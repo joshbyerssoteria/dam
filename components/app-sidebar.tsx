@@ -41,26 +41,28 @@ import {
 /* Soteria brand chrome: off-white warm ground, navy ink, gold rules. */
 const GOLD = "#C2912D";
 
-const BRAND_GUIDE_LINKS = [
-  { href: "/brand/logos", label: "Logos" },
-  { href: "/brand/colors", label: "Colors" },
-  { href: "/brand/typography", label: "Typography" },
-  {
-    href: "/brand/examples",
-    label: "Examples",
-    children: [
-      { href: "/brand/examples/compositions", label: "Compositions" },
-      { href: "/brand/examples/blocks", label: "Blocks" },
-      { href: "/brand/examples/components", label: "Components" },
-      { href: "/brand/examples/slides", label: "Slides" },
-    ],
-  },
-] as const;
-
 const SECONDARY_NAV = [
   { href: "/shares", label: "Share links", icon: Link2, roles: ["admin", "editor"] },
   { href: "/upload-links", label: "Upload links", icon: UploadCloud, roles: ["admin"] },
 ] as const;
+
+/** Animated expand/collapse — content stays mounted so toggling is instant. */
+function Collapse({
+  open,
+  children,
+}: {
+  open: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="grid transition-[grid-template-rows] duration-200 ease-out"
+      style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
+    >
+      <div className="overflow-hidden">{children}</div>
+    </div>
+  );
+}
 
 function containsActive(node: NavTreeNode, pathname: string): boolean {
   if (pathname === node.href || pathname.startsWith(`${node.href}/`)) return true;
@@ -158,17 +160,19 @@ function TreeBranch({
         expanded={expanded}
         onToggle={() => setExpanded((current) => !current)}
       />
-      {node.children.length > 0 && expanded ? (
-        <div>
-          {node.children.map((child) => (
-            <TreeBranch
-              key={child.id}
-              node={child}
-              depth={depth + 1}
-              pathname={pathname}
-            />
-          ))}
-        </div>
+      {node.children.length > 0 ? (
+        <Collapse open={expanded}>
+          <div>
+            {node.children.map((child) => (
+              <TreeBranch
+                key={child.id}
+                node={child}
+                depth={depth + 1}
+                pathname={pathname}
+              />
+            ))}
+          </div>
+        </Collapse>
       ) : null}
     </div>
   );
@@ -217,17 +221,19 @@ function KitsTreeBranch({
           dragProps={!isFolder ? { ...attributes, ...listeners } : undefined}
         />
       </div>
-      {node.children.length > 0 && expanded ? (
-        <div>
-          {node.children.map((child) => (
-            <KitsTreeBranch
-              key={child.id}
-              node={child}
-              depth={depth + 1}
-              pathname={pathname}
-            />
-          ))}
-        </div>
+      {node.children.length > 0 ? (
+        <Collapse open={expanded}>
+          <div>
+            {node.children.map((child) => (
+              <KitsTreeBranch
+                key={child.id}
+                node={child}
+                depth={depth + 1}
+                pathname={pathname}
+              />
+            ))}
+          </div>
+        </Collapse>
       ) : null}
     </div>
   );
@@ -371,6 +377,116 @@ function KitsNav({
   );
 }
 
+/**
+ * Brand Guide group: expands instantly on click (no waiting on navigation)
+ * with an animated submenu; Examples nests its own collapsible group.
+ */
+function BrandGuideNav({ pathname }: { pathname: string }) {
+  const [open, setOpen] = useState(() => pathname.startsWith("/brand"));
+  const [examplesOpen, setExamplesOpen] = useState(() =>
+    pathname.startsWith("/brand/examples")
+  );
+
+  function subLink(href: string, label: string, indent: "pl-5" | "pl-9") {
+    const active = pathname.startsWith(href);
+    return (
+      <Link
+        href={href}
+        className={cn(
+          "block truncate rounded-md py-1 pr-2 text-[13px] transition-colors duration-150",
+          indent,
+          active
+            ? "bg-white font-medium text-foreground"
+            : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
+        )}
+      >
+        {label}
+      </Link>
+    );
+  }
+
+  const sectionActive = pathname.startsWith("/brand");
+
+  return (
+    <div>
+      <div
+        className={cn(
+          "flex items-center rounded-md transition-colors duration-150",
+          sectionActive
+            ? "text-foreground"
+            : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
+        )}
+      >
+        <Link
+          href="/brand"
+          onClick={() => setOpen(true)}
+          className="flex min-w-0 flex-1 items-center gap-2.5 px-2.5 py-1.5 text-sm"
+        >
+          <BookOpen className="size-4" strokeWidth={1.75} />
+          Brand Guide
+        </Link>
+        <button
+          type="button"
+          aria-label={open ? "Collapse Brand Guide" : "Expand Brand Guide"}
+          onClick={() => setOpen((current) => !current)}
+          className="mr-1.5 flex size-5 shrink-0 items-center justify-center rounded hover:bg-black/5"
+        >
+          <ChevronRight
+            className={cn(
+              "size-3 transition-transform duration-200",
+              open && "rotate-90"
+            )}
+          />
+        </button>
+      </div>
+      <Collapse open={open}>
+        <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
+          {subLink("/brand/logos", "Logos", "pl-5")}
+          {subLink("/brand/colors", "Colors", "pl-5")}
+          {subLink("/brand/typography", "Typography", "pl-5")}
+          <div
+            className={cn(
+              "flex items-center rounded-md transition-colors duration-150",
+              pathname.startsWith("/brand/examples")
+                ? "text-foreground"
+                : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
+            )}
+          >
+            <Link
+              href="/brand/examples/compositions"
+              onClick={() => setExamplesOpen(true)}
+              className="min-w-0 flex-1 truncate py-1 pl-5 pr-2 text-[13px]"
+            >
+              Examples
+            </Link>
+            <button
+              type="button"
+              aria-label={examplesOpen ? "Collapse Examples" : "Expand Examples"}
+              onClick={() => setExamplesOpen((current) => !current)}
+              className="mr-1.5 flex size-5 shrink-0 items-center justify-center rounded hover:bg-black/5"
+            >
+              <ChevronRight
+                className={cn(
+                  "size-3 transition-transform duration-200",
+                  examplesOpen && "rotate-90"
+                )}
+              />
+            </button>
+          </div>
+          <Collapse open={examplesOpen}>
+            <div>
+              {subLink("/brand/examples/compositions", "Compositions", "pl-9")}
+              {subLink("/brand/examples/blocks", "Blocks", "pl-9")}
+              {subLink("/brand/examples/components", "Components", "pl-9")}
+              {subLink("/brand/examples/slides", "Slides", "pl-9")}
+            </div>
+          </Collapse>
+        </div>
+      </Collapse>
+    </div>
+  );
+}
+
 export function AppSidebar({
   role,
   email,
@@ -394,7 +510,7 @@ export function AppSidebar({
           <img
             src="/branding/logos/horizontal-navy.svg"
             alt="Soteria Church"
-            className="h-7 w-auto"
+            className="h-auto w-full"
             draggable={false}
           />
         </Link>
@@ -403,50 +519,7 @@ export function AppSidebar({
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
         <SectionLink href="/search" label="Search" icon={Search} pathname={pathname} />
 
-        <div>
-          <SectionLink
-            href="/brand"
-            label="Brand Guide"
-            icon={BookOpen}
-            pathname={pathname}
-          />
-          {pathname.startsWith("/brand") ? (
-            <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
-              {BRAND_GUIDE_LINKS.map((link) => (
-                <div key={link.href}>
-                  <Link
-                    href={link.href}
-                    className={cn(
-                      "block truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
-                      pathname.startsWith(link.href) &&
-                        !("children" in link && pathname !== link.href)
-                        ? "bg-white font-medium text-foreground"
-                        : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
-                    )}
-                  >
-                    {link.label}
-                  </Link>
-                  {"children" in link && pathname.startsWith(link.href)
-                    ? link.children.map((child) => (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          className={cn(
-                            "block truncate rounded-md py-1 pl-9 pr-2 text-[13px] transition-colors",
-                            pathname.startsWith(child.href)
-                              ? "bg-white font-medium text-foreground"
-                              : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
-                          )}
-                        >
-                          {child.label}
-                        </Link>
-                      ))
-                    : null}
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        <BrandGuideNav pathname={pathname} />
 
         <div>
           <SectionLink
