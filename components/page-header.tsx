@@ -8,7 +8,8 @@ export function PageHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-6 border-b border-border px-8 py-6">
+    // 88px matches the sidebar logo block, so titles center with the logo.
+    <div className="flex min-h-[88px] items-center justify-between gap-6 border-b border-border px-8 py-4">
       <div className="min-w-0">
         <h1 className="truncate text-xl font-semibold tracking-tight">
           {title}

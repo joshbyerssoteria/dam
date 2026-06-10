@@ -159,7 +159,7 @@ function TreeBranch({
         pathname={pathname}
         expanded={expanded}
         onToggle={() => setExpanded((current) => !current)}
-        onExpand={() => setExpanded(true)}
+        onExpand={() => setExpanded((current) => !current)}
       />
       {node.children.length > 0 ? (
         <Collapse open={expanded}>
@@ -218,7 +218,7 @@ function KitsTreeBranch({
           pathname={pathname}
           expanded={expanded}
           onToggle={() => setExpanded((current) => !current)}
-          onExpand={() => setExpanded(true)}
+          onExpand={() => setExpanded((current) => !current)}
           isDropTarget={isFolder && isOver}
           dragProps={!isFolder ? { ...attributes, ...listeners } : undefined}
         />
@@ -421,7 +421,7 @@ function BrandGuideNav({ pathname }: { pathname: string }) {
       >
         <Link
           href="/brand"
-          onClick={() => setOpen(true)}
+          onClick={() => setOpen((current) => !current)}
           className="flex min-w-0 flex-1 items-center gap-2.5 px-2.5 py-1.5 text-sm"
         >
           <BookOpen className="size-4" strokeWidth={1.75} />
@@ -456,7 +456,7 @@ function BrandGuideNav({ pathname }: { pathname: string }) {
           >
             <Link
               href="/brand/examples/compositions"
-              onClick={() => setExamplesOpen(true)}
+              onClick={() => setExamplesOpen((current) => !current)}
               className="min-w-0 flex-1 truncate py-1 pl-5 pr-2 text-[13px]"
             >
               Examples
@@ -507,8 +507,9 @@ export function AppSidebar({
   return (
     <aside className="sticky top-0 flex h-svh w-60 shrink-0 flex-col border-r border-border bg-white">
       {/* 22px = nav container (12px) + item padding (10px), so the logo
-          aligns with the menu items' content edge */}
-      <div className="px-[22px] pb-5 pt-6">
+          aligns with the menu items' content edge. 88px matches PageHeader
+          height so page titles center with the logo. */}
+      <div className="flex h-[88px] items-center px-[22px]">
         <Link href="/photos" className="block">
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
           <img
