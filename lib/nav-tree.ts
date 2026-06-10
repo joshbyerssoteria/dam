@@ -2,6 +2,8 @@ export interface NavTreeNode {
   id: string;
   name: string;
   href: string;
+  /** folders can receive drops; leaves (kits) can be dragged */
+  kind: "folder" | "leaf";
   children: NavTreeNode[];
 }
 
@@ -21,7 +23,13 @@ export function buildNavTree(
   const nodeById = new Map<string, NavTreeNode>(
     rows.map((row) => [
       row.id,
-      { id: row.id, name: row.name, href: hrefFor(row.id), children: [] },
+      {
+        id: row.id,
+        name: row.name,
+        href: hrefFor(row.id),
+        kind: "folder" as const,
+        children: [],
+      },
     ])
   );
 
@@ -45,6 +53,7 @@ export function buildNavTree(
       id: leaf.id,
       name: leaf.name,
       href: leaf.href,
+      kind: "leaf",
       children: [],
     };
     const parent = leaf.parentId ? nodeById.get(leaf.parentId) : undefined;

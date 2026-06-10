@@ -13,6 +13,7 @@ export const uploadIntentSchema = z.discriminatedUnion("intent", [
   z.object({ intent: z.literal("portal-photo"), uploadToken: z.string().min(8) }),
   z.object({ intent: z.literal("kit-file"), kitId: z.string().uuid() }),
   z.object({ intent: z.literal("kit-cover"), kitId: z.string().uuid() }),
+  z.object({ intent: z.literal("kit-source"), kitId: z.string().uuid() }),
   z.object({
     intent: z.literal("font-file"),
     fontId: z.string().uuid(),
@@ -32,6 +33,8 @@ export function keyPrefixForIntent(intent: UploadIntent): string {
       return "kit-files";
     case "kit-cover":
       return "kit-covers";
+    case "kit-source":
+      return "kit-source";
     case "font-file":
       return "fonts";
   }
@@ -181,6 +184,17 @@ export async function finalizeUpload(
       .eq("id", intent.kitId);
     if (error) {
       return { ok: false, status: 500, error: "Failed to set cover" };
+    }
+    return { ok: true };
+  }
+
+  if (intent.intent === "kit-source") {
+    const { error } = await db
+      .from("kits")
+      .update({ source_file_id: file.id })
+      .eq("id", intent.kitId);
+    if (error) {
+      return { ok: false, status: 500, error: "Failed to set source file" };
     }
     return { ok: true };
   }

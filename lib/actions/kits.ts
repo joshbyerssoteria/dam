@@ -135,6 +135,36 @@ export async function deleteKitSection(
   return { ok: true };
 }
 
+const sectionOrderSchema = z.array(
+  z.object({
+    sectionId: z.string().uuid(),
+    sortOrder: z.number().int().min(0).max(1000),
+  })
+).max(100);
+
+/** Persist drag-reordered sections. */
+export async function reorderKitSections(
+  updates: Array<{ sectionId: string; sortOrder: number }>
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await requireEditor();
+  if (!session) return { ok: false, error: "Not allowed" };
+
+  const parsed = sectionOrderSchema.safeParse(updates);
+  if (!parsed.success) return { ok: false, error: "Invalid order" };
+
+  const db = await createClient();
+  for (const update of parsed.data) {
+    const { error } = await db
+      .from("kit_sections")
+      .update({ sort_order: update.sortOrder })
+      .eq("id", update.sectionId);
+    if (error) return { ok: false, error: "Failed to save section order" };
+  }
+
+  revalidatePath("/kits");
+  return { ok: true };
+}
+
 const reorderSchema = z.array(
   z.object({
     kitAssetId: z.string().uuid(),

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight, Folder } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { createClient, getSessionProfile } from "@/lib/supabase/server";
-import { KitCard } from "@/components/kit-card";
 import { KitFolderActions } from "@/components/kit-folder-actions";
+import { KitsDndGrid } from "@/components/kits-dnd-grid";
 import { NewKitDialog } from "@/components/new-kit-dialog";
 import { NewKitFolderDialog } from "@/components/new-kit-folder-dialog";
 import { PageHeader } from "@/components/page-header";
@@ -98,34 +98,19 @@ export default async function KitFolderPage({
           <span className="text-foreground">{folder.name}</span>
         </nav>
 
-        {(subfolders ?? []).length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {(subfolders ?? []).map((subfolder) => (
-              <Link
-                key={subfolder.id}
-                href={`/kits/f/${subfolder.id}`}
-                className="group flex items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:border-muted-foreground/40"
-              >
-                <Folder
-                  className="size-5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
-                  strokeWidth={1.5}
-                />
-                <p className="truncate text-sm font-medium">{subfolder.name}</p>
-              </Link>
-            ))}
-          </div>
-        ) : null}
-
         {(kits ?? []).length === 0 && (subfolders ?? []).length === 0 ? (
           <p className="py-16 text-center text-sm text-muted-foreground">
             Nothing in this folder yet.
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {(kits ?? []).map((kit) => (
-              <KitCard key={kit.id} kit={kit} canShare={canEdit} />
-            ))}
-          </div>
+          <KitsDndGrid
+            folders={(subfolders ?? []).map((subfolder) => ({
+              id: subfolder.id,
+              name: subfolder.name,
+            }))}
+            kits={kits ?? []}
+            canEdit={canEdit}
+          />
         )}
       </div>
     </div>

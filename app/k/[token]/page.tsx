@@ -11,6 +11,7 @@ import {
   shareUnlockCookieName,
 } from "@/lib/share-access";
 import { KitContent } from "@/components/kit-content";
+import { KitSourceCard } from "@/components/kit-source-card";
 import { SharePasswordForm } from "@/components/share-password-form";
 import { Button } from "@/components/ui/button";
 
@@ -65,6 +66,18 @@ export default async function SharedKitPage({
           </Button>
         ) : null}
       </header>
+
+      {data.sourceFile ? (
+        <div className="mb-10">
+          <KitSourceCard
+            kitId={data.kit.id}
+            sourceFile={data.sourceFile}
+            coverImageId={data.kit.cover_image_id}
+            srcPrefix={`/api/share/${token}/file`}
+            shareToken={token}
+          />
+        </div>
+      ) : null}
 
       <KitContent
         data={data}

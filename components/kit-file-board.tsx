@@ -18,16 +18,24 @@ import {
   SortableContext,
   arrayMove,
   rectSortingStrategy,
+  verticalListSortingStrategy,
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  GripVertical,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   createKitSection,
   deleteKitSection,
   renameKitSection,
   reorderKitAssets,
+  reorderKitSections,
 } from "@/lib/actions/kits";
 import { cn } from "@/lib/utils";
 import {
@@ -52,6 +60,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const UNSECTIONED = "none";
+const SECTION_PREFIX = "sec:";
 
 export interface BoardFile {
   kitAssetId: string;
@@ -64,11 +73,13 @@ export interface BoardSection {
   name: string;
 }
 
-function SortableCard({
-  item,
-}: {
-  item: BoardFile;
-}) {
+type SectionDialogState =
+  | { mode: "create" }
+  | { mode: "rename"; sectionId: string }
+  | { mode: "name-unsectioned" }
+  | null;
+
+function SortableCard({ item }: { item: BoardFile }) {
   const {
     attributes,
     listeners,
@@ -94,92 +105,152 @@ function SortableCard({
         <GripVertical className="size-3.5" />
       </button>
       <div className="group/card">
-        <FileAssetCard
-          kitAssetId={item.kitAssetId}
-          file={item.file}
-          canEdit
-        />
+        <FileAssetCard kitAssetId={item.kitAssetId} file={item.file} canEdit />
       </div>
     </div>
   );
 }
 
-function SectionContainer({
+function SectionBody({
   containerId,
-  title,
   items,
-  onRename,
-  onDelete,
 }: {
   containerId: string;
-  title: string;
   items: BoardFile[];
-  onRename?: () => void;
-  onDelete?: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: containerId });
 
   return (
-    <section aria-label={title}>
-      <div className="mb-3 flex items-center gap-2">
-        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {title}
-        </h3>
-        <span className="text-xs text-muted-foreground/60">{items.length}</span>
-        {onRename ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-6"
-                aria-label={`Section ${title} actions`}
-              >
-                <MoreHorizontal className="size-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem onSelect={onRename}>
-                <Pencil className="size-4" />
-                Rename section
-              </DropdownMenuItem>
+    <SortableContext
+      items={items.map((item) => item.kitAssetId)}
+      strategy={rectSortingStrategy}
+    >
+      <div
+        ref={setNodeRef}
+        className={cn(
+          "grid min-h-24 grid-cols-2 gap-3 rounded-lg p-1 transition-colors sm:grid-cols-3 lg:grid-cols-4",
+          isOver && "bg-accent/50",
+          items.length === 0 &&
+            "items-center justify-center border border-dashed border-border"
+        )}
+      >
+        {items.length === 0 ? (
+          <p className="col-span-full py-6 text-center text-xs text-muted-foreground">
+            Drag files here
+          </p>
+        ) : (
+          items.map((item) => <SortableCard key={item.kitAssetId} item={item} />)
+        )}
+      </div>
+    </SortableContext>
+  );
+}
+
+function SectionHeader({
+  title,
+  count,
+  dragHandle,
+  onRename,
+  onDelete,
+  renameLabel = "Rename section",
+}: {
+  title: string;
+  count: number;
+  dragHandle?: React.ReactNode;
+  onRename?: () => void;
+  onDelete?: () => void;
+  renameLabel?: string;
+}) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      {dragHandle}
+      <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {title}
+      </h3>
+      <span className="text-xs text-muted-foreground/60">{count}</span>
+      {onRename ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-6"
+              aria-label={`Section ${title} actions`}
+            >
+              <MoreHorizontal className="size-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onSelect={onRename}>
+              <Pencil className="size-4" />
+              {renameLabel}
+            </DropdownMenuItem>
+            {onDelete ? (
               <DropdownMenuItem variant="destructive" onSelect={onDelete}>
                 <Trash2 className="size-4" />
                 Delete section
               </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
-      </div>
-      <SortableContext
-        items={items.map((item) => item.kitAssetId)}
-        strategy={rectSortingStrategy}
-      >
-        <div
-          ref={setNodeRef}
-          className={cn(
-            "grid min-h-24 grid-cols-2 gap-3 rounded-lg p-1 transition-colors sm:grid-cols-3 lg:grid-cols-4",
-            isOver && "bg-accent/50",
-            items.length === 0 &&
-              "items-center justify-center border border-dashed border-border"
-          )}
-        >
-          {items.length === 0 ? (
-            <p className="col-span-full py-6 text-center text-xs text-muted-foreground">
-              Drag files here
-            </p>
-          ) : (
-            items.map((item) => <SortableCard key={item.kitAssetId} item={item} />)
-          )}
-        </div>
-      </SortableContext>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
+    </div>
+  );
+}
+
+function SortableSection({
+  section,
+  items,
+  onRename,
+  onDelete,
+}: {
+  section: BoardSection;
+  items: BoardFile[];
+  onRename: () => void;
+  onDelete: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `${SECTION_PREFIX}${section.id}` });
+
+  return (
+    <section
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      aria-label={section.name}
+      className={cn(isDragging && "z-10 opacity-50")}
+    >
+      <SectionHeader
+        title={section.name}
+        count={items.length}
+        onRename={onRename}
+        onDelete={onDelete}
+        dragHandle={
+          <button
+            type="button"
+            aria-label={`Drag section ${section.name}`}
+            {...attributes}
+            {...listeners}
+            className="cursor-grab rounded p-0.5 text-muted-foreground/60 hover:text-foreground active:cursor-grabbing"
+          >
+            <GripVertical className="size-3.5" />
+          </button>
+        }
+      />
+      <SectionBody containerId={section.id} items={items} />
     </section>
   );
 }
 
 /**
- * Editable file area of a kit: named sections with drag-and-drop between
- * and within them. Order and membership persist via reorderKitAssets.
+ * Editable file area of a kit: named sections that can themselves be
+ * drag-reordered, with files draggable within and across sections. The
+ * unsectioned group can be "named" — which turns it into a real section.
  */
 export function KitFileBoard({
   kitId,
@@ -199,12 +270,17 @@ export function KitFileBoard({
     () => new Map(files.map((item) => [item.kitAssetId, item])),
     [files]
   );
+  const sectionById = useMemo(
+    () => new Map(sections.map((section) => [section.id, section])),
+    [sections]
+  );
 
   function initialContainers(): Record<string, string[]> {
     const result: Record<string, string[]> = { [UNSECTIONED]: [] };
     for (const section of sections) result[section.id] = [];
     for (const item of files) {
-      const key = item.sectionId && result[item.sectionId] ? item.sectionId : UNSECTIONED;
+      const key =
+        item.sectionId && result[item.sectionId] ? item.sectionId : UNSECTIONED;
       result[key]!.push(item.kitAssetId);
     }
     return result;
@@ -213,18 +289,25 @@ export function KitFileBoard({
   const [containers, setContainers] = useState<Record<string, string[]>>(
     initialContainers
   );
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [sectionDialog, setSectionDialog] = useState<
-    { mode: "create" } | { mode: "rename"; sectionId: string; current: string } | null
+  const [sectionOrder, setSectionOrder] = useState<string[]>(() =>
+    sections.map((section) => section.id)
+  );
+  const [active, setActive] = useState<
+    { type: "asset"; id: string } | { type: "section"; id: string } | null
   >(null);
+  const [sectionDialog, setSectionDialog] = useState<SectionDialogState>(null);
   const [sectionName, setSectionName] = useState("");
   const [savingSection, setSavingSection] = useState(false);
 
+  const serverFingerprint = `${sections.map((s) => s.id).join(",")}|${files
+    .map((f) => `${f.kitAssetId}:${f.sectionId}`)
+    .join(",")}`;
   // Server data changed (upload, delete, refresh) — rebuild the board.
   useEffect(() => {
     setContainers(initialContainers());
+    setSectionOrder(sections.map((section) => section.id));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sections.map((s) => s.id).join(","), files.map((f) => `${f.kitAssetId}:${f.sectionId}`).join(",")]);
+  }, [serverFingerprint]);
 
   function findContainer(id: string): string | undefined {
     if (id in containers) return id;
@@ -232,47 +315,38 @@ export function KitFileBoard({
   }
 
   function handleDragStart(event: DragStartEvent) {
-    setActiveId(String(event.active.id));
+    const id = String(event.active.id);
+    setActive(
+      id.startsWith(SECTION_PREFIX)
+        ? { type: "section", id: id.slice(SECTION_PREFIX.length) }
+        : { type: "asset", id }
+    );
   }
 
   function handleDragOver(event: DragOverEvent) {
-    const { active, over } = event;
+    const { active: dragActive, over } = event;
     if (!over) return;
-    const from = findContainer(String(active.id));
-    const to = findContainer(String(over.id));
-    if (!from || !to || from === to) return;
+    const activeId = String(dragActive.id);
+    if (activeId.startsWith(SECTION_PREFIX)) return; // sections sort on drop
+
+    const from = findContainer(activeId);
+    const overId = String(over.id);
+    const to = overId.startsWith(SECTION_PREFIX)
+      ? overId.slice(SECTION_PREFIX.length)
+      : findContainer(overId);
+    if (!from || !to || from === to || !(to in containers)) return;
 
     setContainers((current) => {
-      const fromItems = current[from]!.filter((id) => id !== String(active.id));
+      const fromItems = current[from]!.filter((id) => id !== activeId);
       const toItems = [...current[to]!];
-      const overIndex = toItems.indexOf(String(over.id));
+      const overIndex = toItems.indexOf(overId);
       const insertAt = overIndex >= 0 ? overIndex : toItems.length;
-      toItems.splice(insertAt, 0, String(active.id));
+      toItems.splice(insertAt, 0, activeId);
       return { ...current, [from]: fromItems, [to]: toItems };
     });
   }
 
-  async function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    setActiveId(null);
-    if (!over) return;
-
-    const container = findContainer(String(active.id));
-    if (!container) return;
-
-    let next = containers;
-    const items = containers[container]!;
-    const fromIndex = items.indexOf(String(active.id));
-    const toIndex = items.indexOf(String(over.id));
-    if (fromIndex >= 0 && toIndex >= 0 && fromIndex !== toIndex) {
-      next = {
-        ...containers,
-        [container]: arrayMove(items, fromIndex, toIndex),
-      };
-      setContainers(next);
-    }
-
-    // Persist the full arrangement.
+  async function persistAssets(next: Record<string, string[]>) {
     const updates = Object.entries(next).flatMap(([key, ids]) =>
       ids.map((kitAssetId, index) => ({
         kitAssetId,
@@ -281,27 +355,88 @@ export function KitFileBoard({
       }))
     );
     const result = await reorderKitAssets(updates);
-    if (!result.ok) {
-      toast.error(result.error ?? "Failed to save arrangement");
-    }
+    if (!result.ok) toast.error(result.error ?? "Failed to save arrangement");
     router.refresh();
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active: dragActive, over } = event;
+    setActive(null);
+    if (!over) return;
+    const activeId = String(dragActive.id);
+    const overId = String(over.id);
+
+    // Section reorder
+    if (activeId.startsWith(SECTION_PREFIX)) {
+      if (!overId.startsWith(SECTION_PREFIX) || activeId === overId) return;
+      const fromIndex = sectionOrder.indexOf(activeId.slice(SECTION_PREFIX.length));
+      const toIndex = sectionOrder.indexOf(overId.slice(SECTION_PREFIX.length));
+      if (fromIndex < 0 || toIndex < 0) return;
+      const next = arrayMove(sectionOrder, fromIndex, toIndex);
+      setSectionOrder(next);
+      const result = await reorderKitSections(
+        next.map((sectionId, index) => ({ sectionId, sortOrder: index }))
+      );
+      if (!result.ok) toast.error(result.error ?? "Failed to save section order");
+      router.refresh();
+      return;
+    }
+
+    // Asset reorder within its (possibly new) container
+    const container = findContainer(activeId);
+    if (!container) return;
+    let next = containers;
+    const items = containers[container]!;
+    const fromIndex = items.indexOf(activeId);
+    const toIndex = items.indexOf(overId);
+    if (fromIndex >= 0 && toIndex >= 0 && fromIndex !== toIndex) {
+      next = { ...containers, [container]: arrayMove(items, fromIndex, toIndex) };
+      setContainers(next);
+    }
+    await persistAssets(next);
   }
 
   async function handleSectionSave() {
     if (!sectionDialog) return;
     setSavingSection(true);
-    const result =
-      sectionDialog.mode === "create"
-        ? await createKitSection(kitId, sectionName)
-        : await renameKitSection(sectionDialog.sectionId, sectionName);
-    setSavingSection(false);
-    if (result.ok) {
-      setSectionDialog(null);
-      setSectionName("");
-      router.refresh();
+
+    if (sectionDialog.mode === "rename") {
+      const result = await renameKitSection(sectionDialog.sectionId, sectionName);
+      setSavingSection(false);
+      if (!result.ok) {
+        toast.error(result.error ?? "Failed to rename");
+        return;
+      }
     } else {
-      toast.error(result.error ?? "Failed to save section");
+      // create / name-unsectioned
+      const result = await createKitSection(kitId, sectionName);
+      if (!result.ok) {
+        setSavingSection(false);
+        toast.error(result.error);
+        return;
+      }
+      if (sectionDialog.mode === "name-unsectioned") {
+        // Naming the unsectioned group = move its files into the new section.
+        const unsectionedIds = containers[UNSECTIONED] ?? [];
+        const moveResult = await reorderKitAssets(
+          unsectionedIds.map((kitAssetId, index) => ({
+            kitAssetId,
+            sectionId: result.sectionId,
+            sortOrder: index,
+          }))
+        );
+        if (!moveResult.ok) {
+          setSavingSection(false);
+          toast.error(moveResult.error ?? "Failed to move files");
+          return;
+        }
+      }
+      setSavingSection(false);
     }
+
+    setSectionDialog(null);
+    setSectionName("");
+    router.refresh();
   }
 
   async function handleSectionDelete(sectionId: string) {
@@ -314,9 +449,13 @@ export function KitFileBoard({
     }
   }
 
-  const activeItem = activeId ? fileByAssetId.get(activeId) : null;
-  const showUnsectioned =
-    sections.length === 0 || (containers[UNSECTIONED]?.length ?? 0) > 0;
+  const orderedSections = sectionOrder
+    .map((id) => sectionById.get(id))
+    .filter((section): section is BoardSection => Boolean(section));
+  const unsectionedItems = (containers[UNSECTIONED] ?? [])
+    .map((id) => fileByAssetId.get(id))
+    .filter((item): item is BoardFile => Boolean(item));
+  const showUnsectioned = sections.length === 0 || unsectionedItems.length > 0;
 
   return (
     <div className="space-y-8">
@@ -325,43 +464,60 @@ export function KitFileBoard({
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
+        onDragEnd={(event) => void handleDragEnd(event)}
       >
         {showUnsectioned ? (
-          <SectionContainer
-            containerId={UNSECTIONED}
-            title={sections.length === 0 ? "Files" : "Unsectioned"}
-            items={(containers[UNSECTIONED] ?? [])
-              .map((id) => fileByAssetId.get(id))
-              .filter((item): item is BoardFile => Boolean(item))}
-          />
+          <section aria-label="Unsectioned files">
+            <SectionHeader
+              title={sections.length === 0 ? "Files" : "Unsectioned"}
+              count={unsectionedItems.length}
+              onRename={
+                unsectionedItems.length > 0
+                  ? () => {
+                      setSectionName("");
+                      setSectionDialog({ mode: "name-unsectioned" });
+                    }
+                  : undefined
+              }
+              renameLabel="Name this section"
+            />
+            <SectionBody containerId={UNSECTIONED} items={unsectionedItems} />
+          </section>
         ) : null}
 
-        {sections.map((section) => (
-          <SectionContainer
-            key={section.id}
-            containerId={section.id}
-            title={section.name}
-            items={(containers[section.id] ?? [])
-              .map((id) => fileByAssetId.get(id))
-              .filter((item): item is BoardFile => Boolean(item))}
-            onRename={() => {
-              setSectionName(section.name);
-              setSectionDialog({
-                mode: "rename",
-                sectionId: section.id,
-                current: section.name,
-              });
-            }}
-            onDelete={() => void handleSectionDelete(section.id)}
-          />
-        ))}
+        <SortableContext
+          items={orderedSections.map((section) => `${SECTION_PREFIX}${section.id}`)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-8">
+            {orderedSections.map((section) => (
+              <SortableSection
+                key={section.id}
+                section={section}
+                items={(containers[section.id] ?? [])
+                  .map((id) => fileByAssetId.get(id))
+                  .filter((item): item is BoardFile => Boolean(item))}
+                onRename={() => {
+                  setSectionName(section.name);
+                  setSectionDialog({ mode: "rename", sectionId: section.id });
+                }}
+                onDelete={() => void handleSectionDelete(section.id)}
+              />
+            ))}
+          </div>
+        </SortableContext>
 
         <DragOverlay>
-          {activeItem ? (
+          {active?.type === "asset" && fileByAssetId.get(active.id) ? (
             <div className="w-48 rounded-lg border border-border bg-card px-3 py-2 shadow-lg">
               <p className="truncate text-xs font-medium">
-                {activeItem.file.original_filename}
+                {fileByAssetId.get(active.id)!.file.original_filename}
+              </p>
+            </div>
+          ) : active?.type === "section" && sectionById.get(active.id) ? (
+            <div className="rounded-lg border border-border bg-card px-4 py-2 shadow-lg">
+              <p className="text-xs font-medium uppercase tracking-wide">
+                {sectionById.get(active.id)!.name}
               </p>
             </div>
           ) : null}
@@ -387,7 +543,11 @@ export function KitFileBoard({
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>
-              {sectionDialog?.mode === "rename" ? "Rename section" : "New section"}
+              {sectionDialog?.mode === "rename"
+                ? "Rename section"
+                : sectionDialog?.mode === "name-unsectioned"
+                  ? "Name this section"
+                  : "New section"}
             </DialogTitle>
           </DialogHeader>
           <form

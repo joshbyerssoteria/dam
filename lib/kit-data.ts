@@ -12,6 +12,7 @@ import type {
 
 export interface KitContentData {
   kit: KitRow;
+  sourceFile: FileRow | null;
   sections: KitSectionRow[];
   files: Array<{ kitAssetId: string; sectionId: string | null; file: FileRow }>;
   palettes: Array<{ palette: PaletteRow; colors: ColorRow[] }>;
@@ -104,5 +105,22 @@ export async function loadKitContent(
       }),
   }));
 
-  return { kit, sections: sectionsResult.data ?? [], files, palettes, fonts };
+  let sourceFile: FileRow | null = null;
+  if (kit.source_file_id) {
+    const { data } = await db
+      .from("files")
+      .select("*")
+      .eq("id", kit.source_file_id)
+      .single();
+    sourceFile = data ?? null;
+  }
+
+  return {
+    kit,
+    sourceFile,
+    sections: sectionsResult.data ?? [],
+    files,
+    palettes,
+    fonts,
+  };
 }

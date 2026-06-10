@@ -131,5 +131,6 @@ export async function collectShareFileIds(
   }
 
   if (resolved.kit.cover_image_id) fileIds.add(resolved.kit.cover_image_id);
+  if (resolved.kit.source_file_id) fileIds.add(resolved.kit.source_file_id);
   return fileIds;
 }

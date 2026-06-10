@@ -12,6 +12,7 @@ import {
 } from "@/components/kit-content";
 import { KitFileBoard } from "@/components/kit-file-board";
 import { KitFileUpload } from "@/components/kit-file-upload";
+import { KitSourceCard } from "@/components/kit-source-card";
 import { PageHeader } from "@/components/page-header";
 import { QuickShareButton } from "@/components/quick-share-button";
 import { ShareDialog } from "@/components/share-dialog";
@@ -60,6 +61,14 @@ export default async function KitDetailPage({
       </PageHeader>
 
       <div className="p-8">
+        <div className="mb-8">
+          <KitSourceCard
+            kitId={kit.id}
+            sourceFile={data.sourceFile}
+            coverImageId={kit.cover_image_id}
+            canEdit={canEdit}
+          />
+        </div>
         {canEdit ? (
           <div className="space-y-12">
             {data.files.length === 0 &&

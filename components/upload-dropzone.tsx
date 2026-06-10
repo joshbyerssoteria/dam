@@ -8,11 +8,12 @@ import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 
 // Mirrors lib/upload-intents.ts (kept local — that module is server-only).
-type UploadIntent =
+export type UploadIntent =
   | { intent: "photo"; folderId: string }
   | { intent: "portal-photo"; uploadToken: string }
   | { intent: "kit-file"; kitId: string }
-  | { intent: "kit-cover"; kitId: string };
+  | { intent: "kit-cover"; kitId: string }
+  | { intent: "kit-source"; kitId: string };
 
 interface FileUploadState {
   name: string;
@@ -65,7 +66,7 @@ function errorFrom(responseText: string, status: number): string {
  * Upload one file: ask the server for a presigned S3 URL (bypasses Vercel's
  * 4.5 MB body limit); if S3 isn't configured, fall back to the direct route.
  */
-async function uploadWithProgress(
+export async function uploadWithProgress(
   file: File,
   intent: UploadIntent,
   onProgress: (percent: number) => void

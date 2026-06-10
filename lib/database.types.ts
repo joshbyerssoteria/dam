@@ -45,6 +45,7 @@ export type KitRow = {
   share_expires_at: string | null;
   cover_image_id: string | null;
   kit_folder_id: string | null;
+  source_file_id: string | null;
   sort_order: number;
   created_at: string;
   updated_at: string;

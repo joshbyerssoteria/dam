@@ -2,7 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 import {
   ChevronRight,
   Images,
@@ -12,6 +22,8 @@ import {
   UploadCloud,
   Settings,
 } from "lucide-react";
+import { toast } from "sonner";
+import { moveKitToFolder } from "@/lib/actions/kit-folders";
 import { cn } from "@/lib/utils";
 import type { AppRole } from "@/lib/database.types";
 import type { NavTreeNode } from "@/lib/nav-tree";
@@ -28,6 +40,74 @@ function containsActive(node: NavTreeNode, pathname: string): boolean {
   return node.children.some((child) => containsActive(child, pathname));
 }
 
+function findNode(nodes: NavTreeNode[], id: string): NavTreeNode | null {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    const found = findNode(node.children, id);
+    if (found) return found;
+  }
+  return null;
+}
+
+/** Row chrome shared by both trees; drag/drop hooks attach via wrappers. */
+function BranchRow({
+  node,
+  depth,
+  pathname,
+  expanded,
+  onToggle,
+  isDropTarget = false,
+  dragProps,
+}: {
+  node: NavTreeNode;
+  depth: number;
+  pathname: string;
+  expanded: boolean;
+  onToggle: () => void;
+  isDropTarget?: boolean;
+  dragProps?: Record<string, unknown>;
+}) {
+  const active = pathname === node.href;
+  const hasChildren = node.children.length > 0;
+
+  return (
+    <div
+      className={cn(
+        "group flex items-center rounded-md transition-colors",
+        active
+          ? "bg-accent font-medium text-accent-foreground"
+          : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+        isDropTarget && "bg-accent ring-1 ring-ring"
+      )}
+      style={{ paddingLeft: `${depth * 12}px` }}
+    >
+      {hasChildren ? (
+        <button
+          type="button"
+          aria-label={expanded ? `Collapse ${node.name}` : `Expand ${node.name}`}
+          onClick={onToggle}
+          className="flex size-5 shrink-0 items-center justify-center rounded hover:bg-accent"
+        >
+          <ChevronRight
+            className={cn("size-3 transition-transform", expanded && "rotate-90")}
+          />
+        </button>
+      ) : (
+        <span className="size-5 shrink-0" />
+      )}
+      <Link
+        href={node.href}
+        draggable={false}
+        {...(dragProps ?? {})}
+        className="min-w-0 flex-1 truncate py-1 pr-2 text-[13px]"
+        title={node.name}
+      >
+        {node.name}
+      </Link>
+    </div>
+  );
+}
+
 function TreeBranch({
   node,
   depth,
@@ -37,47 +117,18 @@ function TreeBranch({
   depth: number;
   pathname: string;
 }) {
-  const active = pathname === node.href;
   const [expanded, setExpanded] = useState(() => containsActive(node, pathname));
-  const hasChildren = node.children.length > 0;
 
   return (
     <div>
-      <div
-        className={cn(
-          "group flex items-center rounded-md transition-colors",
-          active
-            ? "bg-accent font-medium text-accent-foreground"
-            : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-        )}
-        style={{ paddingLeft: `${depth * 12}px` }}
-      >
-        {hasChildren ? (
-          <button
-            type="button"
-            aria-label={expanded ? `Collapse ${node.name}` : `Expand ${node.name}`}
-            onClick={() => setExpanded((current) => !current)}
-            className="flex size-5 shrink-0 items-center justify-center rounded hover:bg-accent"
-          >
-            <ChevronRight
-              className={cn(
-                "size-3 transition-transform",
-                expanded && "rotate-90"
-              )}
-            />
-          </button>
-        ) : (
-          <span className="size-5 shrink-0" />
-        )}
-        <Link
-          href={node.href}
-          className="min-w-0 flex-1 truncate py-1 pr-2 text-[13px]"
-          title={node.name}
-        >
-          {node.name}
-        </Link>
-      </div>
-      {hasChildren && expanded ? (
+      <BranchRow
+        node={node}
+        depth={depth}
+        pathname={pathname}
+        expanded={expanded}
+        onToggle={() => setExpanded((current) => !current)}
+      />
+      {node.children.length > 0 && expanded ? (
         <div>
           {node.children.map((child) => (
             <TreeBranch
@@ -93,44 +144,198 @@ function TreeBranch({
   );
 }
 
-function NavSection({
-  href,
-  label,
-  icon: Icon,
-  tree,
+/** Kits tree branch: kit leaves drag; folder rows accept drops. */
+function KitsTreeBranch({
+  node,
+  depth,
   pathname,
 }: {
-  href: string;
-  label: string;
-  icon: typeof Images;
-  tree: NavTreeNode[];
+  node: NavTreeNode;
+  depth: number;
   pathname: string;
 }) {
-  const sectionActive = pathname === href || pathname.startsWith(`${href}/`);
+  const [expanded, setExpanded] = useState(() => containsActive(node, pathname));
+  const isFolder = node.kind === "folder";
+
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: `kitfolder:${node.id}`,
+    disabled: !isFolder,
+  });
+  const {
+    setNodeRef: setDragRef,
+    attributes,
+    listeners,
+    isDragging,
+  } = useDraggable({
+    id: `kit:${node.id}`,
+    disabled: isFolder,
+  });
 
   return (
-    <div>
-      <Link
-        href={href}
-        className={cn(
-          "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
-          sectionActive && pathname === href
-            ? "bg-accent font-medium text-accent-foreground"
-            : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
-          sectionActive && pathname !== href && "text-foreground"
-        )}
+    <div ref={isFolder ? setDropRef : undefined}>
+      <div
+        ref={!isFolder ? setDragRef : undefined}
+        className={cn(isDragging && "opacity-40")}
       >
-        <Icon className="size-4" strokeWidth={1.75} />
-        {label}
-      </Link>
-      {tree.length > 0 ? (
-        <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
-          {tree.map((node) => (
-            <TreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
+        <BranchRow
+          node={node}
+          depth={depth}
+          pathname={pathname}
+          expanded={expanded}
+          onToggle={() => setExpanded((current) => !current)}
+          isDropTarget={isFolder && isOver}
+          dragProps={!isFolder ? { ...attributes, ...listeners } : undefined}
+        />
+      </div>
+      {node.children.length > 0 && expanded ? (
+        <div>
+          {node.children.map((child) => (
+            <KitsTreeBranch
+              key={child.id}
+              node={child}
+              depth={depth + 1}
+              pathname={pathname}
+            />
           ))}
         </div>
       ) : null}
     </div>
+  );
+}
+
+function SectionLink({
+  href,
+  label,
+  icon: Icon,
+  pathname,
+  dropRef,
+  isDropTarget = false,
+}: {
+  href: string;
+  label: string;
+  icon: typeof Images;
+  pathname: string;
+  dropRef?: (element: HTMLElement | null) => void;
+  isDropTarget?: boolean;
+}) {
+  const sectionActive = pathname === href || pathname.startsWith(`${href}/`);
+  return (
+    <Link
+      ref={dropRef as React.Ref<HTMLAnchorElement>}
+      href={href}
+      className={cn(
+        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+        sectionActive && pathname === href
+          ? "bg-accent font-medium text-accent-foreground"
+          : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+        sectionActive && pathname !== href && "text-foreground",
+        isDropTarget && "bg-accent ring-1 ring-ring"
+      )}
+    >
+      <Icon className="size-4" strokeWidth={1.75} />
+      {label}
+    </Link>
+  );
+}
+
+/** Rendered inside DndContext so the root droppable hook has a provider. */
+function KitsNavTreeArea({
+  kitTree,
+  pathname,
+}: {
+  kitTree: NavTreeNode[];
+  pathname: string;
+}) {
+  const { setNodeRef: rootDropRef, isOver: rootIsOver } = useDroppable({
+    id: "kitfolder:root",
+  });
+
+  return (
+    <div>
+      <SectionLink
+        href="/kits"
+        label="Kits"
+        icon={Palette}
+        pathname={pathname}
+        dropRef={rootDropRef}
+        isDropTarget={rootIsOver}
+      />
+      {kitTree.length > 0 ? (
+        <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
+          {kitTree.map((node) => (
+            <KitsTreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function KitsNav({
+  kitTree,
+  pathname,
+  canEdit,
+}: {
+  kitTree: NavTreeNode[];
+  pathname: string;
+  canEdit: boolean;
+}) {
+  const router = useRouter();
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+  const [activeKitId, setActiveKitId] = useState<string | null>(null);
+
+  if (!canEdit) {
+    return (
+      <div>
+        <SectionLink href="/kits" label="Kits" icon={Palette} pathname={pathname} />
+        {kitTree.length > 0 ? (
+          <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
+            {kitTree.map((node) => (
+              <TreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    setActiveKitId(null);
+    const { active, over } = event;
+    if (!over) return;
+    const kitId = String(active.id).replace(/^kit:/, "");
+    const target = String(over.id).replace(/^kitfolder:/, "");
+    const result = await moveKitToFolder(kitId, target === "root" ? null : target);
+    if (result.ok) {
+      toast.success(target === "root" ? "Moved to Kits root" : "Kit moved");
+      router.refresh();
+    } else {
+      toast.error(result.error ?? "Failed to move kit");
+    }
+  }
+
+  const activeNode = activeKitId ? findNode(kitTree, activeKitId) : null;
+
+  return (
+    <DndContext
+      sensors={sensors}
+      onDragStart={(event) =>
+        setActiveKitId(String(event.active.id).replace(/^kit:/, ""))
+      }
+      onDragEnd={(event) => void handleDragEnd(event)}
+      onDragCancel={() => setActiveKitId(null)}
+    >
+      <KitsNavTreeArea kitTree={kitTree} pathname={pathname} />
+      <DragOverlay>
+        {activeNode ? (
+          <div className="rounded-md border border-border bg-card px-3 py-1.5 text-[13px] shadow-lg">
+            {activeNode.name}
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }
 
@@ -146,6 +351,7 @@ export function AppSidebar({
   kitTree: NavTreeNode[];
 }) {
   const pathname = usePathname();
+  const canEdit = role !== "viewer";
 
   return (
     <aside className="flex h-svh w-60 shrink-0 flex-col border-r border-border bg-background">
@@ -158,20 +364,28 @@ export function AppSidebar({
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-        <NavSection
-          href="/photos"
-          label="Photos"
-          icon={Images}
-          tree={photoTree}
-          pathname={pathname}
-        />
-        <NavSection
-          href="/kits"
-          label="Kits"
-          icon={Palette}
-          tree={kitTree}
-          pathname={pathname}
-        />
+        <div>
+          <SectionLink
+            href="/photos"
+            label="Photos"
+            icon={Images}
+            pathname={pathname}
+          />
+          {photoTree.length > 0 ? (
+            <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
+              {photoTree.map((node) => (
+                <TreeBranch
+                  key={node.id}
+                  node={node}
+                  depth={0}
+                  pathname={pathname}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <KitsNav kitTree={kitTree} pathname={pathname} canEdit={canEdit} />
 
         <div className="pt-2">
           {SECONDARY_NAV.filter(

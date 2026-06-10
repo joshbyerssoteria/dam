@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Folder } from "lucide-react";
 import { createClient, getSessionProfile } from "@/lib/supabase/server";
-import { KitCard } from "@/components/kit-card";
+import { KitsDndGrid } from "@/components/kits-dnd-grid";
 import { NewKitDialog } from "@/components/new-kit-dialog";
 import { NewKitFolderDialog } from "@/components/new-kit-folder-dialog";
 import { PageHeader } from "@/components/page-header";
@@ -73,41 +71,19 @@ export default async function KitsPage() {
             </p>
           </div>
         ) : (
-          <>
-            {folderCounts.length > 0 ? (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {folderCounts.map((folder) => (
-                  <Link
-                    key={folder.id}
-                    href={`/kits/f/${folder.id}`}
-                    className="group flex items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:border-muted-foreground/40"
-                  >
-                    <Folder
-                      className="size-5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
-                      strokeWidth={1.5}
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{folder.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {folder.subCount > 0
-                          ? `${folder.subCount} folder${folder.subCount === 1 ? "" : "s"} · `
-                          : ""}
-                        {folder.kitCount} kit{folder.kitCount === 1 ? "" : "s"}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : null}
-
-            {(kits ?? []).length > 0 ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {(kits ?? []).map((kit) => (
-                  <KitCard key={kit.id} kit={kit} canShare={canEdit} />
-                ))}
-              </div>
-            ) : null}
-          </>
+          <KitsDndGrid
+            folders={folderCounts.map((folder) => ({
+              id: folder.id,
+              name: folder.name,
+              meta: `${
+                folder.subCount > 0
+                  ? `${folder.subCount} folder${folder.subCount === 1 ? "" : "s"} · `
+                  : ""
+              }${folder.kitCount} kit${folder.kitCount === 1 ? "" : "s"}`,
+            }))}
+            kits={kits ?? []}
+            canEdit={canEdit}
+          />
         )}
       </div>
     </div>
