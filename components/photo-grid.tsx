@@ -7,15 +7,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  FolderInput,
   Heart,
   Tags,
   Trash2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { deletePhoto } from "@/lib/actions/folders";
+import { createFolder, deletePhoto } from "@/lib/actions/folders";
 import { favoriteMany, setFavorite } from "@/lib/actions/favorites";
-import { batchUpdatePhotos } from "@/lib/actions/photos-batch";
+import { batchMovePhotos, batchUpdatePhotos } from "@/lib/actions/photos-batch";
 import { EVENT_TYPES } from "@/lib/tagging";
 import { formatBytes, formatDate, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+export interface GridFolder {
+  id: string;
+  name: string;
+  parent_id: string | null;
+}
 
 export interface PhotoGridItem {
   id: string;
@@ -73,6 +80,7 @@ export function PhotoGrid({
   allowBatch = false,
   canEditMeta = false,
   favoriteIds = [],
+  folders = [],
 }: {
   photos: PhotoGridItem[];
   srcPrefix?: string;
@@ -82,6 +90,7 @@ export function PhotoGrid({
   allowBatch?: boolean;
   canEditMeta?: boolean;
   favoriteIds?: string[];
+  folders?: GridFolder[];
 }) {
   const router = useRouter();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -90,6 +99,7 @@ export function PhotoGrid({
   );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [tagDialogOpen, setTagDialogOpen] = useState(false);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const open = openIndex !== null ? photos[openIndex] : null;
 
   const serverFavorites = favoriteIds.join(",");
@@ -278,6 +288,16 @@ export function PhotoGrid({
                 Favorite
               </Button>
             ) : null}
+            {canEditMeta && folders.length >= 0 ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setMoveDialogOpen(true)}
+              >
+                <FolderInput className="size-4" />
+                Move
+              </Button>
+            ) : null}
             {canEditMeta ? (
               <Button
                 size="sm"
@@ -302,15 +322,27 @@ export function PhotoGrid({
       ) : null}
 
       {canEditMeta ? (
-        <BatchTagDialog
-          open={tagDialogOpen}
-          onOpenChange={setTagDialogOpen}
-          photoIds={[...selected]}
-          onDone={() => {
-            setSelected(new Set());
-            router.refresh();
-          }}
-        />
+        <>
+          <BatchTagDialog
+            open={tagDialogOpen}
+            onOpenChange={setTagDialogOpen}
+            photoIds={[...selected]}
+            onDone={() => {
+              setSelected(new Set());
+              router.refresh();
+            }}
+          />
+          <BatchMoveDialog
+            open={moveDialogOpen}
+            onOpenChange={setMoveDialogOpen}
+            photoIds={[...selected]}
+            folders={folders}
+            onDone={() => {
+              setSelected(new Set());
+              router.refresh();
+            }}
+          />
+        </>
       ) : null}
 
       {open ? (
@@ -574,6 +606,133 @@ function BatchTagDialog({
         <DialogFooter>
           <Button onClick={() => void handleApply()} disabled={saving}>
             {saving ? "Applying…" : "Apply to selection"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Flatten the folder tree into select options with depth-based indent. */
+function flattenFolders(folders: GridFolder[]): Array<{ id: string; label: string }> {
+  const byParent = new Map<string | null, GridFolder[]>();
+  for (const folder of folders) {
+    const key = folder.parent_id ?? null;
+    byParent.set(key, [...(byParent.get(key) ?? []), folder]);
+  }
+  const result: Array<{ id: string; label: string }> = [];
+  function walk(parentId: string | null, depth: number) {
+    const children = (byParent.get(parentId) ?? []).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+    for (const folder of children) {
+      result.push({ id: folder.id, label: `${"\u00A0".repeat(depth * 3)}${folder.name}` });
+      walk(folder.id, depth + 1);
+    }
+  }
+  walk(null, 0);
+  return result;
+}
+
+function BatchMoveDialog({
+  open,
+  onOpenChange,
+  photoIds,
+  folders,
+  onDone,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  photoIds: string[];
+  folders: GridFolder[];
+  onDone: () => void;
+}) {
+  const [destinationId, setDestinationId] = useState<string>("");
+  const [newFolderName, setNewFolderName] = useState("");
+  const [moving, setMoving] = useState(false);
+  const options = useMemo(() => flattenFolders(folders), [folders]);
+
+  const creatingNew = newFolderName.trim().length > 0;
+  const canApply = creatingNew || destinationId !== "";
+
+  async function handleMove() {
+    setMoving(true);
+    let targetId = destinationId;
+
+    if (creatingNew) {
+      // New folder goes inside the selected destination (or at the root).
+      const created = await createFolder({
+        name: newFolderName.trim(),
+        parentId: destinationId || null,
+      });
+      if (!created.ok) {
+        setMoving(false);
+        toast.error(created.error);
+        return;
+      }
+      targetId = created.folderId;
+    }
+
+    const result = await batchMovePhotos({ photoIds, folderId: targetId });
+    setMoving(false);
+    if (result.ok) {
+      toast.success(`${photoIds.length} photo(s) moved`);
+      onOpenChange(false);
+      setNewFolderName("");
+      setDestinationId("");
+      onDone();
+    } else {
+      toast.error(result.error ?? "Failed to move photos");
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Move {photoIds.length} photo(s)</DialogTitle>
+          <DialogDescription>
+            Pick a destination folder — or name a new one to create it
+            {destinationId ? " inside the selected folder" : " at the top level"}.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Destination folder</Label>
+            <Select value={destinationId} onValueChange={setDestinationId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Choose a folder" />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="new-folder-name">
+              New folder (optional)
+            </Label>
+            <Input
+              id="new-folder-name"
+              value={newFolderName}
+              onChange={(event) => setNewFolderName(event.target.value)}
+              placeholder="e.g. Easter 2026 — selects"
+            />
+            {creatingNew ? (
+              <p className="text-xs text-muted-foreground">
+                Photos will move into the new folder
+                {destinationId ? " inside the selected folder." : " at the top level."}
+              </p>
+            ) : null}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={() => void handleMove()} disabled={moving || !canApply}>
+            {moving ? "Moving…" : creatingNew ? "Create & move" : "Move photos"}
           </Button>
         </DialogFooter>
       </DialogContent>

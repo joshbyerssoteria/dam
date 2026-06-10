@@ -178,6 +178,11 @@ export default async function FolderPage({
           allowBatch
           canEditMeta={canEdit}
           favoriteIds={favoriteIds}
+          folders={folderList.map(({ id, name, parent_id }) => ({
+            id,
+            name,
+            parent_id,
+          }))}
         />
       </div>
     </div>

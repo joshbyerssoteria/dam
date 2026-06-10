@@ -18,9 +18,12 @@ export default async function FavoritesPage() {
     .order("created_at", { ascending: false });
   const favoriteIds = (favorites ?? []).map((row) => row.photo_id);
 
-  const { data: photos } = favoriteIds.length
-    ? await db.from("photos").select("*, files(*)").in("id", favoriteIds)
-    : { data: [] };
+  const [{ data: photos }, { data: folders }] = await Promise.all([
+    favoriteIds.length
+      ? db.from("photos").select("*, files(*)").in("id", favoriteIds)
+      : Promise.resolve({ data: [] }),
+    db.from("folders").select("id, name, parent_id"),
+  ]);
 
   const role = session.profile.role;
   const isAdmin = role === "admin";
@@ -79,6 +82,7 @@ export default async function FavoritesPage() {
             allowBatch
             canEditMeta={canEdit}
             favoriteIds={favoriteIds}
+            folders={folders ?? []}
           />
         )}
       </div>
