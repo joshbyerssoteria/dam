@@ -1,0 +1,339 @@
+# Soteria DAM — Project Spec
+
+## Context
+
+Soteria is a multi-site church in West Des Moines, Iowa. This project replaces two SaaS tools with a custom Digital Asset Management application tailored to Soteria's workflows.
+
+**Tools being replaced:**
+- **Lingo** — currently manages brand assets (logos, color palettes, fonts, templates) organized into "Kits"
+- **Zenfolio** — currently manages photo galleries and event archive in folder/subfolder/gallery hierarchy
+
+**Team shape:**
+- 20–30 internal users; 2–5 power users daily, the rest occasional
+- External marketing agency with frequent access
+- Volunteer photographers who upload event coverage
+- Comms director collaborates daily on assets
+
+## Project Resources
+
+> **Note:** Credentials are initial development values and will be rotated before production. They live in `.env.local` (git-ignored) and Vercel environment variables — never in source control, including this file.
+
+| Resource | Value |
+|---|---|
+| GitHub repo | `https://github.com/joshbyerssoteria/dam.git` |
+| Production URL | `https://assets.soteria.church` |
+| Hosting | Vercel (connected to the repo above) |
+| Supabase project URL | `https://mdtectgfqdowzoepqvrk.supabase.co` |
+| Supabase publishable key | see `.env.local` (`NEXT_PUBLIC_SUPABASE_ANON_KEY`) |
+| Postgres connection | see `.env.local` (`DATABASE_URL` — use the IPv4 session pooler) |
+
+## Goals
+
+1. Single application that handles both brand assets and photo libraries
+2. AI-tagged photo search — both keyword and semantic ("photos of hands raised in worship")
+3. Tokenized share links for kits, folders, and albums (with optional password and expiry)
+4. Photographer upload portal accessed via tokenized link
+5. SVG → on-demand format and size conversion (PNG, JPG, WebP, PDF)
+6. Color palettes as first-class objects with multi-format export (ASE, ACO, CSS, JSON, Tailwind)
+7. Designer-grade UI — must look and feel as polished as the SaaS it replaces
+
+## Non-Goals (v1)
+
+- Multi-tenancy beyond Soteria (Visual Theology, Infinite Design Co. are future spaces)
+- Real-time collaboration or approval workflows
+- Video transcoding
+- Native mobile apps (responsive web only)
+- Face recognition (deferred — privacy implications need explicit decision)
+- Public-facing brand microsite
+
+## Tech Stack
+
+| Layer | Choice | Reason |
+|---|---|---|
+| Framework | Next.js 15+ (App Router), TypeScript | Matches existing Table app stack |
+| Hosting | Vercel | Existing infrastructure |
+| Database | Supabase (Postgres + Auth + pgvector) | Single managed service for db, auth, and vector search |
+| Object storage | AWS S3 | Soteria's existing infrastructure; reuse IAM and bucket conventions |
+| Image variants | Next.js `<Image>` + Vercel image optimization | Automatic resizing and WebP/AVIF conversion at the edge |
+| Raster transforms | `sharp` | SVG → PNG/JPG/WebP at any size |
+| Vector transforms | `@resvg/resvg-js` + `pdf-lib` | SVG → PDF with vectors preserved |
+| Resumable uploads | tus protocol (`tus-node-server`) | Reliable for large photographer uploads |
+| AI tagging | Anthropic Claude API (vision) | Context-aware over generic CV services |
+| Embeddings | OpenAI `text-embedding-3-small` | Cheap, fast, 1536 dimensions |
+| Background jobs | Inngest | Reliable tagging pipeline with retries |
+| Email | Resend | Transactional only (uploads, share notifications) |
+| UI components | shadcn/ui + Tailwind CSS | Designer control, no opinionated styling baked in |
+
+## Data Model
+
+Two parallel trees — kits (brand assets) and folders (photos). Different mental models; do not conflate them in the schema.
+
+```sql
+-- Workspace (one for v1: Soteria)
+spaces (id, name, slug, created_at)
+
+-- Brand asset side (replaces Lingo)
+kits (
+  id, space_id, slug, name, description,
+  share_token, share_password_hash, share_expires_at,
+  cover_image_id, sort_order, created_at, updated_at
+)
+
+kit_assets (id, kit_id, asset_type, asset_id, sort_order, created_at)
+  -- asset_type: 'file' | 'palette' | 'font'
+  -- asset_id: polymorphic reference
+
+files (id, s3_key, s3_bucket, mime_type, original_filename, file_size, width, height, uploaded_by, created_at)
+
+palettes (id, kit_id, name, description, sort_order, created_at)
+colors  (id, palette_id, hex, name, role, rgb, cmyk, pantone, sort_order)
+
+fonts      (id, kit_id, family, foundry, license_note, sort_order, created_at)
+font_files (id, font_id, weight, style, file_id)
+
+-- Photo side (replaces Zenfolio)
+folders (
+  id, space_id, parent_id, slug, name, description,
+  share_token, share_password_hash, share_expires_at,
+  cover_photo_id, sort_order, created_at
+)
+
+photos (
+  id, folder_id, file_id,
+  ai_tags text[], ai_caption text, ai_scene text, event_type text,
+  embedding vector(1536),
+  taken_at, photographer_name, uploaded_by, created_at
+)
+
+-- Sharing and uploads
+share_links (
+  id, token UNIQUE, target_type, target_id,
+  expires_at, password_hash, download_count, created_by, created_at
+)
+  -- target_type: 'kit' | 'folder'
+
+upload_tokens (
+  id, token UNIQUE, target_folder_id,
+  expires_at, max_files, used_count,
+  photographer_name, photographer_email, instructions,
+  created_by, created_at
+)
+
+-- Audit
+download_log (id, share_token, file_id, ip_hash, downloaded_at)
+upload_log   (id, upload_token, file_id, uploaded_at)
+
+-- Users via Supabase Auth; extended with role: 'admin' | 'editor' | 'viewer'
+```
+
+## Phased Build
+
+### v1 — Core
+
+Estimated 60–80 disciplined hours.
+
+**Auth and space**
+- Supabase Auth, magic link login
+- Single space (Soteria) seeded on first run
+- Three roles: admin, editor, viewer
+
+**Photo library**
+- Folder tree with arbitrary nesting
+- Drag-and-drop upload (single or multi)
+- Background job: Claude vision generates tags + caption + scene + event_type; embedding stored in pgvector
+- Gallery view with responsive grid, fast variants via Next.js Image optimization
+- Lightbox preview with metadata sidebar
+- Hybrid search: keyword (ai_tags) + semantic (vector similarity), single endpoint
+- Download single photo at original quality
+
+**Kits and brand assets**
+- Create kit with name, slug, description, cover image
+- Add file assets to kit (any file type)
+- Add palettes (name + colors with hex, name, role)
+- Add fonts (family + uploaded files)
+- Palette swatches render as live UI with click-to-copy hex
+- Kit detail page shows all asset types together in one nav
+
+**Sharing**
+- Generate tokenized share link for any kit or folder
+- Public view at `/k/[token]` and `/f/[token]`
+- Optional password
+- Optional expiry
+- Download-all (zip) for shared folder or kit
+
+**Photographer upload portal**
+- Admin generates upload_token tied to a destination folder
+- Portal at `/upload/[token]` — drag-drop, tus resumable
+- AI tagging runs in background as uploads complete
+- Confirmation page on completion
+
+### v2 — Polish
+
+Build only after v1 is in active use.
+
+- SVG → on-demand format conversion (`sharp` + `@resvg/resvg-js` + `pdf-lib`), edge-cached
+- Color palette exports: ASE (Illustrator), ACO (Photoshop), CSS variables, JSON, Tailwind config
+- Font specimen auto-rendering (preview image generated server-side)
+- Bulk operations: multi-select photos for move/tag/delete
+- Cover image picker UI for folders and kits
+- Photographer email notification on successful upload
+- Comms director email digest of new uploads
+
+### v3 — Future
+
+- Face recognition (explicit decision required — privacy)
+- Approval workflows
+- Asset versioning
+- Multi-space support (Visual Theology, Infinite Design Co.)
+- Public brand microsite generation from a kit
+- Read API for programmatic retrieval
+
+## Implementation Notes
+
+### AI Tagging Pipeline
+
+On photo upload completion:
+1. Inngest triggers tagging job
+2. Job fetches a small image variant via Next.js image route or generates one on demand with `sharp`
+3. Sends to Claude vision with this structured prompt:
+
+```
+You are analyzing a photograph from a church event archive for a Digital Asset Management system. Return ONLY valid JSON with these fields:
+
+{
+  "tags": ["array of 5-15 specific descriptive tags covering people, actions, settings, objects, mood"],
+  "scene": "one-sentence factual description of what is happening",
+  "caption": "one descriptive sentence optimized for semantic search — include people, action, setting, emotional tone",
+  "event_type": "one of: worship_service, baptism, kids_ministry, students, men, women, conference, fellowship, outdoor, other"
+}
+```
+
+4. Embed the `caption` with `text-embedding-3-small` → 1536-dim vector
+5. Store all fields on the photo row
+
+### Search
+
+Single endpoint `/api/search?q=...`:
+1. Generate embedding for query
+2. Run hybrid query in Postgres:
+   - Vector similarity (cosine distance) on `photos.embedding`
+   - Keyword overlap on `photos.ai_tags`
+   - Combined score with configurable weights (start 70/30 semantic/keyword)
+3. Return ranked results with snippets
+
+### SVG Transforms (v2)
+
+URL pattern: `/api/transform/[file_id]?format=png&width=1200`
+
+- Server checks edge cache; returns cached if hit
+- Raster output: `sharp` reads SVG buffer, outputs requested format/size
+- PDF output: `@resvg/resvg-js` rasterizes for preview; `pdf-lib` embeds original SVG paths in PDF for vector preservation
+- Edge-cache with long TTL keyed on (file_id, format, width, height)
+- Stream response
+
+Supported outputs: PNG, JPG, WebP, PDF, original SVG
+
+### Share Tokens
+
+- Generate with `nanoid(16)`
+- Optional bcrypt password
+- Check expiry on every request
+- Increment `download_count` on each download
+- Revocation: set `expires_at` to now
+
+### Photographer Upload Portal
+
+Admin token generation:
+- Destination folder
+- Expiry datetime
+- Max files (optional cap)
+- Photographer name and email
+- Optional instructions text shown on portal
+
+Public portal at `/upload/[token]`:
+- Soteria branding, instructions, generous drop zone
+- tus resumable upload to Vercel route → S3
+- Progress bar per file
+- Confirmation page with summary
+- Background tagging triggers as uploads complete
+
+## Design Principles
+
+The UI must read as designer-grade, not developer-grade. Reference points: Linear, Vercel dashboard, Frontify, Are.na.
+
+- **Typography:** Inter or similar geometric sans for UI; JetBrains Mono for hex values and code
+- **Color:** Restrained neutral palette by default — let the assets be the color
+- **Density:** Generous whitespace; never crowded
+- **Imagery:** Photo grids are the hero — large, sharp, edge-to-edge where the layout allows
+- **Motion:** Subtle and purposeful (Framer Motion); never decorative
+- **No emoji in UI chrome**
+- **No gradients, no glassmorphism, no trendy ornamentation**
+- **Information hierarchy is sacred** — one primary action per screen
+
+Influence is Swiss design: clarity over decoration, structure over chaos. Every element earns its presence by clarifying meaning.
+
+## Auth and Roles
+
+- Magic link login via Supabase Auth
+- Three roles, enforced via Supabase RLS:
+  - **admin** — full control; manage users, generate tokens, delete anything
+  - **editor** — upload, organize, generate share links; cannot delete others' uploads or manage users
+  - **viewer** — read-only access to all assets
+- Public share links bypass auth for the specific resource only
+- Upload tokens bypass auth for the upload action only — no other access granted
+
+## Environment Variables
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://mdtectgfqdowzoepqvrk.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=        # see .env.local
+SUPABASE_SERVICE_ROLE_KEY=
+DATABASE_URL=                         # see .env.local — IPv4 session pooler URL
+
+AWS_REGION=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+S3_BUCKET_NAME=
+S3_PUBLIC_BASE_URL=
+
+ANTHROPIC_API_KEY=
+OPENAI_API_KEY=
+
+RESEND_API_KEY=
+INNGEST_EVENT_KEY=
+INNGEST_SIGNING_KEY=
+```
+
+## Repository Conventions
+
+- TypeScript strict mode, no `any`
+- Conventional commits
+- App Router only — no pages router
+- Server actions for mutations
+- Server components by default; client components only where interactivity demands
+- shadcn/ui customized in `components/ui/`
+- Tailwind only — no CSS modules, no styled-components
+- Tests: Vitest for units, Playwright for critical flows (upload, share access, tagging pipeline)
+- Database migrations via Supabase CLI, checked into repo
+
+## Open Questions
+
+These need decisions before or during v1 — do not invent answers.
+
+1. **Migration from Zenfolio.** Existing photo archive needs to be ingested. The Zenfolio Classic API (SOAP, v1.8) is available for read-only export. Plan a one-time batch script: enumerate folders/galleries/photos → download originals → upload to S3 → trigger tagging pipeline. Estimate the archive size before committing to storage cost projections.
+2. **Migration from Lingo.** Lingo's API is read-only and supports fetching kits, sections, and assets with their metadata. A one-time script can pull and reorganize into the new schema. Color palettes and fonts will need manual review since their structure may not map cleanly.
+3. **Backup strategy.** S3 with versioning enabled covers most accidents. For deep-archive protection, configure an S3 Lifecycle rule to replicate to S3 Glacier Deep Archive or to a second bucket in another region. Decide before storing irreplaceable photos.
+
+## Decision Log
+
+Decisions made during the build that adjust the plan above:
+
+1. **2026-06-10 — Beta uploads are direct POST, not tus.** `@tus/server` v1.x exposes only a Node `http` handler (no fetch-API handler), which doesn't integrate cleanly with App Router routes, and its file store doesn't survive stateless serverless invocations. The beta uses a direct upload route (`/api/upload/direct`) with per-file XHR progress for both the app and the photographer portal. Resumable uploads (tus or S3 multipart presigned) are the first production-hardening task before large-batch photographer uploads.
+2. **2026-06-10 — Image variants via authenticated route, not Next `<Image>`.** Vercel's image optimizer fetches upstream without auth cookies, so it cannot serve access-controlled originals. Variants are generated by `sharp` in `/api/files/[id]?w=` (and the share-scoped equivalent) with cache headers. Revisit if originals move to public-read S3 behind a CDN.
+3. **2026-06-10 — Local-disk storage fallback.** When AWS credentials are absent, uploads are stored under `.uploads/` and rows record bucket `_local`. This makes the beta fully testable with zero AWS setup; S3 activates automatically once `AWS_*` and `S3_BUCKET_NAME` are set.
+4. **2026-06-10 — Database access uses the session pooler.** The direct `db.<ref>.supabase.co` host is IPv6-only; use `aws-1-us-west-2.pooler.supabase.com:5432` with user `postgres.<project-ref>` for migrations and tooling from IPv4 networks.
+5. **2026-06-10 — First sign-up becomes admin.** Bootstrap rule implemented as a database trigger; subsequent sign-ups default to viewer.
+
+---
+
+This spec is the starting point. Implementation constraints may surface during the build that change individual decisions — update this document as those decisions are made. The spec is the source of truth.
