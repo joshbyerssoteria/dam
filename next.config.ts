@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
           ]),
     ],
   },
-  serverExternalPackages: ["sharp", "archiver"],
+  serverExternalPackages: ["sharp", "archiver", "mupdf"],
 };
 
 export default nextConfig;

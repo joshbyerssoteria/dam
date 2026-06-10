@@ -165,6 +165,87 @@ export async function reorderKitSections(
   return { ok: true };
 }
 
+/**
+ * Promote a section to its own kit: files (and a palette named after the
+ * section, if any) move by reference into a new kit, optionally inside a
+ * kit folder. The emptied section is deleted.
+ */
+export async function convertSectionToKit(
+  sectionId: string,
+  kitFolderId: string | null
+): Promise<{ ok: true; slug: string } | { ok: false; error: string }> {
+  const session = await requireEditor();
+  if (!session) return { ok: false, error: "Not allowed" };
+
+  const db = await createClient();
+  const { data: section } = await db
+    .from("kit_sections")
+    .select("*")
+    .eq("id", sectionId)
+    .single();
+  if (!section) return { ok: false, error: "Section not found" };
+
+  const { data: sourceKit } = await db
+    .from("kits")
+    .select("id, space_id")
+    .eq("id", section.kit_id)
+    .single();
+  if (!sourceKit) return { ok: false, error: "Kit not found" };
+
+  // Unique slug: base name, then -2, -3… on collision.
+  const base = slugify(section.name) || "kit";
+  let slug = base;
+  for (let suffix = 2; suffix < 50; suffix += 1) {
+    const { data: taken } = await db
+      .from("kits")
+      .select("id")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (!taken) break;
+    slug = `${base}-${suffix}`;
+  }
+
+  const { data: newKit, error: kitError } = await db
+    .from("kits")
+    .insert({
+      space_id: sourceKit.space_id,
+      name: section.name,
+      slug,
+      kit_folder_id: kitFolderId,
+    })
+    .select("id")
+    .single();
+  if (kitError || !newKit) return { ok: false, error: "Failed to create kit" };
+
+  // Move the section's file assets.
+  const { error: moveError } = await db
+    .from("kit_assets")
+    .update({ kit_id: newKit.id, section_id: null })
+    .eq("section_id", sectionId);
+  if (moveError) return { ok: false, error: "Failed to move files" };
+
+  // A palette named after the section follows it.
+  const { data: palette } = await db
+    .from("palettes")
+    .select("id")
+    .eq("kit_id", sourceKit.id)
+    .eq("name", section.name)
+    .maybeSingle();
+  if (palette) {
+    await db.from("palettes").update({ kit_id: newKit.id }).eq("id", palette.id);
+    await db
+      .from("kit_assets")
+      .update({ kit_id: newKit.id })
+      .eq("asset_type", "palette")
+      .eq("asset_id", palette.id);
+  }
+
+  await db.from("kit_sections").delete().eq("id", sectionId);
+
+  revalidatePath("/kits");
+  return { ok: true, slug };
+}
+
 const reorderSchema = z.array(
   z.object({
     kitAssetId: z.string().uuid(),

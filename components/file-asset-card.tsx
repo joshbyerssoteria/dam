@@ -1,4 +1,5 @@
 import { FileIcon } from "lucide-react";
+import { isPdfLike } from "@/lib/file-kinds";
 import { formatBytes } from "@/lib/utils";
 import { DownloadMenu } from "@/components/download-menu";
 import { KitFileActions } from "@/components/kit-asset-actions";
@@ -24,11 +25,13 @@ export function FileAssetCard({
   canEdit?: boolean;
 }) {
   const isImage = file.mime_type.startsWith("image/");
+  const previewable =
+    isImage || isPdfLike(file.mime_type, file.original_filename);
 
   return (
     <div className="group overflow-hidden rounded-lg border border-border bg-card">
       <div className="flex aspect-[4/3] items-center justify-center bg-muted">
-        {isImage ? (
+        {previewable ? (
           /* eslint-disable-next-line @next/next/no-img-element -- authenticated variant route */
           <img
             src={`${srcPrefix}/${file.id}${file.mime_type === "image/svg+xml" ? "" : "?w=480"}`}
@@ -54,6 +57,7 @@ export function FileAssetCard({
           <DownloadMenu
             fileId={file.id}
             mimeType={file.mime_type}
+            filename={file.original_filename}
             srcPrefix={srcPrefix}
             shareToken={shareToken}
           />

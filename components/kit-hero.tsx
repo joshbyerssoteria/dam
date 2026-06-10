@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ExternalLink, FileUp, ImagePlus, PenTool, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteFont, deletePalette } from "@/lib/actions/kits";
+import { isPdfLike } from "@/lib/file-kinds";
 import type { FontSource } from "@/lib/database.types";
 import { formatBytes } from "@/lib/utils";
 import { AddFontDialog } from "@/components/add-font-dialog";
@@ -236,6 +237,15 @@ export function KitHero({
               draggable={false}
               className="size-full object-cover"
             />
+          ) : sourceFile &&
+            isPdfLike(sourceFile.mime_type, sourceFile.original_filename) ? (
+            /* eslint-disable-next-line @next/next/no-img-element -- first-artboard preview */
+            <img
+              src={`${srcPrefix}/${sourceFile.id}?w=960`}
+              alt=""
+              draggable={false}
+              className="size-full object-contain"
+            />
           ) : (
             <div className="flex size-full items-center justify-center">
               <PenTool
@@ -303,6 +313,7 @@ export function KitHero({
               <DownloadMenu
                 fileId={sourceFile.id}
                 mimeType={sourceFile.mime_type}
+                filename={sourceFile.original_filename}
                 srcPrefix={srcPrefix}
                 shareToken={shareToken}
                 size="sm"

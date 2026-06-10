@@ -11,6 +11,7 @@ import {
   shareUnlockCookieName,
 } from "@/lib/share-access";
 import { isImageMime } from "@/lib/upload";
+import { isPdfLike, renderPdfFirstPage } from "@/lib/pdf-preview";
 
 export const runtime = "nodejs";
 
@@ -69,17 +70,29 @@ export async function GET(
       .eq("id", resolved.share.id);
   }
 
+  const pdfLike = isPdfLike(file.mime_type, file.original_filename);
   if (
     requestedWidth &&
     !download &&
-    isImageMime(file.mime_type) &&
-    file.mime_type !== "image/svg+xml"
+    ((isImageMime(file.mime_type) && file.mime_type !== "image/svg+xml") ||
+      pdfLike)
   ) {
     const width =
       VARIANT_WIDTHS.find((candidate) => candidate >= requestedWidth) ??
       VARIANT_WIDTHS[VARIANT_WIDTHS.length - 1]!;
     const original = await getObjectBuffer(file.s3_bucket, file.s3_key);
-    const variant = await sharp(original)
+    let source = original;
+    if (pdfLike) {
+      try {
+        source = await renderPdfFirstPage(original, width);
+      } catch {
+        return NextResponse.json(
+          { error: "No preview available" },
+          { status: 415 }
+        );
+      }
+    }
+    const variant = await sharp(source)
       .rotate()
       .resize(width, undefined, { withoutEnlargement: true })
       .webp({ quality: 78 })

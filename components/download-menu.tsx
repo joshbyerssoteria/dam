@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, Download } from "lucide-react";
+import { isPdfLike } from "@/lib/file-kinds";
 import { isTransformableMime, TRANSFORM_FORMATS } from "@/lib/transform";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,18 +30,21 @@ const SIZE_OPTIONS = [
 export function DownloadMenu({
   fileId,
   mimeType,
+  filename = "",
   srcPrefix = "/api/files",
   shareToken,
   size = "icon",
 }: {
   fileId: string;
   mimeType: string;
+  filename?: string;
   srcPrefix?: string;
   shareToken?: string;
   size?: "icon" | "sm";
 }) {
   const originalUrl = `${srcPrefix}/${fileId}?download=1`;
-  const convertible = isTransformableMime(mimeType);
+  const convertible =
+    isTransformableMime(mimeType) || isPdfLike(mimeType, filename);
 
   function transformUrl(format: string, width: number | null): string {
     const params = new URLSearchParams({ format });

@@ -25,6 +25,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  FolderOutput,
   GripVertical,
   MoreHorizontal,
   Pencil,
@@ -33,6 +34,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
+  convertSectionToKit,
   createKitSection,
   deleteKitSection,
   renameKitSection,
@@ -61,6 +63,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const UNSECTIONED = "none";
 const SECTION_PREFIX = "sec:";
@@ -166,6 +175,7 @@ function SectionHeader({
   dragHandle,
   onRename,
   onDelete,
+  onConvert,
   renameLabel = "Rename section",
   actions,
 }: {
@@ -174,6 +184,7 @@ function SectionHeader({
   dragHandle?: React.ReactNode;
   onRename?: () => void;
   onDelete?: () => void;
+  onConvert?: () => void;
   renameLabel?: string;
   actions?: React.ReactNode;
 }) {
@@ -202,6 +213,12 @@ function SectionHeader({
               <Pencil className="size-4" />
               {renameLabel}
             </DropdownMenuItem>
+            {onConvert ? (
+              <DropdownMenuItem onSelect={onConvert}>
+                <FolderOutput className="size-4" />
+                Convert to its own kit…
+              </DropdownMenuItem>
+            ) : null}
             {onDelete ? (
               <DropdownMenuItem variant="destructive" onSelect={onDelete}>
                 <Trash2 className="size-4" />
@@ -221,12 +238,14 @@ function SortableSection({
   items,
   onRename,
   onDelete,
+  onConvert,
 }: {
   kitId: string;
   section: BoardSection;
   items: BoardFile[];
   onRename: () => void;
   onDelete: () => void;
+  onConvert: () => void;
 }) {
   const {
     attributes,
@@ -255,6 +274,7 @@ function SortableSection({
           count={items.length}
           onRename={onRename}
           onDelete={onDelete}
+          onConvert={onConvert}
           actions={
             <KitFileUpload
               kitId={kitId}
@@ -287,10 +307,12 @@ export function KitFileBoard({
   kitId,
   sections,
   files,
+  folders,
 }: {
   kitId: string;
   sections: BoardSection[];
   files: BoardFile[];
+  folders: Array<{ id: string; name: string }>;
 }) {
   const router = useRouter();
   const sensors = useSensors(
@@ -329,6 +351,9 @@ export function KitFileBoard({
   const [sectionDialog, setSectionDialog] = useState<SectionDialogState>(null);
   const [sectionName, setSectionName] = useState("");
   const [savingSection, setSavingSection] = useState(false);
+  const [convertSection, setConvertSection] = useState<BoardSection | null>(null);
+  const [convertFolderId, setConvertFolderId] = useState("__root__");
+  const [converting, setConverting] = useState(false);
 
   const serverFingerprint = `${sections.map((s) => s.id).join(",")}|${files
     .map((f) => `${f.kitAssetId}:${f.sectionId}`)
@@ -480,6 +505,23 @@ export function KitFileBoard({
     }
   }
 
+  async function handleConvert() {
+    if (!convertSection) return;
+    setConverting(true);
+    const result = await convertSectionToKit(
+      convertSection.id,
+      convertFolderId === "__root__" ? null : convertFolderId
+    );
+    setConverting(false);
+    if (result.ok) {
+      toast.success(`"${convertSection.name}" is now its own kit`);
+      setConvertSection(null);
+      router.refresh();
+    } else {
+      toast.error(result.error ?? "Failed to convert section");
+    }
+  }
+
   const orderedSections = sectionOrder
     .map((id) => sectionById.get(id))
     .filter((section): section is BoardSection => Boolean(section));
@@ -535,6 +577,10 @@ export function KitFileBoard({
                   setSectionDialog({ mode: "rename", sectionId: section.id });
                 }}
                 onDelete={() => void handleSectionDelete(section.id)}
+                onConvert={() => {
+                  setConvertFolderId("__root__");
+                  setConvertSection(section);
+                }}
               />
             ))}
           </div>
@@ -568,6 +614,44 @@ export function KitFileBoard({
         <Plus className="size-4" />
         Add section
       </Button>
+
+      <Dialog
+        open={convertSection !== null}
+        onOpenChange={(open) => !open && setConvertSection(null)}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              Convert &ldquo;{convertSection?.name}&rdquo; to its own kit
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            The section&apos;s files (and its matching palette, if any) move
+            into a new kit named after the section.
+          </p>
+          <div className="space-y-2">
+            <Label>Destination folder</Label>
+            <Select value={convertFolderId} onValueChange={setConvertFolderId}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__root__">No folder (Kits root)</SelectItem>
+                {folders.map((folder) => (
+                  <SelectItem key={folder.id} value={folder.id}>
+                    {folder.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => void handleConvert()} disabled={converting}>
+              {converting ? "Converting…" : "Convert to kit"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={sectionDialog !== null}

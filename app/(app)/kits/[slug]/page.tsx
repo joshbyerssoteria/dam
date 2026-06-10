@@ -29,7 +29,10 @@ export default async function KitDetailPage({
     .single();
   if (!kit) notFound();
 
-  const data = await loadKitContent(db, kit);
+  const [data, { data: kitFolders }] = await Promise.all([
+    loadKitContent(db, kit),
+    db.from("kit_folders").select("id, name").order("name"),
+  ]);
   const role = session?.profile.role ?? "viewer";
   const canEdit = role !== "viewer";
 
@@ -73,6 +76,7 @@ export default async function KitDetailPage({
         {canEdit ? (
           <KitFileBoard
             kitId={kit.id}
+            folders={kitFolders ?? []}
             sections={data.sections.map(({ id, name }) => ({ id, name }))}
             files={data.files.map(({ kitAssetId, sectionId, file }) => ({
               kitAssetId,

@@ -17,6 +17,7 @@ import {
   TRANSFORM_CONTENT_TYPES,
   transformedFilename,
 } from "@/lib/transform";
+import { isPdfLike, renderPdfFirstPage } from "@/lib/pdf-preview";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -85,7 +86,8 @@ export async function GET(
   if (!file) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  if (!isTransformableMime(file.mime_type)) {
+  const pdfLike = isPdfLike(file.mime_type, file.original_filename);
+  if (!isTransformableMime(file.mime_type) && !pdfLike) {
     return NextResponse.json(
       { error: `Cannot convert ${file.mime_type} — download the original instead` },
       { status: 415 }
@@ -94,8 +96,21 @@ export async function GET(
 
   const original = await getObjectBuffer(file.s3_bucket, file.s3_key);
 
+  // PDF-like sources rasterize their first page/artboard first.
+  let source = original;
+  if (pdfLike) {
+    try {
+      source = await renderPdfFirstPage(original, width ?? 2400);
+    } catch {
+      return NextResponse.json(
+        { error: "This file has no PDF-compatible preview — download the original instead" },
+        { status: 415 }
+      );
+    }
+  }
+
   // High density so SVGs rasterize crisply even when scaled up.
-  let pipeline = sharp(original, {
+  let pipeline = sharp(source, {
     density: file.mime_type === "image/svg+xml" ? 300 : undefined,
   }).rotate();
 
