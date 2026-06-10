@@ -33,8 +33,16 @@ const BRAND_GUIDE_LINKS = [
   { href: "/brand/logos", label: "Logos" },
   { href: "/brand/colors", label: "Colors" },
   { href: "/brand/typography", label: "Typography" },
-  { href: "/brand/guidelines", label: "Guidelines" },
-  { href: "/brand/examples", label: "Examples" },
+  {
+    href: "/brand/examples",
+    label: "Examples",
+    children: [
+      { href: "/brand/examples/compositions", label: "Compositions" },
+      { href: "/brand/examples/blocks", label: "Blocks" },
+      { href: "/brand/examples/components", label: "Components" },
+      { href: "/brand/examples/slides", label: "Slides" },
+    ],
+  },
 ] as const;
 
 const SECONDARY_NAV = [
@@ -383,18 +391,36 @@ export function AppSidebar({
           {pathname.startsWith("/brand") ? (
             <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
               {BRAND_GUIDE_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "block truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
-                    pathname.startsWith(link.href)
-                      ? "bg-accent font-medium text-accent-foreground"
-                      : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-                  )}
-                >
-                  {link.label}
-                </Link>
+                <div key={link.href}>
+                  <Link
+                    href={link.href}
+                    className={cn(
+                      "block truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
+                      pathname.startsWith(link.href) &&
+                        !("children" in link && pathname !== link.href)
+                        ? "bg-accent font-medium text-accent-foreground"
+                        : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                  {"children" in link && pathname.startsWith(link.href)
+                    ? link.children.map((child) => (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={cn(
+                            "block truncate rounded-md py-1 pl-9 pr-2 text-[13px] transition-colors",
+                            pathname.startsWith(child.href)
+                              ? "bg-accent font-medium text-accent-foreground"
+                              : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                          )}
+                        >
+                          {child.label}
+                        </Link>
+                      ))
+                    : null}
+                </div>
               ))}
             </div>
           ) : null}

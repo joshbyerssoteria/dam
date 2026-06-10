@@ -13,6 +13,7 @@ const PUBLIC_PREFIXES = [
   "/api/upload",
   "/api/inngest",
   "/api/transform", // enforces session-or-share-token itself
+  "/branding/", // static brand assets (public by design)
 ];
 
 function isPublicPath(pathname: string): boolean {

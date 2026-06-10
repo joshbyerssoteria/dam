@@ -5,10 +5,13 @@ import {
   TYPE_RULES,
 } from "@/lib/brand";
 import { CopySnippet } from "@/components/brand/copy-chip";
+import { PageHeader } from "@/components/page-header";
 
 export default function BrandTypographyPage() {
   return (
-    <div className="mx-auto max-w-4xl space-y-14 px-8 py-12">
+    <div>
+      <PageHeader title="Typography" />
+      <div className="max-w-4xl space-y-14 px-8 py-10">
       <section aria-label="Typefaces">
         <h2 className="text-sm font-semibold">Two typefaces</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -124,6 +127,7 @@ font-family: 'Lora', Georgia, 'Times New Roman', serif;
 font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';`}
         />
       </section>
+    </div>
     </div>
   );
 }

@@ -103,14 +103,13 @@ export const LOGO_LOCKUPS: LogoLockup[] = [
 export const LOGO_COLORS: Array<{
   color: LogoColor;
   label: string;
-  when: string;
   /** ground the preview tile should use so the mark is visible */
   ground: string;
 }> = [
-  { color: "navy", label: "Navy", when: "On light grounds (default)", ground: BRAND.white },
-  { color: "white", label: "White", when: "On dark grounds", ground: BRAND.navy },
-  { color: "black", label: "Black", when: "Grayscale print, single-color", ground: BRAND.white },
-  { color: "gold", label: "Gold", when: "Sparingly, when the design calls for it", ground: BRAND.white },
+  { color: "navy", label: "Navy", ground: BRAND.white },
+  { color: "white", label: "White", ground: "#E4E4E4" },
+  { color: "black", label: "Black", ground: BRAND.white },
+  { color: "gold", label: "Gold", ground: BRAND.white },
 ];
 
 export function logoPath(

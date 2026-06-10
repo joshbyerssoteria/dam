@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soteria Brand — Slides</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+<style>
+
+    /* ========================================================================
+       Base
+       ======================================================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html {
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+    }
+    body {
+      font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      color: #1B2A41;
+      background: #E8E2D4;
+      -webkit-font-smoothing: antialiased;
+      padding: 80px 0 40px;
+    }
+    a { color: inherit; }
+    img { max-width: 100%; height: auto; display: block; }
+    button { font-family: inherit; }
+    :focus-visible { outline: 2px solid #C2912D; outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+      html { scroll-behavior: auto; }
+    }
+
+    .serif { font-family: 'Lora', Georgia, 'Times New Roman', serif; }
+
+    /* ========================================================================
+       Sticky site navigation (web only, hidden in print)
+       ======================================================================== */
+    .site-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(27, 42, 65, 0.96);
+      -webkit-backdrop-filter: saturate(1.2) blur(8px);
+      backdrop-filter: saturate(1.2) blur(8px);
+      color: #FFFFFF;
+      border-bottom: 1px solid rgba(194, 145, 45, 0.35);
+    }
+    .site-nav-inner {
+      max-width: 1344px;
+      margin: 0 auto;
+      padding: 16px clamp(16px, 3vw, 32px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .site-nav-wordmark {
+      font-size: 11px;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: 0.3em;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .site-nav-wordmark .gold { color: #C2912D; }
+    .site-nav-links {
+      display: flex;
+      align-items: center;
+      gap: clamp(14px, 2vw, 24px);
+    }
+    .site-nav-link {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.82);
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 4px 0;
+      border-bottom: 1px solid transparent;
+      transition: color 140ms ease-out, border-color 140ms ease-out;
+    }
+    .site-nav-link:hover,
+    .site-nav-link:focus-visible {
+      color: #FFFFFF;
+      border-bottom-color: #C2912D;
+    }
+    .site-nav-hamburger {
+      display: none;
+      width: 40px;
+      height: 40px;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      color: #FFFFFF;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .site-nav-hamburger svg { width: 18px; height: 18px; }
+
+    /* Mobile drawer */
+    .site-nav-drawer {
+      position: fixed;
+      top: 0; right: 0;
+      width: min(340px, 88vw);
+      height: 100vh;
+      height: 100dvh;
+      background: #1B2A41;
+      color: #FFFFFF;
+      z-index: 110;
+      transform: translateX(100%);
+      transition: transform 220ms ease-out;
+      padding: 24px 28px 40px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .site-nav-drawer[aria-hidden="false"] { transform: translateX(0); }
+    .site-nav-drawer-close {
+      align-self: flex-end;
+      background: transparent;
+      border: 0;
+      color: #FFFFFF;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 4px 6px;
+    }
+    .site-nav-drawer-eyebrow {
+      color: #C2912D;
+      font-size: 10px;
+      letter-spacing: 0.28em;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+    .site-nav-drawer-links {
+      display: flex;
+      flex-direction: column;
+      margin-top: 24px;
+    }
+    .site-nav-drawer-link {
+      display: block;
+      color: #FFFFFF;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.005em;
+      text-decoration: none;
+      padding: 14px 0;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.12);
+    }
+    .site-nav-drawer-link .num {
+      color: #C2912D;
+      font-size: 9px;
+      letter-spacing: 0.28em;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .site-nav-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(27, 42, 65, 0.6);
+      z-index: 105;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease-out;
+    }
+    .site-nav-overlay[aria-hidden="false"] { opacity: 1; pointer-events: auto; }
+
+    /* ========================================================================
+       Page chrome — desktop-first, editorial print aesthetic
+       ======================================================================== */
+    .page, .section-divider-page {
+      position: relative;
+      background: #FFFFFF;
+      width: calc(100% - 32px);
+      max-width: 1344px;
+      margin: 0 auto 20px;
+      box-shadow: 0 2px 12px rgba(27, 42, 65, 0.12);
+      overflow: hidden;
+      aspect-ratio: 14 / 8.5;
+      display: flex;
+      flex-direction: column;
+      /* Padding lives on .page so content has breathing room even on
+         legacy pages that don't use the .page-inner wrapper. */
+      padding: clamp(28px, 4vw, 96px);
+    }
+    .page-inner {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 0; /* parent .page handles padding on web */
+    }
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 12px;
+      border-bottom: 0.5px solid #E5DFD1;
+      margin-bottom: clamp(14px, 1.5vw, 22px);
+      gap: 16px;
+    }
+    .page-num { font-size: clamp(9px, 0.72vw, 10px); font-weight: 700; color: #C2912D; letter-spacing: 0.28em; }
+    .page-label { font-size: clamp(9px, 0.72vw, 10px); color: #5F5E5A; letter-spacing: 0.22em; text-transform: uppercase; text-align: right; }
+    .page-title { font-size: clamp(22px, 2.2vw, 32px); font-weight: 700; color: #1B2A41; letter-spacing: -0.015em; line-height: 1.1; }
+    .page-sub { font-size: clamp(10px, 0.85vw, 12px); color: #5F5E5A; margin-top: 8px; line-height: 1.6; max-width: 60%; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(16px, 2vw, 28px); flex: 1; margin-top: 20px; min-height: 0; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: clamp(14px, 1.6vw, 20px); flex: 1; margin-top: 20px; min-height: 0; }
+    .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: clamp(12px, 1.4vw, 18px); flex: 1; margin-top: 20px; min-height: 0; }
+
+    .variant { display: flex; flex-direction: column; min-height: 0; }
+    .variant-label { font-size: clamp(8px, 0.7vw, 10px); font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: #5F5E5A; margin-bottom: 8px; }
+    .variant-note { font-size: clamp(9px, 0.8vw, 10px); color: #5F5E5A; margin-top: 6px; line-height: 1.4; font-style: italic; }
+    .mockup { flex: 1; border: 0.5px solid #E5DFD1; overflow: hidden; display: flex; flex-direction: column; }
+    .mockup-frame { border: 0.5px solid #E5DFD1; background: #FFFFFF; position: relative; overflow: hidden; width: 100%; height: 100%; }
+
+    /* Reusable primitives */
+    .eyebrow-navy { font-size: 9px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #1B2A41; }
+    .eyebrow-gold { font-size: 9px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #C2912D; }
+    .eyebrow-white { font-size: 9px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #FFFFFF; }
+    .rule-gold { height: 1px; background: #C2912D; width: 24px; margin: 10px 0; }
+    .rule-gold-long { height: 1px; background: #C2912D; width: 40px; margin: 10px 0; }
+    .rule-gold-thick { height: 2px; background: #C2912D; width: 48px; margin: 14px 0; }
+    .wordmark { font-size: 11px; font-weight: 700; letter-spacing: 0.28em; }
+
+    .display-md { font-size: 22px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.1; }
+    .display-lg { font-size: 28px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.05; }
+    .display-xl { font-size: 36px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+    .body-sm { font-size: 10px; line-height: 1.55; color: #1B2A41; font-weight: 400; }
+    .body-sm-light { font-size: 10px; line-height: 1.55; color: #FFFFFF; opacity: 0.8; font-weight: 400; }
+
+    /* Buttons — pills (rounded-full) with CTA hover contract.
+       At rest: solid fill, transparent border. On hover: bg goes
+       transparent, border appears in the fill color, text re-colors.
+       Pairs with the homepage PlanYourVisitButton component. */
+    .btn-navy, .btn-white, .btn-outline-navy {
+      display: inline-flex; align-items: center; justify-content: center;
+      white-space: nowrap;
+      padding: 9px 18px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0;
+      text-transform: none; text-decoration: none; cursor: pointer;
+      border-radius: 9999px;
+      border: 1.5px solid transparent;
+      transition: background-color 500ms ease-out, color 500ms ease-out, border-color 500ms ease-out;
+    }
+    .btn-navy { background: #1B2A41; color: #FFFFFF; }
+    .btn-navy:hover { background: transparent; color: #1B2A41; border-color: #1B2A41; }
+    .btn-white { background: #FFFFFF; color: #1B2A41; }
+    .btn-white:hover { background: transparent; color: #FFFFFF; border-color: #FFFFFF; }
+    .btn-outline-navy { background: transparent; color: #1B2A41; border-color: #1B2A41; }
+    .btn-outline-navy:hover { background: #1B2A41; color: #FFFFFF; }
+
+    /* Tertiary — text link with a thin gold underline.
+       Stays as text, not a pill. */
+    .btn-ghost-navy {
+      display: inline-block; color: #1B2A41; padding: 4px 0;
+      font-size: 11px; font-weight: 600; letter-spacing: 0;
+      text-transform: none; border-bottom: 1px solid #C2912D;
+      text-decoration: none; transition: color 200ms ease-out;
+    }
+    .btn-ghost-navy:hover { color: #C2912D; }
+    .btn-ghost-light {
+      display: inline-block; color: #FFFFFF; padding: 4px 0;
+      font-size: 11px; font-weight: 600; letter-spacing: 0;
+      text-transform: none; border-bottom: 1px solid #C2912D;
+      text-decoration: none; transition: opacity 200ms ease-out;
+    }
+    .btn-ghost-light:hover { opacity: 0.8; }
+
+    /* Large web CTAs — same pill + hover contract, scaled up */
+    .cta-primary {
+      display: inline-flex; align-items: center; white-space: nowrap;
+      background: #1B2A41; color: #FFFFFF;
+      padding: 12px 24px; font-size: 14px; font-weight: 600;
+      letter-spacing: 0; text-transform: none; text-decoration: none;
+      border-radius: 9999px; border: 2px solid transparent;
+      transition: background-color 500ms ease-out, color 500ms ease-out, border-color 500ms ease-out;
+    }
+    .cta-primary:hover { background: transparent; color: #1B2A41; border-color: #1B2A41; }
+    .cta-ghost {
+      display: inline-block; color: #1B2A41; padding: 12px 0;
+      font-size: 14px; font-weight: 600;
+      letter-spacing: 0; text-transform: none;
+      text-decoration: none; border-bottom: 1px solid #C2912D;
+      transition: color 200ms ease-out;
+    }
+    .cta-ghost:hover { color: #C2912D; }
+
+    /* Section dividers */
+    .section-divider {
+      padding: 22px 0 8px;
+      border-top: 1px solid #E5DFD1;
+      margin-top: 22px;
+    }
+    .section-divider-page { justify-content: center; }
+    .section-divider-page .inner {
+      padding: clamp(40px, 6vw, 96px);
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+    }
+    .section-eyebrow { color: #C2912D; font-size: clamp(10px, 0.9vw, 12px); font-weight: 700; letter-spacing: 0.3em; }
+    .section-rule { height: 2px; background: #C2912D; width: 60px; margin: 24px 0; }
+    .section-title { font-size: clamp(40px, 5.5vw, 72px); font-weight: 700; line-height: 1; letter-spacing: -0.025em; }
+    .section-lede { font-size: clamp(13px, 1.1vw, 15px); line-height: 1.6; margin-top: 24px; max-width: 62ch; opacity: 0.9; }
+
+    /* TOC */
+    .toc-line {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      padding: 16px 0;
+      border-bottom: 0.5px solid #E5DFD1;
+      text-decoration: none;
+      color: inherit;
+      transition: background 140ms ease-out, padding 140ms ease-out;
+    }
+    .toc-line:hover,
+    .toc-line:focus-visible { background: #F2EEE7; padding-left: 12px; padding-right: 12px; outline: none; }
+    .toc-num { font-size: 11px; font-weight: 700; color: #C2912D; letter-spacing: 0.24em; width: 48px; flex-shrink: 0; }
+    .toc-label { font-size: clamp(14px, 1.4vw, 17px); color: #1B2A41; font-weight: 700; flex: 1; }
+    .toc-sub { font-size: clamp(10px, 0.9vw, 12px); color: #5F5E5A; font-style: italic; flex: 1.5; }
+    .toc-page { font-size: 10px; color: #5F5E5A; letter-spacing: 0.12em; font-weight: 700; flex-shrink: 0; }
+
+    /* Photo building blocks */
+    .photo-fill { width: 100%; height: 100%; background-size: cover; background-position: center; background-repeat: no-repeat; }
+    .photo-overlay-navy { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(27,42,65,0.80) 0%, rgba(27,42,65,0.55) 60%, rgba(27,42,65,0.85) 100%); }
+    .photo-overlay-bottom { position: absolute; inset: 0; background: linear-gradient(to top, rgba(27,42,65,0.85) 0%, rgba(27,42,65,0.25) 55%, rgba(27,42,65,0) 100%); }
+
+    .back-to-toc { background: #FFFFFF; }
+
+    /* Minimal end-of-section footer — replaces the old "Keep going" pages */
+    .section-footer {
+      width: calc(100% - 32px);
+      max-width: 1344px;
+      margin: -4px auto 28px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: clamp(12px, 1.4vw, 20px);
+      padding: 10px 4px;
+      flex-wrap: wrap;
+    }
+    .section-footer-eyebrow {
+      color: #5F5E5A;
+      font-size: 9px;
+      letter-spacing: 0.24em;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .section-footer-link {
+      color: #1B2A41;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      text-decoration: none;
+      border-bottom: 1px solid #C2912D;
+      padding-bottom: 2px;
+      transition: color 140ms ease-out;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .section-footer-link:hover,
+    .section-footer-link:focus-visible { color: #C2912D; outline: none; }
+    .section-footer-link .arrow {
+      display: inline-block;
+      transition: transform 140ms ease-out;
+    }
+    .section-footer-link:hover .arrow { transform: translateX(3px); }
+    @media (max-width: 640px) {
+      .section-footer {
+        width: calc(100% - 16px);
+        margin-bottom: 16px;
+        padding: 8px 6px;
+      }
+    }
+
+    /* Anchor scroll offset under sticky nav */
+    [id] { scroll-margin-top: 84px; }
+
+    /* ========================================================================
+       Interactive: copy-on-click token values
+       ======================================================================== */
+    .copyable {
+      cursor: copy;
+      position: relative;
+      display: inline-block;
+      transition: background 140ms ease-out;
+      padding: 2px 6px;
+      margin: -2px -6px;
+      border-radius: 1px;
+    }
+    .copyable:hover { background: rgba(27, 42, 65, 0.06); }
+    .copyable.copied::after {
+      content: 'Copied';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px;
+      color: #FFFFFF;
+      background: #1B2A41;
+      letter-spacing: 0.2em;
+      font-weight: 700;
+      padding: 4px 8px;
+      text-transform: uppercase;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    /* ========================================================================
+       Tablet: release aspect ratio, collapse 4-col grids
+       ======================================================================== */
+    @media (max-width: 1023px) {
+      body { padding: 72px 0 32px; }
+      .page, .section-divider-page {
+        aspect-ratio: auto;
+        min-height: auto;
+      }
+      .page-inner { padding: 0; }
+      .grid-4 { grid-template-columns: 1fr 1fr; }
+
+      /* Soften very large inline type on tablet */
+      [style*="font-size: 104px"] { font-size: 72px !important; }
+      [style*="font-size: 96px"] { font-size: 68px !important; }
+      [style*="font-size: 72px"] { font-size: 52px !important; }
+      [style*="font-size: 68px"] { font-size: 48px !important; }
+
+      /* Collapse inline 4-col grids */
+      [style*="grid-template-columns: 1fr 1fr 1fr 1fr"] {
+        grid-template-columns: 1fr 1fr !important;
+      }
+
+      /* Color palette swatches: flex:1 collapses when aspect-ratio releases.
+         Give them a visible proportion so they don't disappear. */
+      [style*="flex: 1; background: #FFFFFF"],
+      [style*="flex: 1; background: #F2EEE7"],
+      [style*="flex: 1; background: #1B2A41"],
+      [style*="flex: 1; background: #C2912D"] {
+        flex: none !important;
+        aspect-ratio: 3 / 2 !important;
+        min-height: 160px !important;
+      }
+
+      /* Any inner grid with flex:1 loses its reason to be flex-sized.
+         Let it size by content instead. */
+      [style*="flex: 1; display: grid"] {
+        flex: none !important;
+      }
+    }
+
+    /* ========================================================================
+       Mobile: single-column stacking
+       ======================================================================== */
+    @media (max-width: 640px) {
+      body { padding: 64px 0 24px; }
+      .page, .section-divider-page {
+        width: calc(100% - 16px);
+        margin-bottom: 14px;
+        box-shadow: 0 1px 6px rgba(27, 42, 65, 0.08);
+      }
+      .page-inner { padding: 28px 20px; }
+      .page-header { flex-direction: column; align-items: flex-start; gap: 6px; }
+      .page-label { text-align: left; }
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; gap: 20px; }
+
+      /* Collapse common inline grid patterns */
+      [style*="grid-template-columns: 1fr 1fr"],
+      [style*="grid-template-columns: 1fr 1fr 1fr"],
+      [style*="grid-template-columns: 1fr 1fr 1fr 1fr"],
+      [style*="grid-template-columns: 1.1fr 1fr"],
+      [style*="grid-template-columns: 1fr 1.1fr"],
+      [style*="grid-template-columns: 2fr 1fr"],
+      [style*="grid-template-columns: 1fr 2fr"],
+      [style*="grid-template-columns: 3fr 2fr"],
+      [style*="grid-template-columns: 2fr 3fr"] {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+      }
+
+      /* Scale down huge inline display type on mobile */
+      [style*="font-size: 104px"] { font-size: 52px !important; line-height: 0.95 !important; }
+      [style*="font-size: 96px"] { font-size: 48px !important; line-height: 0.95 !important; }
+      [style*="font-size: 72px"] { font-size: 40px !important; }
+      [style*="font-size: 68px"] { font-size: 36px !important; }
+      [style*="font-size: 56px"] { font-size: 32px !important; }
+      [style*="font-size: 48px"] { font-size: 28px !important; }
+      [style*="font-size: 38px"] { font-size: 24px !important; }
+      [style*="font-size: 36px"] { font-size: 24px !important; }
+      [style*="font-size: 32px"] { font-size: 22px !important; }
+      [style*="font-size: 28px"] { font-size: 22px !important; }
+      [style*="font-size: 26px"] { font-size: 20px !important; }
+
+      /* TOC wrapping */
+      .toc-line { flex-wrap: wrap; padding: 14px 0; }
+      .toc-sub { flex: 1 1 100%; margin-top: 4px; }
+      .toc-page { margin-left: auto; }
+
+      /* Section dividers */
+      .section-divider-page .inner { padding: 40px 20px; }
+
+      /* Nav */
+      .site-nav-inner { padding: 14px 16px; }
+      .site-nav-links { display: none; }
+      .site-nav-hamburger { display: inline-flex; }
+    }
+
+    /* ========================================================================
+       Print: restore exact 14in × 8.5in layout for PDF export
+       ======================================================================== */
+    @media print {
+      @page { size: 14in 8.5in; margin: 0; }
+      body { background: #FFFFFF; padding: 0; }
+      .site-nav, .site-nav-drawer, .site-nav-overlay, .back-to-toc { display: none !important; }
+      .page, .section-divider-page {
+        box-shadow: none;
+        margin: 0;
+        width: 14in;
+        max-width: none;
+        aspect-ratio: auto;
+        height: 8.5in;
+        page-break-after: always !important;
+        padding: 0.5in 0.75in; /* print: padding on .page for uniformity */
+      }
+      .page-inner { padding: 0; }
+      .section-divider-page { padding: 0; }
+      .section-divider-page .inner { padding: 1in; }
+      .page:last-child, .section-divider-page:last-child { page-break-after: auto !important; }
+      .copyable { cursor: auto; background: transparent !important; }
+      .copyable::after { display: none !important; }
+    }
+  </style>
+<style>
+html { scroll-padding-top: 0; }
+body { padding-top: 0 !important; margin: 0; }
+</style>
+</head>
+<body>
+<div class="section-divider-page" id="section-04" style="background: #1B2A41;">
+      <div class="inner" style="color: #FFFFFF;">
+        <div class="section-eyebrow">PART 04 · SLIDES</div>
+        <div class="section-rule"></div>
+        <div class="section-title" style="color: #FFFFFF;">Slides</div>
+        <div class="section-lede">Sample layouts for 16:9 slides.</div>
+      </div>
+    </div>
+    
+<div class="page">
+      <div class="page-inner">
+      <div class="page-header">
+        <div><div class="page-num">60</div></div>
+        <div class="page-label">SLIDES</div>
+      </div>
+      <div class="grid-3" style="flex: 1; min-height: 0; align-content: center;">
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #1B2A41; height: 100%; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center; color: #FFFFFF;">
+  <div class="eyebrow-gold">A NEW SERIES</div>
+  <div style="height: 1px; background: #C2912D; width: 20px; margin: 8px 0;"></div>
+  <div style="font-size: 28px; font-weight: 700; line-height: 0.98; letter-spacing: -0.02em;">Precious<br>Blood.</div>
+  <div style="font-size: 8px; opacity: 0.7; margin-top: 8px; letter-spacing: 0.18em;">A WALK THROUGH 1 PETER</div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #F2EEE7; height: 100%; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center;">
+  <div style="font-size: 9px; color: #5F5E5A; letter-spacing: 0.22em; font-weight: 700;">CHAPTER</div>
+  <div style="font-size: 64px; font-weight: 700; color: #1B2A41; line-height: 0.9; letter-spacing: -0.03em; margin-top: 4px;">01</div>
+  <div style="height: 1px; background: #C2912D; width: 22px; margin: 12px 0 6px;"></div>
+  <div class="serif" style="font-size: 16px; font-style: italic; color: #1B2A41;">On hope.</div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #1B2A41; height: 100%; padding: 18px 20px; display: flex; flex-direction: column; justify-content: center; color: #FFFFFF;">
+  <div style="font-size: 18px; font-weight: 700; line-height: 1.1; letter-spacing: -0.015em;">Grace is not the<br>absence of cost —<br>it is the cost paid.</div>
+  <div style="height: 1px; background: #C2912D; width: 22px; margin-top: 14px;"></div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #FFFFFF; height: 100%; padding: 18px 20px; display: flex; flex-direction: column; justify-content: center;">
+  <div style="font-size: 9px; color: #C2912D; letter-spacing: 0.22em; font-weight: 700;">TODAY</div>
+  <div class="serif" style="font-size: 38px; font-weight: 400; color: #1B2A41; line-height: 1; letter-spacing: -0.015em; margin-top: 6px;">1 Peter 1:3–9</div>
+  <div style="height: 1px; background: #C2912D; width: 22px; margin: 12px 0 8px;"></div>
+  <div style="font-size: 9px; color: #5F5E5A; line-height: 1.55;">A living hope through the resurrection of Jesus Christ.</div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #F2EEE7; height: 100%; padding: 18px 20px; display: flex; flex-direction: column; justify-content: center;">
+  <div class="serif" style="font-size: 17px; font-style: italic; font-weight: 400; color: #1B2A41; line-height: 1.35;">"Holiness is not<br>moral perfection.<br>It is belonging<br>to God."</div>
+  <div style="font-size: 8px; color: #5F5E5A; letter-spacing: 0.18em; font-weight: 700; margin-top: 12px;">— PASTOR MIKE</div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #1B2A41; height: 100%; padding: 18px 20px; display: flex; flex-direction: column; justify-content: center; color: #FFFFFF;">
+  <div class="eyebrow-gold">SPEAKING TODAY</div>
+  <div style="height: 1px; background: #C2912D; width: 20px; margin: 10px 0;"></div>
+  <div style="font-size: 24px; font-weight: 700; line-height: 1.05; letter-spacing: -0.015em;">Mike Augsburger</div>
+  <div style="font-size: 9px; opacity: 0.7; letter-spacing: 0.18em; margin-top: 6px;">LEAD PASTOR</div>
+</div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+<div class="page">
+      <div class="page-inner">
+      <div class="page-header">
+        <div><div class="page-num">61</div></div>
+        <div class="page-label">SLIDES</div>
+      </div>
+      <div class="grid-3" style="flex: 1; min-height: 0; align-content: center;">
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #FFFFFF; height: 100%; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center;">
+  <div class="eyebrow-navy">THREE THINGS</div>
+  <div class="rule-gold"></div>
+  <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+    <div style="display: flex; gap: 10px; align-items: baseline;"><div style="color: #C2912D; font-size: 11px; font-weight: 700; letter-spacing: 0.18em;">01</div><div style="font-size: 11px; font-weight: 600; color: #1B2A41;">Chosen by God.</div></div>
+    <div style="display: flex; gap: 10px; align-items: baseline;"><div style="color: #C2912D; font-size: 11px; font-weight: 700; letter-spacing: 0.18em;">02</div><div style="font-size: 11px; font-weight: 600; color: #1B2A41;">Sanctified by the Spirit.</div></div>
+    <div style="display: flex; gap: 10px; align-items: baseline;"><div style="color: #C2912D; font-size: 11px; font-weight: 700; letter-spacing: 0.18em;">03</div><div style="font-size: 11px; font-weight: 600; color: #1B2A41;">Obedient to Jesus.</div></div>
+  </div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #F2EEE7; height: 100%; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center;">
+  <div class="eyebrow-navy">TWO WAYS</div>
+  <div class="rule-gold"></div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px;">
+    <div>
+      <div style="font-size: 9px; color: #5F5E5A; letter-spacing: 0.18em; font-weight: 700;">LAW</div>
+      <div style="font-size: 11px; font-weight: 600; color: #1B2A41; margin-top: 4px; line-height: 1.3;">Earn it<br>and rest.</div>
+    </div>
+    <div>
+      <div style="font-size: 9px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700;">GOSPEL</div>
+      <div style="font-size: 11px; font-weight: 600; color: #1B2A41; margin-top: 4px; line-height: 1.3;">Rest<br>and live.</div>
+    </div>
+  </div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #1B2A41; height: 100%; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center; color: #FFFFFF;">
+  <div class="eyebrow-gold">THE PATTERN</div>
+  <div style="height: 1px; background: #C2912D; width: 20px; margin: 10px 0;"></div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 6px;">
+    <div><div style="font-size: 8px; color: #C2912D; letter-spacing: 0.22em; font-weight: 700;">SUFFER</div><div style="font-size: 13px; font-weight: 700; margin-top: 4px; line-height: 1.15;">In faith.</div></div>
+    <div><div style="font-size: 8px; color: #C2912D; letter-spacing: 0.22em; font-weight: 700;">SERVE</div><div style="font-size: 13px; font-weight: 700; margin-top: 4px; line-height: 1.15;">In love.</div></div>
+    <div><div style="font-size: 8px; color: #C2912D; letter-spacing: 0.22em; font-weight: 700;">STAND</div><div style="font-size: 13px; font-weight: 700; margin-top: 4px; line-height: 1.15;">In hope.</div></div>
+  </div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #F2EEE7; height: 100%; padding: 18px 20px; display: flex; flex-direction: column; justify-content: center;">
+  <div style="font-size: 9px; color: #C2912D; letter-spacing: 0.22em; font-weight: 700;">DISCUSS</div>
+  <div style="height: 1px; background: #C2912D; width: 20px; margin: 10px 0;"></div>
+  <div style="font-size: 17px; font-weight: 700; line-height: 1.2; letter-spacing: -0.015em; color: #1B2A41;">Where in your life<br>is hope being tested<br>right now?</div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #1B2A41; height: 100%; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center; color: #FFFFFF;">
+  <div style="font-size: 64px; font-weight: 700; color: #C2912D; line-height: 0.9; letter-spacing: -0.03em;">147</div>
+  <div style="height: 1px; background: #C2912D; width: 24px; margin: 12px 0 6px;"></div>
+  <div style="font-size: 10px; opacity: 0.85; line-height: 1.5; max-width: 3in;">Baptized at Soteria since 2019.</div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #FFFFFF; height: 100%; padding: 18px 20px; display: flex; flex-direction: column; justify-content: center;">
+  <div style="font-size: 32px; color: #C2912D; line-height: 1; font-weight: 700;">"</div>
+  <div class="serif" style="font-size: 14px; font-style: italic; font-weight: 400; color: #1B2A41; line-height: 1.4; margin-top: -2px;">The good shepherd lays down his life for the sheep.</div>
+  <div style="height: 1px; background: #C2912D; width: 20px; margin: 12px 0 6px;"></div>
+  <div style="font-size: 8px; color: #5F5E5A; letter-spacing: 0.18em; font-weight: 700;">JOHN 10:11</div>
+</div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+<div class="page">
+      <div class="page-inner">
+      <div class="page-header">
+        <div><div class="page-num">62</div></div>
+        <div class="page-label">SLIDES</div>
+      </div>
+      <div class="grid-3" style="flex: 1; min-height: 0; align-content: center;">
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="height: 100%; position: relative; overflow: hidden;">
+  <div style="position: absolute; inset: 0; background-image: url('/branding/photos/lrp-260.jpg'); background-size: cover; background-position: center;"></div>
+  <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(27,42,65,0.9) 0%, rgba(27,42,65,0.2) 55%, rgba(27,42,65,0) 100%);"></div>
+  <div style="position: absolute; bottom: 14px; left: 16px; right: 16px; color: #FFFFFF;">
+    <div class="eyebrow-gold">EASTER SUNDAY</div>
+    <div style="height: 1px; background: #C2912D; width: 18px; margin: 6px 0;"></div>
+    <div style="font-size: 22px; font-weight: 700; line-height: 1.05; letter-spacing: -0.015em;">He is risen.</div>
+  </div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="height: 100%; display: grid; grid-template-columns: 1fr 1fr;">
+  <div style="background-image: url('/branding/photos/baptism-79.jpg'); background-size: cover; background-position: center;"></div>
+  <div style="background: #F2EEE7; padding: 14px 16px; display: flex; flex-direction: column; justify-content: center;">
+    <div class="eyebrow-gold">BAPTISM</div>
+    <div style="height: 1px; background: #C2912D; width: 18px; margin: 8px 0;"></div>
+    <div style="font-size: 18px; font-weight: 700; line-height: 1.05; letter-spacing: -0.015em; color: #1B2A41;">Buried<br>and raised.</div>
+  </div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="height: 100%; position: relative; overflow: hidden;">
+  <div style="position: absolute; inset: 0; background-image: url('/branding/photos/lrp-145.jpg'); background-size: cover; background-position: center;"></div>
+  <div style="position: absolute; inset: 0; background: rgba(27,42,65,0.82);"></div>
+  <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 14px 18px; color: #FFFFFF;">
+    <div class="eyebrow-gold">THE 2026 CAMPAIGN</div>
+    <div style="height: 1px; background: #C2912D; width: 22px; margin: 10px auto;"></div>
+    <div style="font-size: 22px; font-weight: 700; line-height: 1.05; letter-spacing: -0.02em;">Build beyond<br>the walls.</div>
+  </div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="height: 100%; display: grid; grid-template-rows: 1fr 1fr; background: #F2EEE7;">
+  <div style="padding: 14px 16px; display: flex; flex-direction: column; justify-content: center;">
+    <div class="eyebrow-navy">NEXT WEEK</div>
+    <div style="height: 1px; background: #C2912D; width: 18px; margin: 8px 0;"></div>
+    <div style="font-size: 18px; font-weight: 700; line-height: 1.05; letter-spacing: -0.015em; color: #1B2A41;">Growth Groups<br>relaunch.</div>
+  </div>
+  <div style="background-image: url('/branding/photos/lrp-103.jpg'); background-size: cover; background-position: center;"></div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="height: 100%; display: flex; flex-direction: column; background: #FFFFFF;">
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2px; flex: 1; min-height: 0;">
+    <div style="background-image: url('/branding/photos/lrp-100.jpg'); background-size: cover; background-position: center;"></div>
+    <div style="background-image: url('/branding/photos/baptism-141.jpg'); background-size: cover; background-position: center;"></div>
+    <div style="background-image: url('/branding/photos/lrp-18.jpg'); background-size: cover; background-position: center;"></div>
+  </div>
+  <div style="padding: 10px 14px;">
+    <div style="font-size: 9px; color: #C2912D; letter-spacing: 0.22em; font-weight: 700;">SUNDAY · APRIL 14</div>
+    <div style="font-size: 11px; font-weight: 700; color: #1B2A41; margin-top: 2px;">A church full of stories.</div>
+  </div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="height: 100%; position: relative; overflow: hidden;">
+  <div style="position: absolute; inset: 0; background-image: url('/branding/photos/lrp-4.jpg'); background-size: cover; background-position: center;"></div>
+  <div style="position: absolute; inset: 0; background: linear-gradient(135deg, rgba(27,42,65,0.55) 0%, rgba(27,42,65,0.05) 50%, rgba(27,42,65,0.85) 100%);"></div>
+  <div style="position: absolute; bottom: 14px; left: 16px; right: 16px; color: #FFFFFF;">
+    <div class="eyebrow-gold">SERMON ON THE MOUNT</div>
+    <div style="height: 1px; background: #C2912D; width: 18px; margin: 6px 0;"></div>
+    <div style="font-size: 18px; font-weight: 700; line-height: 1.05; letter-spacing: -0.015em;">Blessed<br>are the meek.</div>
+  </div>
+</div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+<div class="page">
+      <div class="page-inner">
+      <div class="page-header">
+        <div><div class="page-num">63</div></div>
+        <div class="page-label">SLIDES</div>
+      </div>
+      <div class="grid-3" style="flex: 1; min-height: 0; align-content: center;">
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #1B2A41; height: 100%; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center; color: #FFFFFF;">
+  <div class="eyebrow-gold">NEXT STEPS</div>
+  <div style="height: 1px; background: #C2912D; width: 20px; margin: 8px 0;"></div>
+  <div style="font-size: 20px; font-weight: 700; line-height: 1.05; letter-spacing: -0.015em;">Sign up for<br>a Growth Group.</div>
+  <div style="margin-top: 14px;"><span class="btn-white">Find a Group</span></div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #F2EEE7; height: 100%; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center;">
+  <div class="eyebrow-navy">SIX WEEKS · JAN 12 – FEB 16</div>
+  <div class="rule-gold"></div>
+  <div style="font-size: 22px; font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; color: #1B2A41; margin-top: 4px;">Precious<br>Blood.</div>
+  <div style="font-size: 9px; color: #5F5E5A; margin-top: 8px; letter-spacing: 0.18em;">SUNDAYS · 8:30 &amp; 10:30 AM</div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #FFFFFF; height: 100%; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center;">
+  <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.22em; font-weight: 700;">PSALM 23:1</div>
+  <div class="rule-gold"></div>
+  <div class="serif" style="font-size: 15px; font-style: italic; font-weight: 400; color: #1B2A41; line-height: 1.4; margin-top: 4px;">"The Lord is my shepherd; I shall not want."</div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #1B2A41; height: 100%; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #FFFFFF;">
+  <div class="eyebrow-gold">THIS WEEK</div>
+  <div style="height: 1px; background: #C2912D; width: 24px; margin: 10px auto;"></div>
+  <div style="font-size: 64px; font-weight: 700; color: #C2912D; line-height: 0.95; letter-spacing: -0.025em;">Grace.</div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #F2EEE7; height: 100%; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center;">
+  <div style="display: flex; align-items: flex-start; gap: 10px;">
+    <div class="serif" style="font-size: 40px; color: #C2912D; font-weight: 400; line-height: 0.9;">Q.</div>
+    <div style="font-size: 16px; font-weight: 700; color: #1B2A41; line-height: 1.15; letter-spacing: -0.015em; padding-top: 6px;">What does<br>repentance<br>cost you?</div>
+  </div>
+</div>
+          </div>
+        </div>
+        <div class="variant" style="justify-content: center;">
+          <div class="mockup" style="aspect-ratio: 16/9; flex: none; width: 100%;">
+<div style="background: #1B2A41; height: 100%; padding: 16px 18px; display: flex; flex-direction: column; justify-content: space-between; color: #FFFFFF;">
+  <div>
+    <div class="eyebrow-gold">BENEDICTION</div>
+    <div style="height: 1px; background: #C2912D; width: 22px; margin: 8px 0;"></div>
+  </div>
+  <div class="serif" style="font-size: 13px; font-style: italic; font-weight: 400; line-height: 1.4;">Now may the God of peace make you holy in every way, and may your whole spirit and soul and body be kept blameless.</div>
+  <div style="font-size: 8px; opacity: 0.7; letter-spacing: 0.18em; font-weight: 700;">1 THESS 5:23</div>
+</div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+
+<div class="section-footer">
+  <span class="section-footer-eyebrow">END OF PART 04 &middot; SLIDES</span>
+  <a href="#contents" class="section-footer-link">Back to contents <span class="arrow">&rarr;</span></a>
+</div>
+<script>
+  (function () {
+    'use strict';
+
+    /* --------------------------------------------------
+       Mobile drawer
+       -------------------------------------------------- */
+    var hamburger = document.querySelector('.site-nav-hamburger');
+    var drawer = document.getElementById('site-nav-drawer');
+    var overlay = document.querySelector('.site-nav-overlay');
+    var closers = document.querySelectorAll('[data-drawer-close]');
+    var drawerLinks = document.querySelectorAll('.site-nav-drawer-link');
+
+    function openDrawer() {
+      if (!drawer) return;
+      drawer.setAttribute('aria-hidden', 'false');
+      if (overlay) overlay.setAttribute('aria-hidden', 'false');
+      if (hamburger) hamburger.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeDrawer() {
+      if (!drawer) return;
+      drawer.setAttribute('aria-hidden', 'true');
+      if (overlay) overlay.setAttribute('aria-hidden', 'true');
+      if (hamburger) hamburger.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+    if (hamburger) hamburger.addEventListener('click', openDrawer);
+    closers.forEach(function (el) { el.addEventListener('click', closeDrawer); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeDrawer();
+    });
+    drawerLinks.forEach(function (link) {
+      link.addEventListener('click', function () {
+        setTimeout(closeDrawer, 140);
+      });
+    });
+
+    /* --------------------------------------------------
+       Copy-on-click for .copyable tokens (hex, names)
+       -------------------------------------------------- */
+    document.querySelectorAll('.copyable').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var text = el.dataset.copy || el.textContent.trim();
+        var done = function () {
+          el.classList.add('copied');
+          setTimeout(function () { el.classList.remove('copied'); }, 1200);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done).catch(done);
+        } else {
+          try {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'absolute';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            done();
+          } catch (err) {
+            done();
+          }
+        }
+      });
+    });
+  })();
+</script>
+</body>
+</html>
+
+</body>
+</html>

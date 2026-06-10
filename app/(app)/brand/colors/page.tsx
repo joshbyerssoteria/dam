@@ -6,17 +6,15 @@ import {
   SUPPORTING_COLORS,
 } from "@/lib/brand";
 import { CopyChip, CopySnippet } from "@/components/brand/copy-chip";
+import { PageHeader } from "@/components/page-header";
 
 export default function BrandColorsPage() {
   return (
-    <div className="mx-auto max-w-4xl space-y-14 px-8 py-12">
+    <div>
+      <PageHeader title="Colors" />
+      <div className="max-w-4xl space-y-14 px-8 py-10">
       <section aria-label="Brand colors">
-        <h2 className="text-sm font-semibold">Four colors. No more.</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          The entire system is built on these and only these. Click any value
-          to copy it.
-        </p>
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {BRAND_COLORS.map((color) => (
             <div
               key={color.id}
@@ -153,6 +151,7 @@ export default function BrandColorsPage() {
         </p>
         <CopySnippet code={CSS_VARIABLES_SNIPPET} />
       </section>
+      </div>
     </div>
   );
 }

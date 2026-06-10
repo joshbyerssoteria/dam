@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soteria Brand — Blocks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+<style>
+
+    /* ========================================================================
+       Base
+       ======================================================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html {
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+    }
+    body {
+      font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      color: #1B2A41;
+      background: #E8E2D4;
+      -webkit-font-smoothing: antialiased;
+      padding: 80px 0 40px;
+    }
+    a { color: inherit; }
+    img { max-width: 100%; height: auto; display: block; }
+    button { font-family: inherit; }
+    :focus-visible { outline: 2px solid #C2912D; outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+      html { scroll-behavior: auto; }
+    }
+
+    .serif { font-family: 'Lora', Georgia, 'Times New Roman', serif; }
+
+    /* ========================================================================
+       Sticky site navigation (web only, hidden in print)
+       ======================================================================== */
+    .site-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(27, 42, 65, 0.96);
+      -webkit-backdrop-filter: saturate(1.2) blur(8px);
+      backdrop-filter: saturate(1.2) blur(8px);
+      color: #FFFFFF;
+      border-bottom: 1px solid rgba(194, 145, 45, 0.35);
+    }
+    .site-nav-inner {
+      max-width: 1344px;
+      margin: 0 auto;
+      padding: 16px clamp(16px, 3vw, 32px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .site-nav-wordmark {
+      font-size: 11px;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: 0.3em;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .site-nav-wordmark .gold { color: #C2912D; }
+    .site-nav-links {
+      display: flex;
+      align-items: center;
+      gap: clamp(14px, 2vw, 24px);
+    }
+    .site-nav-link {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.82);
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 4px 0;
+      border-bottom: 1px solid transparent;
+      transition: color 140ms ease-out, border-color 140ms ease-out;
+    }
+    .site-nav-link:hover,
+    .site-nav-link:focus-visible {
+      color: #FFFFFF;
+      border-bottom-color: #C2912D;
+    }
+    .site-nav-hamburger {
+      display: none;
+      width: 40px;
+      height: 40px;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      color: #FFFFFF;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .site-nav-hamburger svg { width: 18px; height: 18px; }
+
+    /* Mobile drawer */
+    .site-nav-drawer {
+      position: fixed;
+      top: 0; right: 0;
+      width: min(340px, 88vw);
+      height: 100vh;
+      height: 100dvh;
+      background: #1B2A41;
+      color: #FFFFFF;
+      z-index: 110;
+      transform: translateX(100%);
+      transition: transform 220ms ease-out;
+      padding: 24px 28px 40px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .site-nav-drawer[aria-hidden="false"] { transform: translateX(0); }
+    .site-nav-drawer-close {
+      align-self: flex-end;
+      background: transparent;
+      border: 0;
+      color: #FFFFFF;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 4px 6px;
+    }
+    .site-nav-drawer-eyebrow {
+      color: #C2912D;
+      font-size: 10px;
+      letter-spacing: 0.28em;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+    .site-nav-drawer-links {
+      display: flex;
+      flex-direction: column;
+      margin-top: 24px;
+    }
+    .site-nav-drawer-link {
+      display: block;
+      color: #FFFFFF;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.005em;
+      text-decoration: none;
+      padding: 14px 0;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.12);
+    }
+    .site-nav-drawer-link .num {
+      color: #C2912D;
+      font-size: 9px;
+      letter-spacing: 0.28em;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .site-nav-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(27, 42, 65, 0.6);
+      z-index: 105;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease-out;
+    }
+    .site-nav-overlay[aria-hidden="false"] { opacity: 1; pointer-events: auto; }
+
+    /* ========================================================================
+       Page chrome — desktop-first, editorial print aesthetic
+       ======================================================================== */
+    .page, .section-divider-page {
+      position: relative;
+      background: #FFFFFF;
+      width: calc(100% - 32px);
+      max-width: 1344px;
+      margin: 0 auto 20px;
+      box-shadow: 0 2px 12px rgba(27, 42, 65, 0.12);
+      overflow: hidden;
+      aspect-ratio: 14 / 8.5;
+      display: flex;
+      flex-direction: column;
+      /* Padding lives on .page so content has breathing room even on
+         legacy pages that don't use the .page-inner wrapper. */
+      padding: clamp(28px, 4vw, 96px);
+    }
+    .page-inner {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 0; /* parent .page handles padding on web */
+    }
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 12px;
+      border-bottom: 0.5px solid #E5DFD1;
+      margin-bottom: clamp(14px, 1.5vw, 22px);
+      gap: 16px;
+    }
+    .page-num { font-size: clamp(9px, 0.72vw, 10px); font-weight: 700; color: #C2912D; letter-spacing: 0.28em; }
+    .page-label { font-size: clamp(9px, 0.72vw, 10px); color: #5F5E5A; letter-spacing: 0.22em; text-transform: uppercase; text-align: right; }
+    .page-title { font-size: clamp(22px, 2.2vw, 32px); font-weight: 700; color: #1B2A41; letter-spacing: -0.015em; line-height: 1.1; }
+    .page-sub { font-size: clamp(10px, 0.85vw, 12px); color: #5F5E5A; margin-top: 8px; line-height: 1.6; max-width: 60%; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(16px, 2vw, 28px); flex: 1; margin-top: 20px; min-height: 0; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: clamp(14px, 1.6vw, 20px); flex: 1; margin-top: 20px; min-height: 0; }
+    .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: clamp(12px, 1.4vw, 18px); flex: 1; margin-top: 20px; min-height: 0; }
+
+    .variant { display: flex; flex-direction: column; min-height: 0; }
+    .variant-label { font-size: clamp(8px, 0.7vw, 10px); font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: #5F5E5A; margin-bottom: 8px; }
+    .variant-note { font-size: clamp(9px, 0.8vw, 10px); color: #5F5E5A; margin-top: 6px; line-height: 1.4; font-style: italic; }
+    .mockup { flex: 1; border: 0.5px solid #E5DFD1; overflow: hidden; display: flex; flex-direction: column; }
+    .mockup-frame { border: 0.5px solid #E5DFD1; background: #FFFFFF; position: relative; overflow: hidden; width: 100%; height: 100%; }
+
+    /* Reusable primitives */
+    .eyebrow-navy { font-size: 9px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #1B2A41; }
+    .eyebrow-gold { font-size: 9px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #C2912D; }
+    .eyebrow-white { font-size: 9px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #FFFFFF; }
+    .rule-gold { height: 1px; background: #C2912D; width: 24px; margin: 10px 0; }
+    .rule-gold-long { height: 1px; background: #C2912D; width: 40px; margin: 10px 0; }
+    .rule-gold-thick { height: 2px; background: #C2912D; width: 48px; margin: 14px 0; }
+    .wordmark { font-size: 11px; font-weight: 700; letter-spacing: 0.28em; }
+
+    .display-md { font-size: 22px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.1; }
+    .display-lg { font-size: 28px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.05; }
+    .display-xl { font-size: 36px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+    .body-sm { font-size: 10px; line-height: 1.55; color: #1B2A41; font-weight: 400; }
+    .body-sm-light { font-size: 10px; line-height: 1.55; color: #FFFFFF; opacity: 0.8; font-weight: 400; }
+
+    /* Buttons — pills (rounded-full) with CTA hover contract.
+       At rest: solid fill, transparent border. On hover: bg goes
+       transparent, border appears in the fill color, text re-colors.
+       Pairs with the homepage PlanYourVisitButton component. */
+    .btn-navy, .btn-white, .btn-outline-navy {
+      display: inline-flex; align-items: center; justify-content: center;
+      white-space: nowrap;
+      padding: 9px 18px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0;
+      text-transform: none; text-decoration: none; cursor: pointer;
+      border-radius: 9999px;
+      border: 1.5px solid transparent;
+      transition: background-color 500ms ease-out, color 500ms ease-out, border-color 500ms ease-out;
+    }
+    .btn-navy { background: #1B2A41; color: #FFFFFF; }
+    .btn-navy:hover { background: transparent; color: #1B2A41; border-color: #1B2A41; }
+    .btn-white { background: #FFFFFF; color: #1B2A41; }
+    .btn-white:hover { background: transparent; color: #FFFFFF; border-color: #FFFFFF; }
+    .btn-outline-navy { background: transparent; color: #1B2A41; border-color: #1B2A41; }
+    .btn-outline-navy:hover { background: #1B2A41; color: #FFFFFF; }
+
+    /* Tertiary — text link with a thin gold underline.
+       Stays as text, not a pill. */
+    .btn-ghost-navy {
+      display: inline-block; color: #1B2A41; padding: 4px 0;
+      font-size: 11px; font-weight: 600; letter-spacing: 0;
+      text-transform: none; border-bottom: 1px solid #C2912D;
+      text-decoration: none; transition: color 200ms ease-out;
+    }
+    .btn-ghost-navy:hover { color: #C2912D; }
+    .btn-ghost-light {
+      display: inline-block; color: #FFFFFF; padding: 4px 0;
+      font-size: 11px; font-weight: 600; letter-spacing: 0;
+      text-transform: none; border-bottom: 1px solid #C2912D;
+      text-decoration: none; transition: opacity 200ms ease-out;
+    }
+    .btn-ghost-light:hover { opacity: 0.8; }
+
+    /* Large web CTAs — same pill + hover contract, scaled up */
+    .cta-primary {
+      display: inline-flex; align-items: center; white-space: nowrap;
+      background: #1B2A41; color: #FFFFFF;
+      padding: 12px 24px; font-size: 14px; font-weight: 600;
+      letter-spacing: 0; text-transform: none; text-decoration: none;
+      border-radius: 9999px; border: 2px solid transparent;
+      transition: background-color 500ms ease-out, color 500ms ease-out, border-color 500ms ease-out;
+    }
+    .cta-primary:hover { background: transparent; color: #1B2A41; border-color: #1B2A41; }
+    .cta-ghost {
+      display: inline-block; color: #1B2A41; padding: 12px 0;
+      font-size: 14px; font-weight: 600;
+      letter-spacing: 0; text-transform: none;
+      text-decoration: none; border-bottom: 1px solid #C2912D;
+      transition: color 200ms ease-out;
+    }
+    .cta-ghost:hover { color: #C2912D; }
+
+    /* Section dividers */
+    .section-divider {
+      padding: 22px 0 8px;
+      border-top: 1px solid #E5DFD1;
+      margin-top: 22px;
+    }
+    .section-divider-page { justify-content: center; }
+    .section-divider-page .inner {
+      padding: clamp(40px, 6vw, 96px);
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+    }
+    .section-eyebrow { color: #C2912D; font-size: clamp(10px, 0.9vw, 12px); font-weight: 700; letter-spacing: 0.3em; }
+    .section-rule { height: 2px; background: #C2912D; width: 60px; margin: 24px 0; }
+    .section-title { font-size: clamp(40px, 5.5vw, 72px); font-weight: 700; line-height: 1; letter-spacing: -0.025em; }
+    .section-lede { font-size: clamp(13px, 1.1vw, 15px); line-height: 1.6; margin-top: 24px; max-width: 62ch; opacity: 0.9; }
+
+    /* TOC */
+    .toc-line {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      padding: 16px 0;
+      border-bottom: 0.5px solid #E5DFD1;
+      text-decoration: none;
+      color: inherit;
+      transition: background 140ms ease-out, padding 140ms ease-out;
+    }
+    .toc-line:hover,
+    .toc-line:focus-visible { background: #F2EEE7; padding-left: 12px; padding-right: 12px; outline: none; }
+    .toc-num { font-size: 11px; font-weight: 700; color: #C2912D; letter-spacing: 0.24em; width: 48px; flex-shrink: 0; }
+    .toc-label { font-size: clamp(14px, 1.4vw, 17px); color: #1B2A41; font-weight: 700; flex: 1; }
+    .toc-sub { font-size: clamp(10px, 0.9vw, 12px); color: #5F5E5A; font-style: italic; flex: 1.5; }
+    .toc-page { font-size: 10px; color: #5F5E5A; letter-spacing: 0.12em; font-weight: 700; flex-shrink: 0; }
+
+    /* Photo building blocks */
+    .photo-fill { width: 100%; height: 100%; background-size: cover; background-position: center; background-repeat: no-repeat; }
+    .photo-overlay-navy { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(27,42,65,0.80) 0%, rgba(27,42,65,0.55) 60%, rgba(27,42,65,0.85) 100%); }
+    .photo-overlay-bottom { position: absolute; inset: 0; background: linear-gradient(to top, rgba(27,42,65,0.85) 0%, rgba(27,42,65,0.25) 55%, rgba(27,42,65,0) 100%); }
+
+    .back-to-toc { background: #FFFFFF; }
+
+    /* Minimal end-of-section footer — replaces the old "Keep going" pages */
+    .section-footer {
+      width: calc(100% - 32px);
+      max-width: 1344px;
+      margin: -4px auto 28px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: clamp(12px, 1.4vw, 20px);
+      padding: 10px 4px;
+      flex-wrap: wrap;
+    }
+    .section-footer-eyebrow {
+      color: #5F5E5A;
+      font-size: 9px;
+      letter-spacing: 0.24em;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .section-footer-link {
+      color: #1B2A41;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      text-decoration: none;
+      border-bottom: 1px solid #C2912D;
+      padding-bottom: 2px;
+      transition: color 140ms ease-out;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .section-footer-link:hover,
+    .section-footer-link:focus-visible { color: #C2912D; outline: none; }
+    .section-footer-link .arrow {
+      display: inline-block;
+      transition: transform 140ms ease-out;
+    }
+    .section-footer-link:hover .arrow { transform: translateX(3px); }
+    @media (max-width: 640px) {
+      .section-footer {
+        width: calc(100% - 16px);
+        margin-bottom: 16px;
+        padding: 8px 6px;
+      }
+    }
+
+    /* Anchor scroll offset under sticky nav */
+    [id] { scroll-margin-top: 84px; }
+
+    /* ========================================================================
+       Interactive: copy-on-click token values
+       ======================================================================== */
+    .copyable {
+      cursor: copy;
+      position: relative;
+      display: inline-block;
+      transition: background 140ms ease-out;
+      padding: 2px 6px;
+      margin: -2px -6px;
+      border-radius: 1px;
+    }
+    .copyable:hover { background: rgba(27, 42, 65, 0.06); }
+    .copyable.copied::after {
+      content: 'Copied';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px;
+      color: #FFFFFF;
+      background: #1B2A41;
+      letter-spacing: 0.2em;
+      font-weight: 700;
+      padding: 4px 8px;
+      text-transform: uppercase;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    /* ========================================================================
+       Tablet: release aspect ratio, collapse 4-col grids
+       ======================================================================== */
+    @media (max-width: 1023px) {
+      body { padding: 72px 0 32px; }
+      .page, .section-divider-page {
+        aspect-ratio: auto;
+        min-height: auto;
+      }
+      .page-inner { padding: 0; }
+      .grid-4 { grid-template-columns: 1fr 1fr; }
+
+      /* Soften very large inline type on tablet */
+      [style*="font-size: 104px"] { font-size: 72px !important; }
+      [style*="font-size: 96px"] { font-size: 68px !important; }
+      [style*="font-size: 72px"] { font-size: 52px !important; }
+      [style*="font-size: 68px"] { font-size: 48px !important; }
+
+      /* Collapse inline 4-col grids */
+      [style*="grid-template-columns: 1fr 1fr 1fr 1fr"] {
+        grid-template-columns: 1fr 1fr !important;
+      }
+
+      /* Color palette swatches: flex:1 collapses when aspect-ratio releases.
+         Give them a visible proportion so they don't disappear. */
+      [style*="flex: 1; background: #FFFFFF"],
+      [style*="flex: 1; background: #F2EEE7"],
+      [style*="flex: 1; background: #1B2A41"],
+      [style*="flex: 1; background: #C2912D"] {
+        flex: none !important;
+        aspect-ratio: 3 / 2 !important;
+        min-height: 160px !important;
+      }
+
+      /* Any inner grid with flex:1 loses its reason to be flex-sized.
+         Let it size by content instead. */
+      [style*="flex: 1; display: grid"] {
+        flex: none !important;
+      }
+    }
+
+    /* ========================================================================
+       Mobile: single-column stacking
+       ======================================================================== */
+    @media (max-width: 640px) {
+      body { padding: 64px 0 24px; }
+      .page, .section-divider-page {
+        width: calc(100% - 16px);
+        margin-bottom: 14px;
+        box-shadow: 0 1px 6px rgba(27, 42, 65, 0.08);
+      }
+      .page-inner { padding: 28px 20px; }
+      .page-header { flex-direction: column; align-items: flex-start; gap: 6px; }
+      .page-label { text-align: left; }
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; gap: 20px; }
+
+      /* Collapse common inline grid patterns */
+      [style*="grid-template-columns: 1fr 1fr"],
+      [style*="grid-template-columns: 1fr 1fr 1fr"],
+      [style*="grid-template-columns: 1fr 1fr 1fr 1fr"],
+      [style*="grid-template-columns: 1.1fr 1fr"],
+      [style*="grid-template-columns: 1fr 1.1fr"],
+      [style*="grid-template-columns: 2fr 1fr"],
+      [style*="grid-template-columns: 1fr 2fr"],
+      [style*="grid-template-columns: 3fr 2fr"],
+      [style*="grid-template-columns: 2fr 3fr"] {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+      }
+
+      /* Scale down huge inline display type on mobile */
+      [style*="font-size: 104px"] { font-size: 52px !important; line-height: 0.95 !important; }
+      [style*="font-size: 96px"] { font-size: 48px !important; line-height: 0.95 !important; }
+      [style*="font-size: 72px"] { font-size: 40px !important; }
+      [style*="font-size: 68px"] { font-size: 36px !important; }
+      [style*="font-size: 56px"] { font-size: 32px !important; }
+      [style*="font-size: 48px"] { font-size: 28px !important; }
+      [style*="font-size: 38px"] { font-size: 24px !important; }
+      [style*="font-size: 36px"] { font-size: 24px !important; }
+      [style*="font-size: 32px"] { font-size: 22px !important; }
+      [style*="font-size: 28px"] { font-size: 22px !important; }
+      [style*="font-size: 26px"] { font-size: 20px !important; }
+
+      /* TOC wrapping */
+      .toc-line { flex-wrap: wrap; padding: 14px 0; }
+      .toc-sub { flex: 1 1 100%; margin-top: 4px; }
+      .toc-page { margin-left: auto; }
+
+      /* Section dividers */
+      .section-divider-page .inner { padding: 40px 20px; }
+
+      /* Nav */
+      .site-nav-inner { padding: 14px 16px; }
+      .site-nav-links { display: none; }
+      .site-nav-hamburger { display: inline-flex; }
+    }
+
+    /* ========================================================================
+       Print: restore exact 14in × 8.5in layout for PDF export
+       ======================================================================== */
+    @media print {
+      @page { size: 14in 8.5in; margin: 0; }
+      body { background: #FFFFFF; padding: 0; }
+      .site-nav, .site-nav-drawer, .site-nav-overlay, .back-to-toc { display: none !important; }
+      .page, .section-divider-page {
+        box-shadow: none;
+        margin: 0;
+        width: 14in;
+        max-width: none;
+        aspect-ratio: auto;
+        height: 8.5in;
+        page-break-after: always !important;
+        padding: 0.5in 0.75in; /* print: padding on .page for uniformity */
+      }
+      .page-inner { padding: 0; }
+      .section-divider-page { padding: 0; }
+      .section-divider-page .inner { padding: 1in; }
+      .page:last-child, .section-divider-page:last-child { page-break-after: auto !important; }
+      .copyable { cursor: auto; background: transparent !important; }
+      .copyable::after { display: none !important; }
+    }
+  </style>
+<style>
+html { scroll-padding-top: 0; }
+body { padding-top: 0 !important; margin: 0; }
+</style>
+</head>
+<body>
+<div class="section-divider-page" id="section-02" style="background: #1B2A41;">
+      <div class="inner" style="color: #FFFFFF;">
+        <div class="section-eyebrow">PART 02 · BLOCKS</div>
+        <div class="section-rule"></div>
+        <div class="section-title" style="color: #FFFFFF;">Blocks</div>
+        <div class="section-lede">Heroes, CTAs, feature rows, footers — the blocks that build screens. Each pattern shown in at least two variants.</div>
+      </div>
+    </div>
+    
+<div class="page">
+      <div class="page-header">
+        <div><div class="page-num">30</div></div>
+        <div class="page-label">BLOCKS</div>
+      </div>
+      <div class="page-title">Homepage hero section.</div>
+      <div class="page-sub">The welcome mat. One headline, one primary action, no competing moments. Centered layout for editorial warmth; split layout when a visual element earns its place.</div>
+      <div class="grid-2">
+        <div class="variant">
+          <div class="variant-label">OFF-WHITE CENTERED</div>
+          <div class="mockup">
+<div style="background: #F2EEE7; height: 100%; display: flex; flex-direction: column;">
+  <div style="background: #1B2A41; padding: 10px 18px; display: flex; justify-content: space-between; align-items: center;">
+    <div class="wordmark" style="color: #FFFFFF; font-size: 10px;">SOTERIA</div>
+    <div style="display: flex; gap: 14px; color: #FFFFFF; font-size: 8px; opacity: 0.8;">
+      <span>ABOUT</span><span>SUNDAYS</span><span>GROUPS</span><span>GIVE</span>
+    </div>
+  </div>
+  <div style="padding: 36px 22px; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+    <div class="eyebrow-gold" style="margin-bottom: 12px;">WEST DES MOINES, IOWA</div>
+    <div style="font-size: 32px; font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; max-width: 4.5in;">Making more &amp; better disciples.</div>
+    <div style="font-size: 11px; color: #1B2A41; opacity: 0.75; line-height: 1.6; margin-top: 12px; max-width: 3.5in;">Sundays at 8:30 and 10:30 · Kids and students welcomed at both services.</div>
+    <div style="margin-top: 18px; display: flex; gap: 10px;">
+      <span class="btn-navy">Plan Your Visit</span>
+      <span class="btn-ghost-navy">Watch a Sermon</span>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        
+        <div class="variant">
+          <div class="variant-label">SPLIT · CONTENT + VISUAL</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; display: flex; flex-direction: column;">
+  <div style="background: #1B2A41; padding: 10px 18px; display: flex; justify-content: space-between; align-items: center;">
+    <div class="wordmark" style="color: #FFFFFF; font-size: 10px;">SOTERIA</div>
+    <div style="display: flex; gap: 14px; color: #FFFFFF; font-size: 8px; opacity: 0.8;">
+      <span>ABOUT</span><span>SUNDAYS</span><span>GROUPS</span><span>GIVE</span>
+    </div>
+  </div>
+  <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr;">
+    <div style="padding: 30px 22px; display: flex; flex-direction: column; justify-content: center;">
+      <div class="eyebrow-gold" style="margin-bottom: 10px;">THIS SUNDAY</div>
+      <div style="font-size: 28px; font-weight: 700; line-height: 1.05; letter-spacing: -0.02em;">Come as<br>you are.</div>
+      <div style="font-size: 11px; color: #1B2A41; opacity: 0.75; margin-top: 10px; line-height: 1.6;">Services at 8:30 and 10:30 AM. Kids welcomed at both.</div>
+      <div style="margin-top: 16px;"><span class="btn-navy">Plan Your Visit</span></div>
+    </div>
+    <div style="background: #F2EEE7; display: flex; align-items: center; justify-content: center; padding: 22px;">
+      <div style="width: 120px; height: 120px; border: 1px solid #C2912D; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <div style="width: 60%; height: 60%; border: 1px solid #C2912D; border-radius: 50%;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        </div>
+    </div>
+<div class="page">
+      <div class="page-header">
+        <div><div class="page-num">31</div></div>
+        <div class="page-label">BLOCKS</div>
+      </div>
+      <div class="page-title">Call-to-action sections.</div>
+      <div class="page-sub">Each CTA gets one headline, one sentence of context, and at most two actions (primary + secondary). Navy CTA creates punctuation in a long page. Off-white CTA is the quieter default.</div>
+      <div class="grid-2">
+        <div class="variant">
+          <div class="variant-label">NAVY · PUNCTUATION</div>
+          <div class="mockup">
+<div style="background: #1B2A41; height: 100%; padding: 30px 26px; display: flex; flex-direction: column; justify-content: center;">
+  <div class="eyebrow-gold">NEXT STEPS</div>
+  <div style="height: 1px; background: #C2912D; width: 24px; margin: 12px 0;"></div>
+  <div style="font-size: 28px; font-weight: 700; color: #FFFFFF; line-height: 1.1; letter-spacing: -0.015em; margin-top: 4px;">New here?<br>Let's meet.</div>
+  <div style="font-size: 11px; color: #FFFFFF; opacity: 0.75; line-height: 1.6; margin-top: 12px; max-width: 3in;">Fifteen minutes with a pastor. No commitment, just conversation.</div>
+  <div style="margin-top: 18px; display: flex; gap: 10px;">
+    <span class="btn-white">Book a Time</span>
+    <span class="btn-ghost-light">Or Just Show Up</span>
+  </div>
+</div>
+</div>
+        </div>
+        
+        <div class="variant">
+          <div class="variant-label">OFF-WHITE · QUIET DEFAULT</div>
+          <div class="mockup">
+<div style="background: #F2EEE7; height: 100%; padding: 30px 26px; display: flex; flex-direction: column; justify-content: center;">
+  <div class="eyebrow-navy">GIVE</div>
+  <div class="rule-gold"></div>
+  <div style="font-size: 28px; font-weight: 700; line-height: 1.1; letter-spacing: -0.015em; margin-top: 4px;">Partner with<br>the mission.</div>
+  <div style="font-size: 11px; color: #1B2A41; opacity: 0.75; line-height: 1.6; margin-top: 12px; max-width: 3in;">Every gift funds disciple-making — locally and globally.</div>
+  <div style="margin-top: 18px;"><span class="btn-navy">Give Once</span> &nbsp; <span class="btn-outline-navy">Give Monthly</span></div>
+</div>
+</div>
+        </div>
+        </div>
+    </div>
+<div class="page">
+      <div class="page-header">
+        <div><div class="page-num">32</div></div>
+        <div class="page-label">BLOCKS</div>
+      </div>
+      <div class="page-title">Comparison blocks.</div>
+      <div class="page-sub">Card-based comparison when options need personality. Table-based comparison when dimensions need to line up precisely. The recommended option gets one gold border and one small badge — nothing else.</div>
+      <div class="grid-2">
+        <div class="variant">
+          <div class="variant-label">CARD COMPARISON · RECOMMENDED HIGHLIGHTED</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 24px;">
+  <div style="text-align: center;">
+    <div class="eyebrow-navy">COMPARE</div>
+    <div class="rule-gold" style="margin: 10px auto;"></div>
+    <div style="font-size: 22px; font-weight: 700; margin-top: 4px;">Which group is for me?</div>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 20px;">
+    <div style="background: #FFFFFF; padding: 18px 14px; border: 0.5px solid #E5DFD1;">
+      <div class="eyebrow-gold">STARTER</div>
+      <div style="font-size: 15px; font-weight: 700; margin-top: 6px;">Explore</div>
+      <div style="font-size: 9px; color: #5F5E5A; line-height: 1.55; margin-top: 8px;">For those new to faith or new to Soteria Church.</div>
+      <div style="height: 0.5px; background: #E5DFD1; margin: 12px 0;"></div>
+      <div style="font-size: 9px; color: #1B2A41; line-height: 1.8;">· 8 weeks<br>· Once a week<br>· Light homework</div>
+    </div>
+    <div style="background: #FFFFFF; padding: 18px 14px; border: 2px solid #C2912D; position: relative;">
+      <div style="position: absolute; top: -8px; left: 14px; background: #C2912D; color: #1B2A41; font-size: 7px; font-weight: 700; letter-spacing: 0.18em; padding: 3px 8px;">MOST COMMON</div>
+      <div class="eyebrow-gold">GROWTH</div>
+      <div style="font-size: 15px; font-weight: 700; margin-top: 6px;">Go deeper</div>
+      <div style="font-size: 9px; color: #5F5E5A; line-height: 1.55; margin-top: 8px;">Weekly gathering around scripture and life.</div>
+      <div style="height: 0.5px; background: #E5DFD1; margin: 12px 0;"></div>
+      <div style="font-size: 9px; color: #1B2A41; line-height: 1.8;">· Ongoing<br>· Weekly in homes<br>· Shared meals</div>
+    </div>
+    <div style="background: #FFFFFF; padding: 18px 14px; border: 0.5px solid #E5DFD1;">
+      <div class="eyebrow-gold">LEADERSHIP</div>
+      <div style="font-size: 15px; font-weight: 700; margin-top: 6px;">Lead others</div>
+      <div style="font-size: 9px; color: #5F5E5A; line-height: 1.55; margin-top: 8px;">Training cohort for group leaders.</div>
+      <div style="height: 0.5px; background: #E5DFD1; margin: 12px 0;"></div>
+      <div style="font-size: 9px; color: #1B2A41; line-height: 1.8;">· 12 weeks<br>· Led by a pastor<br>· Apply first</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        
+        <div class="variant">
+          <div class="variant-label">TABLE COMPARISON · DIMENSIONS ALIGNED</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 24px; border: 0.5px solid #E5DFD1;">
+  <div class="eyebrow-navy">AT A GLANCE</div>
+  <div class="rule-gold"></div>
+  <div style="font-size: 18px; font-weight: 700; margin-top: 4px;">Growth paths, compared.</div>
+  <table style="width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 10px;">
+    <tr>
+      <td style="padding: 10px 8px; font-size: 8px; font-weight: 700; letter-spacing: 0.14em; color: #5F5E5A; text-transform: uppercase; border-bottom: 1px solid #E5DFD1;"></td>
+      <td style="padding: 10px 8px; font-size: 8px; font-weight: 700; letter-spacing: 0.14em; color: #C2912D; text-transform: uppercase; border-bottom: 1px solid #E5DFD1;">EXPLORE</td>
+      <td style="padding: 10px 8px; font-size: 8px; font-weight: 700; letter-spacing: 0.14em; color: #C2912D; text-transform: uppercase; border-bottom: 1px solid #E5DFD1;">GROWTH</td>
+      <td style="padding: 10px 8px; font-size: 8px; font-weight: 700; letter-spacing: 0.14em; color: #C2912D; text-transform: uppercase; border-bottom: 1px solid #E5DFD1;">LEADERSHIP</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 8px; font-weight: 700; color: #1B2A41; border-bottom: 0.5px solid #E5DFD1;">Length</td>
+      <td style="padding: 10px 8px; color: #1B2A41; border-bottom: 0.5px solid #E5DFD1;">8 weeks</td>
+      <td style="padding: 10px 8px; color: #1B2A41; border-bottom: 0.5px solid #E5DFD1;">Ongoing</td>
+      <td style="padding: 10px 8px; color: #1B2A41; border-bottom: 0.5px solid #E5DFD1;">12 weeks</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 8px; font-weight: 700; color: #1B2A41; border-bottom: 0.5px solid #E5DFD1;">Location</td>
+      <td style="padding: 10px 8px; color: #1B2A41; border-bottom: 0.5px solid #E5DFD1;">Church</td>
+      <td style="padding: 10px 8px; color: #1B2A41; border-bottom: 0.5px solid #E5DFD1;">Homes</td>
+      <td style="padding: 10px 8px; color: #1B2A41; border-bottom: 0.5px solid #E5DFD1;">Church</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 8px; font-weight: 700; color: #1B2A41; border-bottom: 0.5px solid #E5DFD1;">Application</td>
+      <td style="padding: 10px 8px; color: #1B2A41; border-bottom: 0.5px solid #E5DFD1;">—</td>
+      <td style="padding: 10px 8px; color: #1B2A41; border-bottom: 0.5px solid #E5DFD1;">—</td>
+      <td style="padding: 10px 8px; color: #1B2A41; border-bottom: 0.5px solid #E5DFD1;">Required</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 8px; font-weight: 700; color: #1B2A41;">Cost</td>
+      <td style="padding: 10px 8px; color: #1B2A41;">Free</td>
+      <td style="padding: 10px 8px; color: #1B2A41;">Free</td>
+      <td style="padding: 10px 8px; color: #1B2A41;">Free</td>
+    </tr>
+  </table>
+</div>
+</div>
+        </div>
+        </div>
+    </div>
+<div class="page">
+      <div class="page-header">
+        <div><div class="page-num">33</div></div>
+        <div class="page-label">BLOCKS</div>
+      </div>
+      <div class="page-title">Contact patterns.</div>
+      <div class="page-sub">Form + info, side by side in a real layout. Form variant uses inputs on a warm ground. Info variant uses navy for a quiet, directory-style block. Often these appear together, form left, info right.</div>
+      <div class="grid-2">
+        <div class="variant">
+          <div class="variant-label">FORM · OFF-WHITE</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 26px;">
+  <div class="eyebrow-navy">GET IN TOUCH</div>
+  <div class="rule-gold"></div>
+  <div style="font-size: 22px; font-weight: 700; margin-top: 4px; line-height: 1.15;">We read every message.</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px;">
+    <div>
+      <div style="font-size: 8px; color: #5F5E5A; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 4px; font-weight: 700;">NAME</div>
+      <div style="height: 32px; background: #FFFFFF; border: 0.5px solid #E5DFD1; padding: 0 10px; display: flex; align-items: center; font-size: 10px;">Josh Byers</div>
+    </div>
+    <div>
+      <div style="font-size: 8px; color: #5F5E5A; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 4px; font-weight: 700;">EMAIL</div>
+      <div style="height: 32px; background: #FFFFFF; border: 0.5px solid #E5DFD1; padding: 0 10px; display: flex; align-items: center; font-size: 10px;">josh@example.com</div>
+    </div>
+  </div>
+  <div style="margin-top: 12px;">
+    <div style="font-size: 8px; color: #5F5E5A; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 4px; font-weight: 700;">MESSAGE</div>
+    <div style="height: 72px; background: #FFFFFF; border: 0.5px solid #E5DFD1; padding: 8px 10px; font-size: 10px; color: #5F5E5A;">How do I plan a first visit?</div>
+  </div>
+  <div style="margin-top: 16px;"><span class="btn-navy">Send Message</span></div>
+</div>
+</div>
+        </div>
+        
+        <div class="variant">
+          <div class="variant-label">INFO · NAVY DIRECTORY</div>
+          <div class="mockup">
+<div style="background: #1B2A41; height: 100%; padding: 26px; color: #FFFFFF;">
+  <div class="eyebrow-gold">VISIT · CALL · WRITE</div>
+  <div style="height: 1px; background: #C2912D; width: 24px; margin: 10px 0;"></div>
+  <div style="font-size: 22px; font-weight: 700; margin-top: 4px; line-height: 1.15;">We'd love to hear from you.</div>
+  <div style="margin-top: 22px; display: flex; flex-direction: column; gap: 14px;">
+    <div>
+      <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700;">ADDRESS</div>
+      <div style="font-size: 11px; color: #FFFFFF; margin-top: 4px;">1234 Address Lane<br>West Des Moines, IA 50266</div>
+    </div>
+    <div>
+      <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700;">PHONE</div>
+      <div style="font-size: 11px; color: #FFFFFF; margin-top: 4px;">(515) 555-0142</div>
+    </div>
+    <div>
+      <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700;">EMAIL</div>
+      <div style="font-size: 11px; color: #FFFFFF; margin-top: 4px;">hello@soteria.church</div>
+    </div>
+    <div>
+      <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700;">SUNDAYS</div>
+      <div style="font-size: 11px; color: #FFFFFF; margin-top: 4px;">9:00 AM &amp; 11:00 AM</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        </div>
+    </div>
+<div class="page">
+      <div class="page-header">
+        <div><div class="page-num">34</div></div>
+        <div class="page-label">BLOCKS</div>
+      </div>
+      <div class="page-title">Downloadable resources.</div>
+      <div class="page-sub">List view when the library is long — typography-driven, gold download labels, hairline dividers. Card view when three or fewer items are featured. Never mix the two on one page.</div>
+      <div class="grid-2">
+        <div class="variant">
+          <div class="variant-label">LIST · MANY RESOURCES</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 24px; border: 0.5px solid #E5DFD1;">
+  <div class="eyebrow-navy">RESOURCES</div>
+  <div class="rule-gold"></div>
+  <div style="font-size: 20px; font-weight: 700; margin-top: 4px;">Read, listen, study.</div>
+  <div style="margin-top: 16px; display: flex; flex-direction: column;">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 0.5px solid #E5DFD1;">
+      <div>
+        <div style="font-size: 7px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700;">PDF · 12 PAGES</div>
+        <div style="font-size: 12px; font-weight: 700; color: #1B2A41; margin-top: 2px;">How to read the Bible</div>
+        <div style="font-size: 9px; color: #5F5E5A; margin-top: 2px;">A short guide for new believers.</div>
+      </div>
+      <div style="color: #C2912D; font-size: 10px; font-weight: 700; letter-spacing: 0.14em;">DOWNLOAD ↓</div>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 0.5px solid #E5DFD1;">
+      <div>
+        <div style="font-size: 7px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700;">PDF · 24 PAGES</div>
+        <div style="font-size: 12px; font-weight: 700; color: #1B2A41; margin-top: 2px;">Growth group leader guide</div>
+        <div style="font-size: 9px; color: #5F5E5A; margin-top: 2px;">Everything you need to lead a group well.</div>
+      </div>
+      <div style="color: #C2912D; font-size: 10px; font-weight: 700; letter-spacing: 0.14em;">DOWNLOAD ↓</div>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
+      <div>
+        <div style="font-size: 7px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700;">AUDIO · 42 MIN</div>
+        <div style="font-size: 12px; font-weight: 700; color: #1B2A41; margin-top: 2px;">Last Sunday's message</div>
+        <div style="font-size: 9px; color: #5F5E5A; margin-top: 2px;">The Mustard Seed · Matthew 13</div>
+      </div>
+      <div style="color: #C2912D; font-size: 10px; font-weight: 700; letter-spacing: 0.14em;">LISTEN ↗</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        
+        <div class="variant">
+          <div class="variant-label">CARDS · FEATURED</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 24px;">
+  <div class="eyebrow-navy">FEATURED RESOURCES</div>
+  <div class="rule-gold"></div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
+    <div style="background: #FFFFFF; padding: 14px; border: 0.5px solid #E5DFD1;">
+      <div style="aspect-ratio: 4/3; background: #1B2A41; display: flex; align-items: flex-end; padding: 10px;">
+        <div style="color: #FFFFFF; font-size: 10px; font-weight: 700; line-height: 1.1;">How to<br>read the Bible</div>
+      </div>
+      <div style="font-size: 7px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700; margin-top: 8px;">PDF · 12 PAGES</div>
+      <div style="font-size: 10px; font-weight: 700; color: #1B2A41; margin-top: 2px;">How to read the Bible</div>
+    </div>
+    <div style="background: #FFFFFF; padding: 14px; border: 0.5px solid #E5DFD1;">
+      <div style="aspect-ratio: 4/3; background: #F2EEE7; border: 0.5px solid #E5DFD1; display: flex; align-items: flex-end; padding: 10px;">
+        <div style="color: #1B2A41; font-size: 10px; font-weight: 700; line-height: 1.1;">Group leader<br>guide</div>
+      </div>
+      <div style="font-size: 7px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700; margin-top: 8px;">PDF · 24 PAGES</div>
+      <div style="font-size: 10px; font-weight: 700; color: #1B2A41; margin-top: 2px;">Growth group guide</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        </div>
+    </div>
+<div class="page">
+      <div class="page-header">
+        <div><div class="page-num">35</div></div>
+        <div class="page-label">BLOCKS</div>
+      </div>
+      <div class="page-title">Frequently asked questions.</div>
+      <div class="page-sub">Accordion when answers are long and fewer items fit on screen at once. Grid when answers are short and the list is scanable. Gold plus/minus toggles; never use chevrons (they compete with the gold rules).</div>
+      <div class="grid-2">
+        <div class="variant">
+          <div class="variant-label">ACCORDION · LONG ANSWERS</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 24px;">
+  <div class="eyebrow-navy">QUESTIONS</div>
+  <div class="rule-gold"></div>
+  <div style="font-size: 20px; font-weight: 700; margin-top: 4px;">Frequently asked.</div>
+  <div style="margin-top: 18px; display: flex; flex-direction: column;">
+    <div style="padding: 14px 0; border-bottom: 0.5px solid rgba(27,42,65,0.15); display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">What should I expect on a first visit?</div>
+      <div style="color: #C2912D; font-size: 16px; font-weight: 700;">+</div>
+    </div>
+    <div style="padding: 14px 0; border-bottom: 0.5px solid rgba(27,42,65,0.15);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">Where do I drop off my kids?</div>
+        <div style="color: #C2912D; font-size: 16px; font-weight: 700;">−</div>
+      </div>
+      <div style="font-size: 10px; color: #1B2A41; opacity: 0.78; line-height: 1.65; margin-top: 8px; max-width: 5in;">A greeter will help you check in at the kids' desk in the main lobby. Kids are placed by age group. You'll get a matching claim tag for pickup.</div>
+    </div>
+    <div style="padding: 14px 0; border-bottom: 0.5px solid rgba(27,42,65,0.15); display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">How do I get connected to a growth group?</div>
+      <div style="color: #C2912D; font-size: 16px; font-weight: 700;">+</div>
+    </div>
+    <div style="padding: 14px 0; display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">What does Soteria Church believe?</div>
+      <div style="color: #C2912D; font-size: 16px; font-weight: 700;">+</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        
+        <div class="variant">
+          <div class="variant-label">GRID · SHORT ANSWERS</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 24px; border: 0.5px solid #E5DFD1;">
+  <div class="eyebrow-navy">COMMON QUESTIONS</div>
+  <div class="rule-gold"></div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+    <div>
+      <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">What time are services?</div>
+      <div style="font-size: 10px; color: #1B2A41; opacity: 0.75; line-height: 1.6; margin-top: 6px;">Sundays at 8:30 and 10:30 AM.</div>
+    </div>
+    <div>
+      <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">How long is the service?</div>
+      <div style="font-size: 10px; color: #1B2A41; opacity: 0.75; line-height: 1.6; margin-top: 6px;">About 75 minutes, start to finish.</div>
+    </div>
+    <div>
+      <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">What should I wear?</div>
+      <div style="font-size: 10px; color: #1B2A41; opacity: 0.75; line-height: 1.6; margin-top: 6px;">Whatever's comfortable. Jeans and a t-shirt are just fine.</div>
+    </div>
+    <div>
+      <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">Is there parking?</div>
+      <div style="font-size: 10px; color: #1B2A41; opacity: 0.75; line-height: 1.6; margin-top: 6px;">Yes, plenty — with guest spots near the entrance.</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        </div>
+    </div>
+<div class="page">
+      <div class="page-header">
+        <div><div class="page-num">36</div></div>
+        <div class="page-label">BLOCKS</div>
+      </div>
+      <div class="page-title">Feature / benefit sections.</div>
+      <div class="page-sub">Three-column layout when the features are parallel and want visual symmetry. Alternating content + visual when each feature deserves its own moment. Numbered steps use a gold circle — the only place a circle shape is permitted.</div>
+      <div class="grid-2">
+        <div class="variant">
+          <div class="variant-label">3-COLUMN · PARALLEL FEATURES</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 24px; border: 0.5px solid #E5DFD1;">
+  <div style="text-align: center;">
+    <div class="eyebrow-navy">OUR RHYTHM</div>
+    <div class="rule-gold" style="margin: 10px auto;"></div>
+    <div style="font-size: 22px; font-weight: 700;">Learn. Grow. Serve.</div>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-top: 22px;">
+    <div>
+      <div style="width: 28px; height: 28px; border: 1px solid #C2912D; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <div style="font-size: 11px; font-weight: 700; color: #C2912D;">1</div>
+      </div>
+      <div style="font-size: 12px; font-weight: 700; color: #1B2A41; margin-top: 12px;">Learn.</div>
+      <div style="font-size: 10px; color: #1B2A41; opacity: 0.72; line-height: 1.6; margin-top: 6px;">Sunday preaching, verse by verse, through whole books of scripture.</div>
+    </div>
+    <div>
+      <div style="width: 28px; height: 28px; border: 1px solid #C2912D; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <div style="font-size: 11px; font-weight: 700; color: #C2912D;">2</div>
+      </div>
+      <div style="font-size: 12px; font-weight: 700; color: #1B2A41; margin-top: 12px;">Grow.</div>
+      <div style="font-size: 10px; color: #1B2A41; opacity: 0.72; line-height: 1.6; margin-top: 6px;">Weekly gatherings in homes, around scripture and shared life.</div>
+    </div>
+    <div>
+      <div style="width: 28px; height: 28px; border: 1px solid #C2912D; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <div style="font-size: 11px; font-weight: 700; color: #C2912D;">3</div>
+      </div>
+      <div style="font-size: 12px; font-weight: 700; color: #1B2A41; margin-top: 12px;">Serve.</div>
+      <div style="font-size: 10px; color: #1B2A41; opacity: 0.72; line-height: 1.6; margin-top: 6px;">Volunteer inside the church, or love neighbors outside of it.</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        
+        <div class="variant">
+          <div class="variant-label">ALTERNATING · STANDALONE FEATURES</div>
+          <div class="mockup">
+<div style="background: #F2EEE7; height: 100%; padding: 0; display: flex; flex-direction: column;">
+  <div style="padding: 22px 26px; display: grid; grid-template-columns: 2fr 3fr; gap: 22px; flex: 1; align-items: center;">
+    <div>
+      <div class="eyebrow-gold">WHAT'S INSIDE</div>
+      <div style="font-size: 22px; font-weight: 700; margin-top: 8px; line-height: 1.1;">Growth groups.</div>
+      <div style="font-size: 10px; color: #1B2A41; opacity: 0.75; line-height: 1.6; margin-top: 10px;">Weekly gatherings in homes around scripture, shared meals, and shared life.</div>
+    </div>
+    <div style="background: #1B2A41; aspect-ratio: 16/10; display: flex; align-items: flex-end; padding: 14px;">
+      <div style="color: #FFFFFF; font-size: 10px; font-weight: 700; letter-spacing: 0.14em;">A MEAL · A TEXT · A TABLE</div>
+    </div>
+  </div>
+  <div style="background: #FFFFFF; padding: 22px 26px; display: grid; grid-template-columns: 3fr 2fr; gap: 22px; flex: 1; align-items: center; border-top: 0.5px solid #E5DFD1;">
+    <div style="background: #F2EEE7; aspect-ratio: 16/10; display: flex; align-items: flex-end; padding: 14px;">
+      <div style="color: #1B2A41; font-size: 10px; font-weight: 700; letter-spacing: 0.14em;">EVERY SUNDAY · 8:30 &amp; 10:30 AM</div>
+    </div>
+    <div>
+      <div class="eyebrow-gold">SUNDAYS</div>
+      <div style="font-size: 22px; font-weight: 700; margin-top: 8px; line-height: 1.1;">Verse by verse.</div>
+      <div style="font-size: 10px; color: #1B2A41; opacity: 0.75; line-height: 1.6; margin-top: 10px;">Expositional preaching through whole books of scripture.</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        </div>
+    </div>
+<div class="page">
+      <div class="page-header">
+        <div><div class="page-num">37</div></div>
+        <div class="page-label">BLOCKS</div>
+      </div>
+      <div class="page-title">Expandable content blocks.</div>
+      <div class="page-sub">Line-divided accordion for tightly packed lists (beliefs, FAQs). Boxed accordion when each item carries more visual weight (event details, registration sections).</div>
+      <div class="grid-2">
+        <div class="variant">
+          <div class="variant-label">LINE-DIVIDED · DENSE LIST</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 24px; border: 0.5px solid #E5DFD1;">
+  <div class="eyebrow-navy">WHAT WE BELIEVE</div>
+  <div class="rule-gold"></div>
+  <div style="margin-top: 16px;">
+    <div style="padding: 14px 0; border-bottom: 0.5px solid #E5DFD1;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">On scripture</div>
+        <div style="color: #C2912D; font-size: 16px; font-weight: 700;">−</div>
+      </div>
+      <div style="font-size: 10px; color: #1B2A41; opacity: 0.78; line-height: 1.7; margin-top: 10px; max-width: 6in;">We believe the Bible is the inspired, inerrant, and authoritative word of God — sufficient for all matters of faith and practice. We read it slowly, study it carefully, and trust it completely.</div>
+    </div>
+    <div style="padding: 14px 0; border-bottom: 0.5px solid #E5DFD1; display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">On the gospel</div>
+      <div style="color: #C2912D; font-size: 16px; font-weight: 700;">+</div>
+    </div>
+    <div style="padding: 14px 0; border-bottom: 0.5px solid #E5DFD1; display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">On the church</div>
+      <div style="color: #C2912D; font-size: 16px; font-weight: 700;">+</div>
+    </div>
+    <div style="padding: 14px 0; display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">On baptism and communion</div>
+      <div style="color: #C2912D; font-size: 16px; font-weight: 700;">+</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        
+        <div class="variant">
+          <div class="variant-label">BOXED · WEIGHTY ITEMS</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 24px;">
+  <div class="eyebrow-navy">DETAILS</div>
+  <div class="rule-gold"></div>
+  <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 6px;">
+    <div style="background: #FFFFFF; border: 0.5px solid #E5DFD1; padding: 12px 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">Registration details</div>
+        <div style="color: #C2912D; font-size: 16px; font-weight: 700;">−</div>
+      </div>
+      <div style="font-size: 10px; color: #1B2A41; opacity: 0.78; line-height: 1.7; margin-top: 10px;">Register by June 1 for the early rate. Spots fill quickly for leadership cohorts.</div>
+    </div>
+    <div style="background: #FFFFFF; border: 0.5px solid #E5DFD1; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">Childcare</div>
+      <div style="color: #C2912D; font-size: 16px; font-weight: 700;">+</div>
+    </div>
+    <div style="background: #FFFFFF; border: 0.5px solid #E5DFD1; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">Dietary and accessibility</div>
+      <div style="color: #C2912D; font-size: 16px; font-weight: 700;">+</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        </div>
+    </div>
+<div class="page">
+      <div class="page-header">
+        <div><div class="page-num">38</div></div>
+        <div class="page-label">BLOCKS</div>
+      </div>
+      <div class="page-title">Site footer patterns.</div>
+      <div class="page-sub">Four-column footer for full websites where a sitemap is needed. Minimal centered footer for campaign landing pages, microsites, and single-purpose pages.</div>
+      <div class="grid-2">
+        <div class="variant">
+          <div class="variant-label">FULL · SITEMAP FOOTER</div>
+          <div class="mockup">
+<div style="background: #1B2A41; height: 100%; padding: 28px 26px; display: flex; flex-direction: column;">
+  <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 24px; flex: 1;">
+    <div>
+      <div class="wordmark" style="color: #FFFFFF;">SOTERIA</div>
+      <div style="height: 1px; background: #C2912D; width: 24px; margin: 12px 0;"></div>
+      <div style="font-size: 10px; color: #FFFFFF; opacity: 0.7; line-height: 1.6;">A gospel-centered church<br>in West Des Moines, Iowa.</div>
+    </div>
+    <div>
+      <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700;">VISIT</div>
+      <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-size: 10px; color: #FFFFFF;">Sundays</div>
+        <div style="font-size: 10px; color: #FFFFFF;">What to expect</div>
+        <div style="font-size: 10px; color: #FFFFFF;">Location</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700;">GROW</div>
+      <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-size: 10px; color: #FFFFFF;">Growth groups</div>
+        <div style="font-size: 10px; color: #FFFFFF;">Messages</div>
+        <div style="font-size: 10px; color: #FFFFFF;">Resources</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700;">CONNECT</div>
+      <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-size: 10px; color: #FFFFFF;">Contact</div>
+        <div style="font-size: 10px; color: #FFFFFF;">Give</div>
+        <div style="font-size: 10px; color: #FFFFFF;">Prayer</div>
+      </div>
+    </div>
+  </div>
+  <div style="border-top: 0.5px solid rgba(243,230,212,0.2); margin-top: 20px; padding-top: 14px; display: flex; justify-content: space-between;">
+    <div style="font-size: 9px; color: #FFFFFF; opacity: 0.5;">© 2026 Soteria Church</div>
+    <div style="font-size: 9px; color: #FFFFFF; opacity: 0.5; letter-spacing: 0.15em;">INSTAGRAM · YOUTUBE · SPOTIFY</div>
+  </div>
+</div>
+</div>
+        </div>
+        
+        <div class="variant">
+          <div class="variant-label">MINIMAL · CAMPAIGN</div>
+          <div class="mockup">
+<div style="background: #F2EEE7; height: 100%; padding: 28px 26px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+  <div class="wordmark" style="color: #1B2A41;">SOTERIA</div>
+  <div class="rule-gold" style="margin: 14px auto;"></div>
+  <div style="font-size: 10px; color: #1B2A41; opacity: 0.7; line-height: 1.6; margin-top: 4px;">A gospel-centered church in West Des Moines, Iowa.</div>
+  <div style="font-size: 9px; color: #5F5E5A; letter-spacing: 0.18em; margin-top: 20px;">INSTAGRAM · YOUTUBE · SPOTIFY</div>
+  <div style="font-size: 9px; color: #5F5E5A; margin-top: 28px;">© 2026 Soteria Church</div>
+</div>
+</div>
+        </div>
+        </div>
+    </div>
+<div class="page">
+      <div class="page-header">
+        <div><div class="page-num">39</div></div>
+        <div class="page-label">BLOCKS</div>
+      </div>
+      <div class="page-title">Giving levels and one-click giving.</div>
+      <div class="page-sub">Tiered giving uses the same card pattern as product pricing — one highlighted tier, two supporting tiers. One-click giving uses amount chips on a navy ground for direct, decisive action.</div>
+      <div class="grid-2">
+        <div class="variant">
+          <div class="variant-label">TIERED · RECURRING PARTNER PROGRAM</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 24px;">
+  <div style="text-align: center;">
+    <div class="eyebrow-navy">PARTNER TIERS</div>
+    <div class="rule-gold" style="margin: 10px auto;"></div>
+    <div style="font-size: 20px; font-weight: 700;">Choose your rhythm.</div>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 20px;">
+    <div style="background: #FFFFFF; padding: 16px; border: 0.5px solid #E5DFD1;">
+      <div class="eyebrow-gold">SEED</div>
+      <div style="font-size: 24px; font-weight: 700; margin-top: 8px;">$25<span style="font-size: 10px; color: #5F5E5A;"> /mo</span></div>
+      <div style="height: 0.5px; background: #E5DFD1; margin: 12px 0;"></div>
+      <div style="font-size: 9px; color: #1B2A41; line-height: 1.8;">· Monthly giving<br>· Partner updates<br>· Prayer list access</div>
+      <div style="margin-top: 16px;"><span style="display: block; background: transparent; color: #1B2A41; text-align: center; padding: 8px; font-size: 8px; font-weight: 700; letter-spacing: 0.18em; border: 1px solid #1B2A41;">CHOOSE SEED</span></div>
+    </div>
+    <div style="background: #FFFFFF; padding: 16px; border: 2px solid #C2912D; position: relative;">
+      <div style="position: absolute; top: -8px; left: 16px; background: #C2912D; color: #1B2A41; font-size: 7px; font-weight: 700; letter-spacing: 0.18em; padding: 3px 8px;">MOST COMMON</div>
+      <div class="eyebrow-gold">ROOTED</div>
+      <div style="font-size: 24px; font-weight: 700; margin-top: 8px;">$100<span style="font-size: 10px; color: #5F5E5A;"> /mo</span></div>
+      <div style="height: 0.5px; background: #E5DFD1; margin: 12px 0;"></div>
+      <div style="font-size: 9px; color: #1B2A41; line-height: 1.8;">· Everything in Seed<br>· Quarterly dinner<br>· Early event access</div>
+      <div style="margin-top: 16px;"><span style="display: block; background: #1B2A41; color: #FFFFFF; text-align: center; padding: 9px; font-size: 8px; font-weight: 700; letter-spacing: 0.18em;">CHOOSE ROOTED</span></div>
+    </div>
+    <div style="background: #FFFFFF; padding: 16px; border: 0.5px solid #E5DFD1;">
+      <div class="eyebrow-gold">HARVEST</div>
+      <div style="font-size: 24px; font-weight: 700; margin-top: 8px;">$250<span style="font-size: 10px; color: #5F5E5A;"> /mo</span></div>
+      <div style="height: 0.5px; background: #E5DFD1; margin: 12px 0;"></div>
+      <div style="font-size: 9px; color: #1B2A41; line-height: 1.8;">· Everything in Rooted<br>· Annual retreat<br>· Elder correspondence</div>
+      <div style="margin-top: 16px;"><span style="display: block; background: transparent; color: #1B2A41; text-align: center; padding: 8px; font-size: 8px; font-weight: 700; letter-spacing: 0.18em; border: 1px solid #1B2A41;">CHOOSE HARVEST</span></div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        
+        <div class="variant">
+          <div class="variant-label">ONE-CLICK · SIMPLE GIVING</div>
+          <div class="mockup">
+<div style="background: #1B2A41; height: 100%; padding: 26px; display: flex; flex-direction: column; justify-content: center;">
+  <div class="eyebrow-gold">A SIMPLE WAY TO GIVE</div>
+  <div style="height: 1px; background: #C2912D; width: 24px; margin: 12px 0;"></div>
+  <div style="font-size: 24px; font-weight: 700; color: #FFFFFF; line-height: 1.1; margin-top: 4px;">Every gift funds the mission.</div>
+  <div style="display: flex; gap: 10px; margin-top: 22px;">
+    <div style="padding: 14px 18px; border: 0.5px solid #F2EEE7; color: #FFFFFF; font-size: 11px; font-weight: 700;">$25</div>
+    <div style="padding: 14px 18px; background: #F2EEE7; color: #1B2A41; font-size: 11px; font-weight: 700;">$50</div>
+    <div style="padding: 14px 18px; border: 0.5px solid #F2EEE7; color: #FFFFFF; font-size: 11px; font-weight: 700;">$100</div>
+    <div style="padding: 14px 18px; border: 0.5px solid #F2EEE7; color: #FFFFFF; font-size: 11px; font-weight: 700;">$250</div>
+    <div style="padding: 14px 18px; border: 0.5px solid #F2EEE7; color: #FFFFFF; font-size: 11px; font-weight: 700;">Custom</div>
+  </div>
+  <div style="font-size: 9px; color: #FFFFFF; opacity: 0.55; margin-top: 14px;">One-time or recurring. Cancel anytime.</div>
+</div>
+</div>
+        </div>
+        </div>
+    </div>
+<div class="page">
+      <div class="page-header">
+        <div><div class="page-num">40</div></div>
+        <div class="page-label">BLOCKS</div>
+      </div>
+      <div class="page-title">Featured content and archive views.</div>
+      <div class="page-sub">Grid view for recent or featured items where visual personality matters (sermons, series, events). List view for deep archives where scanning and dates do the work.</div>
+      <div class="grid-2">
+        <div class="variant">
+          <div class="variant-label">GRID · RECENT / FEATURED</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 24px; border: 0.5px solid #E5DFD1;">
+  <div class="eyebrow-navy">RECENT MESSAGES</div>
+  <div class="rule-gold"></div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 16px;">
+    <div>
+      <div style="aspect-ratio: 16/10; background: #1B2A41; display: flex; align-items: flex-end; padding: 10px;">
+        <div style="color: #FFFFFF; font-size: 10px; font-weight: 700; line-height: 1.1;">The<br>Mustard Seed</div>
+      </div>
+      <div style="font-size: 7px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700; margin-top: 8px;">APR 13 · PASTOR MIKE</div>
+      <div style="font-size: 10px; font-weight: 700; color: #1B2A41; margin-top: 2px;">The Mustard Seed</div>
+      <div style="font-size: 9px; color: #5F5E5A; margin-top: 1px;">Matthew 13:31–32</div>
+    </div>
+    <div>
+      <div style="aspect-ratio: 16/10; background: #F2EEE7; border: 0.5px solid #E5DFD1; display: flex; align-items: flex-end; padding: 10px;">
+        <div style="color: #1B2A41; font-size: 10px; font-weight: 700; line-height: 1.1;">The Sower<br>and the Seed</div>
+      </div>
+      <div style="font-size: 7px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700; margin-top: 8px;">APR 6 · PASTOR MIKE</div>
+      <div style="font-size: 10px; font-weight: 700; color: #1B2A41; margin-top: 2px;">The Sower and the Seed</div>
+      <div style="font-size: 9px; color: #5F5E5A; margin-top: 1px;">Matthew 13:1–23</div>
+    </div>
+    <div>
+      <div style="aspect-ratio: 16/10; background: #1B2A41; display: flex; align-items: flex-end; padding: 10px;">
+        <div style="color: #FFFFFF; font-size: 10px; font-weight: 700; line-height: 1.1;">Two Debtors</div>
+      </div>
+      <div style="font-size: 7px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700; margin-top: 8px;">MAR 30 · PASTOR MIKE</div>
+      <div style="font-size: 10px; font-weight: 700; color: #1B2A41; margin-top: 2px;">Two Debtors</div>
+      <div style="font-size: 9px; color: #5F5E5A; margin-top: 1px;">Luke 7:36–50</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        
+        <div class="variant">
+          <div class="variant-label">LIST · ARCHIVE VIEW</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 24px;">
+  <div class="eyebrow-navy">ARCHIVE · LATEST FIRST</div>
+  <div class="rule-gold"></div>
+  <div style="margin-top: 14px;">
+    <div style="padding: 12px 0; border-bottom: 0.5px solid rgba(27,42,65,0.15); display: flex; justify-content: space-between; align-items: baseline;">
+      <div style="flex: 1;">
+        <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">The Mustard Seed</div>
+        <div style="font-size: 9px; color: #5F5E5A; margin-top: 1px;">Matthew 13:31–32 · Pastor Mike</div>
+      </div>
+      <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700;">APR 13</div>
+    </div>
+    <div style="padding: 12px 0; border-bottom: 0.5px solid rgba(27,42,65,0.15); display: flex; justify-content: space-between; align-items: baseline;">
+      <div style="flex: 1;">
+        <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">The Sower and the Seed</div>
+        <div style="font-size: 9px; color: #5F5E5A; margin-top: 1px;">Matthew 13:1–23 · Pastor Mike</div>
+      </div>
+      <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700;">APR 6</div>
+    </div>
+    <div style="padding: 12px 0; border-bottom: 0.5px solid rgba(27,42,65,0.15); display: flex; justify-content: space-between; align-items: baseline;">
+      <div style="flex: 1;">
+        <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">Two Debtors</div>
+        <div style="font-size: 9px; color: #5F5E5A; margin-top: 1px;">Luke 7:36–50 · Pastor Mike</div>
+      </div>
+      <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700;">MAR 30</div>
+    </div>
+    <div style="padding: 12px 0; display: flex; justify-content: space-between; align-items: baseline;">
+      <div style="flex: 1;">
+        <div style="font-size: 11px; font-weight: 700; color: #1B2A41;">The Lost Sheep</div>
+        <div style="font-size: 9px; color: #5F5E5A; margin-top: 1px;">Luke 15:1–7 · Pastor Jonah</div>
+      </div>
+      <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700;">MAR 23</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        </div>
+    </div>
+<div class="page">
+      <div class="page-header">
+        <div><div class="page-num">41</div></div>
+        <div class="page-label">BLOCKS</div>
+      </div>
+      <div class="page-title">Testimonials and stories from the church.</div>
+      <div class="page-sub">Single large testimonial for emotional punch on a landing page. Grid of three for breadth across a story page. The gold quotation mark is the only decorative element permitted.</div>
+      <div class="grid-2">
+        <div class="variant">
+          <div class="variant-label">SINGLE HERO TESTIMONIAL</div>
+          <div class="mockup">
+<div style="background: #F2EEE7; height: 100%; padding: 30px 26px; display: flex; flex-direction: column; justify-content: center;">
+  <div style="font-size: 56px; color: #C2912D; line-height: 0.5; font-weight: 700;">"</div>
+  <div style="font-size: 22px; font-weight: 700; line-height: 1.3; margin-top: 14px; max-width: 5in; letter-spacing: -0.01em;">For the first time in my life, I felt like I could ask real questions and get real answers — from people who actually cared.</div>
+  <div class="rule-gold" style="margin-top: 18px;"></div>
+  <div style="font-size: 10px; color: #1B2A41; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 6px;">SARAH · JOINED 2023</div>
+</div>
+</div>
+        </div>
+        
+        <div class="variant">
+          <div class="variant-label">GRID · THREE VOICES</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 24px; border: 0.5px solid #E5DFD1;">
+  <div style="text-align: center;">
+    <div class="eyebrow-navy">FROM THE CHURCH</div>
+    <div class="rule-gold" style="margin: 10px auto;"></div>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 22px;">
+    <div style="background: #F2EEE7; padding: 16px;">
+      <div style="font-size: 24px; color: #C2912D; line-height: 0.5; font-weight: 700;">"</div>
+      <div style="font-size: 10px; color: #1B2A41; line-height: 1.55; margin-top: 10px;">I'd been away from church for ten years. Soteria Church made it easy to come back without pretending I had it figured out.</div>
+      <div style="font-size: 8px; color: #5F5E5A; letter-spacing: 0.14em; font-weight: 700; margin-top: 12px;">JAMES · 2022</div>
+    </div>
+    <div style="background: #F2EEE7; padding: 16px;">
+      <div style="font-size: 24px; color: #C2912D; line-height: 0.5; font-weight: 700;">"</div>
+      <div style="font-size: 10px; color: #1B2A41; line-height: 1.55; margin-top: 10px;">Our kids actually ask to come on Sundays. That alone tells me something is right here.</div>
+      <div style="font-size: 8px; color: #5F5E5A; letter-spacing: 0.14em; font-weight: 700; margin-top: 12px;">THE PATELS · 2021</div>
+    </div>
+    <div style="background: #F2EEE7; padding: 16px;">
+      <div style="font-size: 24px; color: #C2912D; line-height: 0.5; font-weight: 700;">"</div>
+      <div style="font-size: 10px; color: #1B2A41; line-height: 1.55; margin-top: 10px;">My growth group has become my closest friendships — people I'd have never met otherwise.</div>
+      <div style="font-size: 8px; color: #5F5E5A; letter-spacing: 0.14em; font-weight: 700; margin-top: 12px;">MEGAN · 2020</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        </div>
+    </div>
+<div class="page">
+      <div class="page-header">
+        <div><div class="page-num">42</div></div>
+        <div class="page-label">BLOCKS</div>
+      </div>
+      <div class="page-title">Numbers and milestones.</div>
+      <div class="page-sub">Row of four for full-width impact moments. Narrative pair for context-heavy annual reports or about pages. Numbers are always Inter 700, display size, with a tight letter-spacing to feel substantial.</div>
+      <div class="grid-2">
+        <div class="variant">
+          <div class="variant-label">ROW · IMPACT MOMENT</div>
+          <div class="mockup">
+<div style="background: #1B2A41; height: 100%; padding: 30px 26px; display: flex; flex-direction: column; justify-content: center;">
+  <div style="text-align: center;">
+    <div class="eyebrow-gold">THE CHURCH, BY THE NUMBERS</div>
+    <div style="height: 1px; background: #C2912D; width: 24px; margin: 12px auto;"></div>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; margin-top: 24px; text-align: center;">
+    <div>
+      <div style="font-size: 40px; font-weight: 700; color: #FFFFFF; line-height: 1; letter-spacing: -0.02em;">1,200</div>
+      <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700; margin-top: 8px;">SUNDAY ATTENDANCE</div>
+    </div>
+    <div>
+      <div style="font-size: 40px; font-weight: 700; color: #FFFFFF; line-height: 1; letter-spacing: -0.02em;">48</div>
+      <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700; margin-top: 8px;">GROWTH GROUPS</div>
+    </div>
+    <div>
+      <div style="font-size: 40px; font-weight: 700; color: #FFFFFF; line-height: 1; letter-spacing: -0.02em;">87</div>
+      <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700; margin-top: 8px;">BAPTIZED IN 2025</div>
+    </div>
+    <div>
+      <div style="font-size: 40px; font-weight: 700; color: #FFFFFF; line-height: 1; letter-spacing: -0.02em;">14</div>
+      <div style="font-size: 8px; color: #C2912D; letter-spacing: 0.18em; font-weight: 700; margin-top: 8px;">YEARS IN DSM</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        
+        <div class="variant">
+          <div class="variant-label">NARRATIVE · WITH CONTEXT</div>
+          <div class="mockup">
+<div style="background: #F2EEE7; height: 100%; padding: 30px 26px; display: flex; flex-direction: column; justify-content: center;">
+  <div class="eyebrow-navy">A LITTLE HISTORY</div>
+  <div class="rule-gold"></div>
+  <div style="font-size: 22px; font-weight: 700; margin-top: 4px; line-height: 1.1; max-width: 5in;">Fourteen years, and still early.</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 22px; max-width: 6in;">
+    <div>
+      <div style="font-size: 32px; font-weight: 700; color: #1B2A41; line-height: 1;">87<span style="font-size: 14px; color: #C2912D;"> ↑</span></div>
+      <div style="font-size: 9px; color: #5F5E5A; letter-spacing: 0.14em; font-weight: 700; margin-top: 4px;">BAPTIZED · 2025</div>
+      <div style="font-size: 9px; color: #1B2A41; opacity: 0.7; line-height: 1.55; margin-top: 4px;">Up 24% from 2024.</div>
+    </div>
+    <div>
+      <div style="font-size: 32px; font-weight: 700; color: #1B2A41; line-height: 1;">48</div>
+      <div style="font-size: 9px; color: #5F5E5A; letter-spacing: 0.14em; font-weight: 700; margin-top: 4px;">GROWTH GROUPS</div>
+      <div style="font-size: 9px; color: #1B2A41; opacity: 0.7; line-height: 1.55; margin-top: 4px;">Across Des Moines metro.</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        </div>
+    </div>
+<div class="page">
+      <div class="page-header">
+        <div><div class="page-num">43</div></div>
+        <div class="page-label">BLOCKS</div>
+      </div>
+      <div class="page-title">Product browsing and product detail.</div>
+      <div class="page-sub">Grid view for browsing. Detail view for a single product — image left, copy right. Swatches and size selectors use the same button treatment as the rest of the system.</div>
+      <div class="grid-2">
+        <div class="variant">
+          <div class="variant-label">GRID · PRODUCT BROWSING</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 24px; border: 0.5px solid #E5DFD1;">
+  <div class="eyebrow-navy">SOTERIA SHOP</div>
+  <div class="rule-gold"></div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 16px;">
+    <div>
+      <div style="aspect-ratio: 1; background: #F2EEE7; border: 0.5px solid #E5DFD1; display: flex; align-items: center; justify-content: center;">
+        <div style="width: 60%; height: 70%; background: #1B2A41; border-radius: 3px;"></div>
+      </div>
+      <div style="font-size: 10px; font-weight: 700; color: #1B2A41; margin-top: 8px;">Saved &amp; Sent tee</div>
+      <div style="font-size: 10px; color: #C2912D; font-weight: 700; margin-top: 2px;">$24</div>
+    </div>
+    <div>
+      <div style="aspect-ratio: 1; background: #1B2A41; display: flex; align-items: center; justify-content: center;">
+        <div style="color: #FFFFFF; font-size: 10px; font-weight: 700; letter-spacing: 0.2em;">SOTERIA</div>
+      </div>
+      <div style="font-size: 10px; font-weight: 700; color: #1B2A41; margin-top: 8px;">Wordmark hoodie</div>
+      <div style="font-size: 10px; color: #C2912D; font-weight: 700; margin-top: 2px;">$48</div>
+    </div>
+    <div>
+      <div style="aspect-ratio: 1; background: #F2EEE7; border: 0.5px solid #E5DFD1; display: flex; align-items: center; justify-content: center;">
+        <div style="width: 70%; height: 70%; border: 1px solid #1B2A41; border-radius: 50%;"></div>
+      </div>
+      <div style="font-size: 10px; font-weight: 700; color: #1B2A41; margin-top: 8px;">Six Circles pin</div>
+      <div style="font-size: 10px; color: #C2912D; font-weight: 700; margin-top: 2px;">$8</div>
+    </div>
+  </div>
+</div>
+</div>
+        </div>
+        
+        <div class="variant">
+          <div class="variant-label">DETAIL · SINGLE PRODUCT</div>
+          <div class="mockup">
+<div style="background: #F2EEE7; height: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 0;">
+  <div style="background: #1B2A41; display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div style="color: #FFFFFF; font-size: 14px; font-weight: 700; letter-spacing: 0.18em; text-align: center; line-height: 1.2;">SAVED.<br>SENT.</div>
+  </div>
+  <div style="padding: 22px 20px; display: flex; flex-direction: column; justify-content: center;">
+    <div class="eyebrow-gold">APPAREL</div>
+    <div style="font-size: 20px; font-weight: 700; margin-top: 8px; line-height: 1.1;">Saved &amp; Sent tee.</div>
+    <div style="font-size: 10px; color: #1B2A41; opacity: 0.75; line-height: 1.55; margin-top: 10px;">Heavyweight cotton. Navy on off-white. Proceeds fund local outreach.</div>
+    <div style="font-size: 18px; font-weight: 700; color: #1B2A41; margin-top: 16px;">$24</div>
+    <div style="display: flex; gap: 6px; margin-top: 10px;">
+      <div style="padding: 6px 10px; border: 1px solid #1B2A41; font-size: 9px; font-weight: 700; color: #1B2A41;">S</div>
+      <div style="padding: 6px 10px; background: #1B2A41; font-size: 9px; font-weight: 700; color: #FFFFFF;">M</div>
+      <div style="padding: 6px 10px; border: 1px solid #1B2A41; font-size: 9px; font-weight: 700; color: #1B2A41;">L</div>
+      <div style="padding: 6px 10px; border: 1px solid #1B2A41; font-size: 9px; font-weight: 700; color: #1B2A41;">XL</div>
+    </div>
+    <div style="margin-top: 16px;"><span class="btn-navy">Add to Cart</span></div>
+  </div>
+</div>
+</div>
+        </div>
+        </div>
+    </div>
+
+
+<div class="page">
+      <div class="page-header">
+        <div><div class="page-num">44</div></div>
+        <div class="page-label">BLOCKS</div>
+      </div>
+      <div class="page-title">Recurring patterns</div>
+      <div class="page-sub">Three reusable behaviors lifted from locked sections. Reach for these before inventing new ones — every place they appear should look and move the same way. The full prose lives in the markdown style guide; these mockups show the visual at rest, mid-motion, and complete.</div>
+      <div class="grid-3">
+
+        <div class="variant">
+          <div class="variant-label">HOVER-OVERLAY REVEAL · POSTER CARD</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 22px; display: flex; flex-direction: column; gap: 14px; justify-content: center;">
+  <div style="font-size: 9px; color: #5F5E5A; line-height: 1.6;">Card swaps to an info panel on hover. Surface clip-path sweep 0–400ms; content fade-in delayed 200ms so the panel arrives before the text. Same translucent treatment as the nav and playbar.</div>
+  <div style="display: flex; gap: 10px;">
+    <div style="flex: 1; aspect-ratio: 4/5; background: linear-gradient(135deg, #1B2A41 0%, #243a5a 100%); border-radius: 12px; position: relative; overflow: hidden;">
+      <div style="position: absolute; bottom: 8px; left: 10px; color: rgba(255,255,255,0.85); font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase;">Rest</div>
+    </div>
+    <div style="flex: 1; aspect-ratio: 4/5; background: linear-gradient(135deg, #1B2A41 0%, #243a5a 100%); border-radius: 12px; position: relative; overflow: hidden;">
+      <div style="position: absolute; inset: 0 50% 0 0; background: rgba(27,42,65,0.55); backdrop-filter: blur(8px); border-right: 1px solid rgba(255,255,255,0.1);"></div>
+      <div style="position: absolute; bottom: 8px; left: 10px; color: rgba(255,255,255,0.85); font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase;">Sweeping</div>
+    </div>
+    <div style="flex: 1; aspect-ratio: 4/5; background: linear-gradient(135deg, #1B2A41 0%, #243a5a 100%); border-radius: 12px; position: relative; overflow: hidden;">
+      <div style="position: absolute; inset: 0; background: rgba(27,42,65,0.55); backdrop-filter: blur(8px); padding: 10px; display: flex; flex-direction: column; gap: 4px;">
+        <div style="font-size: 7px; color: #C2912D; letter-spacing: 0.18em; text-transform: uppercase;">Series</div>
+        <div style="font-size: 10px; color: #FFFFFF; font-weight: 700; line-height: 1.15;">Mustard<br>Seed</div>
+        <div style="flex: 1;"></div>
+        <div style="font-size: 7px; color: rgba(255,255,255,0.7); line-height: 1.5;">5 messages · Matthew 13</div>
+      </div>
+    </div>
+  </div>
+  <div style="display: flex; gap: 10px; font-size: 7px; color: #5F5E5A; letter-spacing: 0.18em;">
+    <div style="flex: 1; text-align: center;">0ms</div>
+    <div style="flex: 1; text-align: center;">200ms</div>
+    <div style="flex: 1; text-align: center;">400ms</div>
+  </div>
+</div>
+</div>
+        </div>
+
+        <div class="variant">
+          <div class="variant-label">ADAPTIVE LINE-CLAMP</div>
+          <div class="mockup">
+<div style="background: #FFFFFF; height: 100%; padding: 22px; display: flex; flex-direction: column; gap: 12px; justify-content: center;">
+  <div style="font-size: 9px; color: #5F5E5A; line-height: 1.6;">When a description sits below a multi-line title in a fixed-height container, the description's <code style="font-family: inherit; font-size: 10px;">line-clamp</code> adapts to the title's actual rendered line count so the total height stays even.</div>
+  <div style="display: flex; gap: 10px;">
+    <div style="flex: 1; padding: 10px; background: #F2EEE7; border-radius: 4px; aspect-ratio: 1/1; display: flex; flex-direction: column;">
+      <div style="font-size: 11px; font-weight: 700; line-height: 1.15; color: #1B2A41;">One-line title.</div>
+      <div style="font-size: 8px; color: #1B2A41; opacity: 0.78; line-height: 1.55; margin-top: 6px;">Seven lines of description copy fill the rest of the card. The clamp adapts so the body still reaches the bottom of the surface, even though the title is short. No wasted whitespace; no overflow either.</div>
+    </div>
+    <div style="flex: 1; padding: 10px; background: #F2EEE7; border-radius: 4px; aspect-ratio: 1/1; display: flex; flex-direction: column;">
+      <div style="font-size: 11px; font-weight: 700; line-height: 1.15; color: #1B2A41;">A four-line<br>title forces<br>the description<br>shorter.</div>
+      <div style="font-size: 8px; color: #1B2A41; opacity: 0.78; line-height: 1.55; margin-top: 6px;">Four lines, no more. Same total surface height as the card on the left.</div>
+    </div>
+  </div>
+  <div style="font-size: 8px; color: #5F5E5A; letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.5;">Title 1 → desc 7 · Title 4 → desc 4 · Title 5+ → desc 3 (floor)</div>
+</div>
+</div>
+        </div>
+
+        <div class="variant">
+          <div class="variant-label">CUSTOM MUX PLAYER CHROME</div>
+          <div class="mockup">
+<div style="background: #1B2A41; height: 100%; padding: 18px; display: flex; flex-direction: column; gap: 12px; justify-content: center;">
+  <div style="font-size: 9px; color: rgba(255,255,255,0.65); line-height: 1.6;">Sermon player chrome lives inside a translucent navy pill — same surface as the nav and hover-overlay reveal. Idle controls fade out; cursor wakes them. 24fps source, branded scrub.</div>
+  <div style="aspect-ratio: 16/9; background: linear-gradient(135deg, #0a0f1a 0%, #1B2A41 100%); border-radius: 8px; position: relative; overflow: hidden;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.85); display: flex; align-items: center; justify-content: center; color: #1B2A41; font-size: 12px;">▶</div>
+    <div style="position: absolute; bottom: 10px; left: 10px; right: 10px; padding: 7px 10px; background: rgba(27,42,65,0.55); backdrop-filter: blur(12px); border-radius: 9999px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px;">
+      <div style="color: #FFFFFF; font-size: 9px;">▶</div>
+      <div style="color: #FFFFFF; font-size: 9px; opacity: 0.7;">⏪</div>
+      <div style="flex: 1; height: 2px; background: rgba(255,255,255,0.2); border-radius: 9999px; position: relative;">
+        <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 38%; background: #C2912D; border-radius: 9999px;"></div>
+        <div style="position: absolute; left: 38%; top: 50%; transform: translate(-50%, -50%); width: 8px; height: 8px; background: #C2912D; border-radius: 50%;"></div>
+      </div>
+      <div style="color: rgba(255,255,255,0.7); font-size: 8px;">12:34 / 32:50</div>
+      <div style="color: #FFFFFF; font-size: 9px; opacity: 0.7;">CC</div>
+      <div style="color: #FFFFFF; font-size: 9px; opacity: 0.7;">⤢</div>
+    </div>
+  </div>
+  <div style="font-size: 8px; color: rgba(255,255,255,0.55); letter-spacing: 0.14em; text-transform: uppercase;">Pill ground · gold scrub · cursor-wake controls</div>
+</div>
+</div>
+        </div>
+
+        </div>
+    </div>
+
+<div class="section-footer">
+  <span class="section-footer-eyebrow">END OF PART 02 &middot; BLOCKS</span>
+  <a href="#contents" class="section-footer-link">Back to contents <span class="arrow">&rarr;</span></a>
+</div>
+
+</body>
+</html>
