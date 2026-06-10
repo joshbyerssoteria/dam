@@ -6,10 +6,12 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
-  closestCorners,
+  pointerWithin,
+  rectIntersection,
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -61,6 +63,15 @@ import { Label } from "@/components/ui/label";
 
 const UNSECTIONED = "none";
 const SECTION_PREFIX = "sec:";
+
+// closestCorners misbehaves with adjacent grid containers — the container a
+// drag started in keeps winning, so items can never leave it. Prefer
+// whatever is directly under the pointer; fall back to rect overlap.
+const boardCollision: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) return pointerCollisions;
+  return rectIntersection(args);
+};
 
 export interface BoardFile {
   kitAssetId: string;
@@ -467,7 +478,7 @@ export function KitFileBoard({
     <div className="space-y-8">
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={boardCollision}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={(event) => void handleDragEnd(event)}

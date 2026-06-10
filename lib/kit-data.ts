@@ -10,6 +10,28 @@ import type {
   PaletteRow,
 } from "@/lib/database.types";
 
+/** Shape the hero component needs for the fonts list. */
+export function heroFontsFrom(data: KitContentData): Array<{
+  id: string;
+  family: string;
+  source: FontRow["source"];
+  externalRef: string | null;
+  licenseNote: string | null;
+  files: Array<{ fileId: string; filename: string }>;
+}> {
+  return data.fonts.map(({ font, files }) => ({
+    id: font.id,
+    family: font.family,
+    source: font.source,
+    externalRef: font.external_ref,
+    licenseNote: font.license_note,
+    files: files.map(({ file }) => ({
+      fileId: file.id,
+      filename: file.original_filename,
+    })),
+  }));
+}
+
 export interface KitContentData {
   kit: KitRow;
   sourceFile: FileRow | null;

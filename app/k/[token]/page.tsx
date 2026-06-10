@@ -4,14 +4,14 @@ import { notFound } from "next/navigation";
 import { Download } from "lucide-react";
 import { tryCreateAdminClient } from "@/lib/supabase/admin";
 import { NotConfigured } from "@/components/not-configured";
-import { loadKitContent } from "@/lib/kit-data";
+import { heroFontsFrom, loadKitContent } from "@/lib/kit-data";
 import {
   isShareUnlocked,
   resolveShare,
   shareUnlockCookieName,
 } from "@/lib/share-access";
-import { KitContent } from "@/components/kit-content";
-import { KitSourceCard } from "@/components/kit-source-card";
+import { KitExtraPalettes, KitFilesSection } from "@/components/kit-content";
+import { KitHero } from "@/components/kit-hero";
 import { SharePasswordForm } from "@/components/share-password-form";
 import { Button } from "@/components/ui/button";
 
@@ -39,7 +39,19 @@ export default async function SharedKitPage({
   }
 
   const data = await loadKitContent(admin, resolved.kit);
-  const hasFiles = data.files.length > 0 || data.fonts.some((f) => f.files.length > 0);
+  const hasFiles =
+    data.files.length > 0 ||
+    data.sourceFile !== null ||
+    data.fonts.some((f) => f.files.length > 0);
+  const srcPrefix = `/api/share/${token}/file`;
+
+  const mainPalette = data.palettes[0]
+    ? {
+        id: data.palettes[0].palette.id,
+        name: data.palettes[0].palette.name,
+        colors: data.palettes[0].colors,
+      }
+    : null;
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
@@ -67,23 +79,19 @@ export default async function SharedKitPage({
         ) : null}
       </header>
 
-      {data.sourceFile ? (
-        <div className="mb-10">
-          <KitSourceCard
-            kitId={data.kit.id}
-            sourceFile={data.sourceFile}
-            coverImageId={data.kit.cover_image_id}
-            srcPrefix={`/api/share/${token}/file`}
-            shareToken={token}
-          />
-        </div>
-      ) : null}
-
-      <KitContent
-        data={data}
-        srcPrefix={`/api/share/${token}/file`}
-        shareToken={token}
-      />
+      <div className="space-y-12">
+        <KitHero
+          kitId={data.kit.id}
+          sourceFile={data.sourceFile}
+          coverImageId={data.kit.cover_image_id}
+          palette={mainPalette}
+          fonts={heroFontsFrom(data)}
+          srcPrefix={srcPrefix}
+          shareToken={token}
+        />
+        <KitFilesSection data={data} srcPrefix={srcPrefix} shareToken={token} />
+        <KitExtraPalettes data={data} />
+      </div>
     </div>
   );
 }

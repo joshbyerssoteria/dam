@@ -14,6 +14,42 @@ export interface PaletteCardColor {
   role: string | null;
 }
 
+/** Click-to-copy swatch row — shared by palette cards and the kit hero. */
+export function ColorSwatchRow({ colors }: { colors: PaletteCardColor[] }) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  async function copyHex(color: PaletteCardColor) {
+    await navigator.clipboard.writeText(color.hex);
+    setCopiedId(color.id);
+    setTimeout(() => setCopiedId(null), 1200);
+  }
+
+  return (
+    <div className="flex flex-wrap gap-3">
+      {colors.map((color) => (
+        <button
+          key={color.id}
+          type="button"
+          onClick={() => void copyHex(color)}
+          title={`Copy ${color.hex}`}
+          className="group w-24 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+        >
+          <span
+            className="block h-16 w-full rounded-md border border-black/5 transition-transform group-hover:scale-[1.03]"
+            style={{ backgroundColor: color.hex }}
+          />
+          <span className="mt-1.5 block truncate text-xs font-medium">
+            {color.name ?? color.role ?? " "}
+          </span>
+          <span className="block font-mono text-xs text-muted-foreground">
+            {copiedId === color.id ? "Copied" : color.hex}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** Live palette swatches with click-to-copy hex (JetBrains Mono per spec). */
 export function PaletteCard({
   paletteId,
@@ -29,13 +65,6 @@ export function PaletteCard({
   canEdit: boolean;
 }) {
   const router = useRouter();
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  async function copyHex(color: PaletteCardColor) {
-    await navigator.clipboard.writeText(color.hex);
-    setCopiedId(color.id);
-    setTimeout(() => setCopiedId(null), 1200);
-  }
 
   async function handleDelete() {
     const result = await deletePalette(paletteId);
@@ -69,27 +98,8 @@ export function PaletteCard({
         ) : null}
       </div>
 
-      <div className="flex flex-wrap gap-3 p-5">
-        {colors.map((color) => (
-          <button
-            key={color.id}
-            type="button"
-            onClick={() => void copyHex(color)}
-            title={`Copy ${color.hex}`}
-            className="group w-24 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            <span
-              className="block h-16 w-full rounded-md border border-black/5 transition-transform group-hover:scale-[1.03]"
-              style={{ backgroundColor: color.hex }}
-            />
-            <span className="mt-1.5 block truncate text-xs font-medium">
-              {color.name ?? color.role ?? " "}
-            </span>
-            <span className="block font-mono text-xs text-muted-foreground">
-              {copiedId === color.id ? "Copied" : color.hex}
-            </span>
-          </button>
-        ))}
+      <div className="p-5">
+        <ColorSwatchRow colors={colors} />
       </div>
     </div>
   );
