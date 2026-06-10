@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { RevokeButton } from "@/components/revoke-button";
 import { Badge } from "@/components/ui/badge";
 
-export const metadata: Metadata = { title: "Upload tokens" };
+export const metadata: Metadata = { title: "Upload links" };
 
 export default async function UploadTokensPage() {
   const session = await getSessionProfile();
@@ -28,7 +28,7 @@ export default async function UploadTokensPage() {
   return (
     <div>
       <PageHeader
-        title="Upload tokens"
+        title="Upload links"
         description="Tokenized links volunteer photographers use to deliver event coverage."
       >
         <NewUploadTokenDialog folders={folderList} />

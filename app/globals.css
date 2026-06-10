@@ -32,30 +32,36 @@
 }
 
 /*
- * Soteria DAM — restrained neutral palette.
- * Swiss influence: the assets are the color; the chrome stays quiet.
+ * Soteria brand system (branding/brand-guidelines.md):
+ * white dominant ground, navy structural, off-white warmth, gold accents.
+ * Navy #1B2A41 · Gold #C2912D · Off-white #F2EEE7 · Muted #5F5E5A ·
+ * Hairline #E5DFD1 · Error #B43C3C
  */
 :root {
   --radius: 0.5rem;
-  --background: oklch(0.99 0 0);
-  --foreground: oklch(0.18 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0 0);
-  --primary: oklch(0.2 0 0);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 0 0);
-  --secondary-foreground: oklch(0.2 0 0);
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.5 0 0);
-  --accent: oklch(0.95 0 0);
-  --accent-foreground: oklch(0.2 0 0);
-  --destructive: oklch(0.55 0.2 25);
-  --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.92 0 0);
-  --input: oklch(0.92 0 0);
-  --ring: oklch(0.6 0 0);
+  --navy: #1b2a41;
+  --gold: #c2912d;
+  --offwhite: #f2eee7;
+
+  --background: #ffffff;
+  --foreground: var(--navy);
+  --card: #ffffff;
+  --card-foreground: var(--navy);
+  --popover: #ffffff;
+  --popover-foreground: var(--navy);
+  --primary: var(--navy);
+  --primary-foreground: #ffffff;
+  --secondary: var(--offwhite);
+  --secondary-foreground: var(--navy);
+  --muted: #f7f4ee;
+  --muted-foreground: #5f5e5a;
+  --accent: var(--offwhite);
+  --accent-foreground: var(--navy);
+  --destructive: #b43c3c;
+  --destructive-foreground: #ffffff;
+  --border: #e5dfd1;
+  --input: #e5dfd1;
+  --ring: var(--gold);
 }
 
 .dark {

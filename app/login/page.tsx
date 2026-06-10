@@ -42,11 +42,14 @@ function LoginForm() {
     <div className="flex min-h-svh items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <div className="mb-10">
-          <h1 className="text-lg font-semibold tracking-tight">
-            Soteria Assets
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Sign in with your email to continue.
+          {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
+          <img
+            src="/branding/logos/horizontal-navy.svg"
+            alt="Soteria Church"
+            className="h-9 w-auto"
+          />
+          <p className="mt-4 text-sm text-muted-foreground">
+            Sign in with your email to access the asset library.
           </p>
         </div>
 

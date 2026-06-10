@@ -46,7 +46,7 @@ export async function createUploadToken(input: {
   });
   if (error) return { ok: false, error: "Failed to create upload link" };
 
-  revalidatePath("/upload-tokens");
+  revalidatePath("/upload-links");
   return { ok: true, token };
 }
 
@@ -65,6 +65,6 @@ export async function revokeUploadToken(
     .eq("id", uploadTokenId);
   if (error) return { ok: false, error: "Failed to revoke" };
 
-  revalidatePath("/upload-tokens");
+  revalidatePath("/upload-links");
   return { ok: true };
 }
