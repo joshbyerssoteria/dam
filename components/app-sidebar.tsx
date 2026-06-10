@@ -104,9 +104,9 @@ function BranchRow({
       className={cn(
         "group flex items-center rounded-md transition-colors",
         active
-          ? "bg-white font-medium text-foreground"
-          : "text-muted-foreground hover:bg-white/60 hover:text-foreground",
-        isDropTarget && "bg-white ring-1 ring-[#C2912D]"
+          ? "bg-[#F2EEE7] font-medium text-foreground"
+          : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground",
+        isDropTarget && "bg-[#F2EEE7] ring-1 ring-[#C2912D]"
       )}
       style={{
         paddingLeft: `${depth * 12}px`,
@@ -263,10 +263,10 @@ function SectionLink({
       className={cn(
         "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
         exactActive
-          ? "bg-white font-medium text-foreground"
-          : "text-muted-foreground hover:bg-white/60 hover:text-foreground",
+          ? "bg-[#F2EEE7] font-medium text-foreground"
+          : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground",
         sectionActive && !exactActive && "text-foreground",
-        isDropTarget && "bg-white ring-1 ring-[#C2912D]"
+        isDropTarget && "bg-[#F2EEE7] ring-1 ring-[#C2912D]"
       )}
       style={exactActive ? { boxShadow: `inset 2px 0 0 ${GOLD}` } : undefined}
     >
@@ -396,8 +396,8 @@ function BrandGuideNav({ pathname }: { pathname: string }) {
           "block truncate rounded-md py-1 pr-2 text-[13px] transition-colors duration-150",
           indent,
           active
-            ? "bg-white font-medium text-foreground"
-            : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
+            ? "bg-[#F2EEE7] font-medium text-foreground"
+            : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
         )}
       >
         {label}
@@ -414,7 +414,7 @@ function BrandGuideNav({ pathname }: { pathname: string }) {
           "flex items-center rounded-md transition-colors duration-150",
           sectionActive
             ? "text-foreground"
-            : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
+            : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
         )}
       >
         <Link
@@ -449,7 +449,7 @@ function BrandGuideNav({ pathname }: { pathname: string }) {
               "flex items-center rounded-md transition-colors duration-150",
               pathname.startsWith("/brand/examples")
                 ? "text-foreground"
-                : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
+                : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
             )}
           >
             <Link
@@ -503,8 +503,8 @@ export function AppSidebar({
   const initial = (email[0] ?? "?").toUpperCase();
 
   return (
-    <aside className="sticky top-0 flex h-svh w-60 shrink-0 flex-col border-r border-border bg-[#F2EEE7]">
-      <div className="px-5 pb-6 pt-6">
+    <aside className="sticky top-0 flex h-svh w-60 shrink-0 flex-col border-r border-border bg-white">
+      <div className="px-3 pb-5 pt-5">
         <Link href="/photos" className="block">
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
           <img
@@ -558,8 +558,8 @@ export function AppSidebar({
                 className={cn(
                   "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
                   active
-                    ? "bg-white font-medium text-foreground"
-                    : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
+                    ? "bg-[#F2EEE7] font-medium text-foreground"
+                    : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
                 )}
                 style={active ? { boxShadow: `inset 2px 0 0 ${GOLD}` } : undefined}
               >
@@ -576,7 +576,7 @@ export function AppSidebar({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-white/60"
+              className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-[#F2EEE7]/70"
             >
               <span
                 className="flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
