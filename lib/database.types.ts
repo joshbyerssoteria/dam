@@ -179,6 +179,12 @@ export type UploadTokenRow = {
   created_at: string;
 }
 
+export type PhotoFavoriteRow = {
+  photo_id: string;
+  user_id: string;
+  created_at: string;
+}
+
 export type DownloadLogRow = {
   id: string;
   share_token: string;
@@ -250,6 +256,7 @@ export type Database = {
       photos: PhotosTableDef;
       share_links: TableDef<ShareLinkRow>;
       upload_tokens: TableDef<UploadTokenRow>;
+      photo_favorites: TableDef<PhotoFavoriteRow>;
       download_log: TableDef<DownloadLogRow>;
       upload_log: TableDef<UploadLogRow>;
     };

@@ -1,14 +1,43 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Trash2, X } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Heart,
+  Tags,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { deletePhoto } from "@/lib/actions/folders";
+import { favoriteMany, setFavorite } from "@/lib/actions/favorites";
+import { batchUpdatePhotos } from "@/lib/actions/photos-batch";
+import { EVENT_TYPES } from "@/lib/tagging";
 import { formatBytes, formatDate, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { DownloadMenu } from "@/components/download-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface PhotoGridItem {
   id: string;
@@ -27,25 +56,55 @@ export interface PhotoGridItem {
   canDelete: boolean;
 }
 
+const KEEP = "__keep__";
+
 /**
- * Responsive photo grid + lightbox with metadata sidebar.
- * `srcPrefix` lets the same grid serve the app (/api/files) and public
- * share views (/api/share/[token]/file).
+ * Responsive photo grid + lightbox with metadata sidebar. Optional
+ * per-user favorites (heart) and batch selection with zip download,
+ * tagging, and favoriting. `srcPrefix` lets the same grid serve the app
+ * (/api/files) and public share views (/api/share/[token]/file).
  */
 export function PhotoGrid({
   photos,
   srcPrefix = "/api/files",
   shareToken,
   allowDelete = false,
+  allowFavorites = false,
+  allowBatch = false,
+  canEditMeta = false,
+  favoriteIds = [],
 }: {
   photos: PhotoGridItem[];
   srcPrefix?: string;
   shareToken?: string;
   allowDelete?: boolean;
+  allowFavorites?: boolean;
+  allowBatch?: boolean;
+  canEditMeta?: boolean;
+  favoriteIds?: string[];
 }) {
   const router = useRouter();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(
+    () => new Set(favoriteIds)
+  );
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [tagDialogOpen, setTagDialogOpen] = useState(false);
   const open = openIndex !== null ? photos[openIndex] : null;
+
+  const serverFavorites = favoriteIds.join(",");
+  useEffect(() => {
+    setFavorites(new Set(serverFavorites ? serverFavorites.split(",") : []));
+  }, [serverFavorites]);
+
+  // Clear selections that no longer exist (e.g. after deletes).
+  const photoIdSet = useMemo(() => new Set(photos.map((p) => p.id)), [photos]);
+  useEffect(() => {
+    setSelected((current) => {
+      const next = new Set([...current].filter((id) => photoIdSet.has(id)));
+      return next.size === current.size ? current : next;
+    });
+  }, [photoIdSet]);
 
   const step = useCallback(
     (delta: number) => {
@@ -79,6 +138,43 @@ export function PhotoGrid({
     }
   }
 
+  async function toggleFavorite(photoId: string) {
+    const next = !favorites.has(photoId);
+    setFavorites((current) => {
+      const updated = new Set(current);
+      if (next) updated.add(photoId);
+      else updated.delete(photoId);
+      return updated;
+    });
+    const result = await setFavorite(photoId, next);
+    if (!result.ok) {
+      toast.error(result.error ?? "Failed to update favorite");
+      router.refresh();
+    }
+  }
+
+  function toggleSelected(photoId: string) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(photoId)) next.delete(photoId);
+      else next.add(photoId);
+      return next;
+    });
+  }
+
+  async function handleBatchFavorite() {
+    const ids = [...selected];
+    const result = await favoriteMany(ids);
+    if (result.ok) {
+      setFavorites((current) => new Set([...current, ...ids]));
+      toast.success(`${ids.length} added to Favorites`);
+    } else {
+      toast.error(result.error ?? "Failed to favorite");
+    }
+  }
+
+  const selectionActive = selected.size > 0;
+
   if (photos.length === 0) {
     return (
       <p className="py-16 text-center text-sm text-muted-foreground">
@@ -90,23 +186,132 @@ export function PhotoGrid({
   return (
     <>
       <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {photos.map((photo, index) => (
-          <button
-            key={photo.id}
-            type="button"
-            onClick={() => setOpenIndex(index)}
-            className="group relative aspect-square overflow-hidden bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element -- authenticated variant route; Next optimizer cannot send cookies */}
-            <img
-              src={`${srcPrefix}/${photo.fileId}?w=480`}
-              alt={photo.aiCaption ?? photo.originalFilename}
-              loading="lazy"
-              className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-            />
-          </button>
-        ))}
+        {photos.map((photo, index) => {
+          const isSelected = selected.has(photo.id);
+          const isFavorite = favorites.has(photo.id);
+          return (
+            <div key={photo.id} className="group relative aspect-square">
+              <button
+                type="button"
+                onClick={() =>
+                  selectionActive && allowBatch
+                    ? toggleSelected(photo.id)
+                    : setOpenIndex(index)
+                }
+                className={cn(
+                  "size-full overflow-hidden bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring",
+                  isSelected && "ring-2 ring-inset ring-[#C2912D]"
+                )}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- authenticated variant route */}
+                <img
+                  src={`${srcPrefix}/${photo.fileId}?w=480`}
+                  alt={photo.aiCaption ?? photo.originalFilename}
+                  loading="lazy"
+                  draggable={false}
+                  className={cn(
+                    "size-full object-cover transition-transform duration-300 group-hover:scale-[1.02]",
+                    isSelected && "opacity-80"
+                  )}
+                />
+              </button>
+
+              {allowBatch ? (
+                <button
+                  type="button"
+                  aria-label={isSelected ? "Deselect photo" : "Select photo"}
+                  onClick={() => toggleSelected(photo.id)}
+                  className={cn(
+                    "absolute right-2 top-2 flex size-6 items-center justify-center rounded-full border transition-opacity",
+                    isSelected
+                      ? "border-transparent bg-[#C2912D] text-white opacity-100"
+                      : "border-white/80 bg-black/30 text-white opacity-0 hover:bg-black/50 group-hover:opacity-100"
+                  )}
+                >
+                  {isSelected ? <Check className="size-3.5" /> : null}
+                </button>
+              ) : null}
+
+              {allowFavorites ? (
+                <button
+                  type="button"
+                  aria-label={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                  onClick={() => void toggleFavorite(photo.id)}
+                  className={cn(
+                    "absolute left-2 top-2 flex size-6 items-center justify-center rounded-full bg-black/30 transition-opacity hover:bg-black/50",
+                    isFavorite
+                      ? "text-[#C2912D] opacity-100"
+                      : "text-white opacity-0 group-hover:opacity-100"
+                  )}
+                >
+                  <Heart
+                    className="size-3.5"
+                    fill={isFavorite ? "currentColor" : "none"}
+                  />
+                </button>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
+
+      {/* Batch action bar */}
+      {allowBatch && selectionActive ? (
+        <div className="fixed inset-x-0 bottom-6 z-40 flex justify-center px-4">
+          <div className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-2 shadow-lg">
+            <span className="px-2 text-sm font-medium">
+              {selected.size} selected
+            </span>
+            <Button size="sm" variant="ghost" asChild>
+              <a href={`/api/photos/zip?ids=${[...selected].join(",")}`}>
+                <Download className="size-4" />
+                Download
+              </a>
+            </Button>
+            {allowFavorites ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => void handleBatchFavorite()}
+              >
+                <Heart className="size-4" />
+                Favorite
+              </Button>
+            ) : null}
+            {canEditMeta ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setTagDialogOpen(true)}
+              >
+                <Tags className="size-4" />
+                Tag / edit
+              </Button>
+            ) : null}
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-muted-foreground"
+              onClick={() => setSelected(new Set())}
+            >
+              <X className="size-4" />
+              Clear
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {canEditMeta ? (
+        <BatchTagDialog
+          open={tagDialogOpen}
+          onOpenChange={setTagDialogOpen}
+          photoIds={[...selected]}
+          onDone={() => {
+            setSelected(new Set());
+            router.refresh();
+          }}
+        />
+      ) : null}
 
       {open ? (
         <div
@@ -154,16 +359,40 @@ export function PhotoGrid({
 
           <aside className="flex w-80 shrink-0 flex-col overflow-y-auto border-l border-border">
             <div className="space-y-6 p-6">
-              <div>
-                <h2 className="break-words text-sm font-medium">
-                  {open.originalFilename}
-                </h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {formatBytes(open.fileSize)}
-                  {open.width && open.height
-                    ? ` · ${open.width}×${open.height}`
-                    : ""}
-                </p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="break-words text-sm font-medium">
+                    {open.originalFilename}
+                  </h2>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formatBytes(open.fileSize)}
+                    {open.width && open.height
+                      ? ` · ${open.width}×${open.height}`
+                      : ""}
+                  </p>
+                </div>
+                {allowFavorites ? (
+                  <button
+                    type="button"
+                    aria-label={
+                      favorites.has(open.id)
+                        ? "Remove from Favorites"
+                        : "Add to Favorites"
+                    }
+                    onClick={() => void toggleFavorite(open.id)}
+                    className={cn(
+                      "shrink-0 rounded-full p-1.5 transition-colors hover:bg-accent",
+                      favorites.has(open.id)
+                        ? "text-[#C2912D]"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    <Heart
+                      className="size-4"
+                      fill={favorites.has(open.id) ? "currentColor" : "none"}
+                    />
+                  </button>
+                ) : null}
               </div>
 
               {open.aiCaption ? (
@@ -254,5 +483,100 @@ export function PhotoGrid({
         </div>
       ) : null}
     </>
+  );
+}
+
+function BatchTagDialog({
+  open,
+  onOpenChange,
+  photoIds,
+  onDone,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  photoIds: string[];
+  onDone: () => void;
+}) {
+  const [tags, setTags] = useState("");
+  const [eventType, setEventType] = useState(KEEP);
+  const [photographer, setPhotographer] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function handleApply() {
+    setSaving(true);
+    const result = await batchUpdatePhotos({
+      photoIds,
+      addTags: tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+      eventType: eventType === KEEP ? null : eventType,
+      photographerName: photographer.trim() || null,
+    });
+    setSaving(false);
+    if (result.ok) {
+      toast.success(`${photoIds.length} photo(s) updated`);
+      onOpenChange(false);
+      setTags("");
+      setEventType(KEEP);
+      setPhotographer("");
+      onDone();
+    } else {
+      toast.error(result.error ?? "Failed to update");
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit {photoIds.length} photo(s)</DialogTitle>
+          <DialogDescription>
+            Tags are added to each photo; fields left blank stay unchanged.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="batch-tags">Add tags (comma separated)</Label>
+            <Input
+              id="batch-tags"
+              value={tags}
+              onChange={(event) => setTags(event.target.value)}
+              placeholder="easter, baptism, worship night"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Event type</Label>
+            <Select value={eventType} onValueChange={setEventType}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={KEEP}>Keep current</SelectItem>
+                {EVENT_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type.replace(/_/g, " ")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="batch-photographer">Photographer</Label>
+            <Input
+              id="batch-photographer"
+              value={photographer}
+              onChange={(event) => setPhotographer(event.target.value)}
+              placeholder="Leave blank to keep current"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={() => void handleApply()} disabled={saving}>
+            {saving ? "Applying…" : "Apply to selection"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

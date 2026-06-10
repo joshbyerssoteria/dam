@@ -23,6 +23,7 @@ import {
   BookOpen,
   ChevronRight,
   ChevronsUpDown,
+  Heart,
   Images,
   LogOut,
   Palette,
@@ -639,6 +640,20 @@ export function AppSidebar({
             icon={Images}
             pathname={pathname}
           />
+          <div className="mb-0.5 ml-3 mt-0.5 border-l border-border pl-1">
+            <Link
+              href="/photos/favorites"
+              className={cn(
+                "flex items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
+                pathname === "/photos/favorites"
+                  ? "bg-[#F2EEE7] font-medium text-foreground"
+                  : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
+              )}
+            >
+              <Heart className="size-3" />
+              Favorites
+            </Link>
+          </div>
           {photoTree.length > 0 ? (
             <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
               {photoTree.map((node) => (

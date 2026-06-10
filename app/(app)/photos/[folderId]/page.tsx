@@ -23,15 +23,19 @@ export default async function FolderPage({
 
   // One round trip: session, the full folder tree (small — breadcrumbs and
   // subfolder counts compute in memory), and this folder's photos.
-  const [session, { data: allFolders }, { data: photos }] = await Promise.all([
-    getSessionProfile(),
-    db.from("folders").select("id, name, parent_id, description, sort_order"),
-    db
-      .from("photos")
-      .select("*, files(*)")
-      .eq("folder_id", folderId)
-      .order("created_at", { ascending: false }),
-  ]);
+  const [session, { data: allFolders }, { data: photos }, { data: favorites }] =
+    await Promise.all([
+      getSessionProfile(),
+      db.from("folders").select("id, name, parent_id, description, sort_order"),
+      db
+        .from("photos")
+        .select("*, files(*)")
+        .eq("folder_id", folderId)
+        .order("created_at", { ascending: false }),
+      // RLS scopes favorites to the signed-in user.
+      db.from("photo_favorites").select("photo_id"),
+    ]);
+  const favoriteIds = (favorites ?? []).map((row) => row.photo_id);
 
   const folderList = allFolders ?? [];
   const folderById = new Map(folderList.map((f) => [f.id, f]));
@@ -167,7 +171,14 @@ export default async function FolderPage({
           </div>
         ) : null}
 
-        <PhotoGrid photos={gridItems} allowDelete={canEdit} />
+        <PhotoGrid
+          photos={gridItems}
+          allowDelete={canEdit}
+          allowFavorites
+          allowBatch
+          canEditMeta={canEdit}
+          favoriteIds={favoriteIds}
+        />
       </div>
     </div>
   );
