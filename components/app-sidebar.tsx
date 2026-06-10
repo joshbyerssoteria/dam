@@ -85,6 +85,7 @@ function BranchRow({
   pathname,
   expanded,
   onToggle,
+  onExpand,
   isDropTarget = false,
   dragProps,
 }: {
@@ -93,6 +94,7 @@ function BranchRow({
   pathname: string;
   expanded: boolean;
   onToggle: () => void;
+  onExpand: () => void;
   isDropTarget?: boolean;
   dragProps?: Record<string, unknown>;
 }) {
@@ -130,6 +132,7 @@ function BranchRow({
       <Link
         href={node.href}
         draggable={false}
+        onClick={onExpand}
         {...(dragProps ?? {})}
         className="min-w-0 flex-1 truncate py-1 pr-2 text-[13px]"
         title={node.name}
@@ -159,6 +162,7 @@ function TreeBranch({
         pathname={pathname}
         expanded={expanded}
         onToggle={() => setExpanded((current) => !current)}
+        onExpand={() => setExpanded(true)}
       />
       {node.children.length > 0 ? (
         <Collapse open={expanded}>
@@ -217,6 +221,7 @@ function KitsTreeBranch({
           pathname={pathname}
           expanded={expanded}
           onToggle={() => setExpanded((current) => !current)}
+          onExpand={() => setExpanded(true)}
           isDropTarget={isFolder && isOver}
           dragProps={!isFolder ? { ...attributes, ...listeners } : undefined}
         />
