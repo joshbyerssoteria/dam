@@ -321,7 +321,7 @@ INNGEST_SIGNING_KEY=
 These need decisions before or during v1 — do not invent answers.
 
 1. **Migration from Zenfolio.** Existing photo archive needs to be ingested. The Zenfolio Classic API (SOAP, v1.8) is available for read-only export. Plan a one-time batch script: enumerate folders/galleries/photos → download originals → upload to S3 → trigger tagging pipeline. Estimate the archive size before committing to storage cost projections.
-2. **Migration from Lingo.** Lingo's API is read-only and supports fetching kits, sections, and assets with their metadata. A one-time script can pull and reorganize into the new schema. Color palettes and fonts will need manual review since their structure may not map cleanly.
+2. **Migration from Lingo.** ✅ **Resolved 2026-06-10.** `scripts/import-lingo.mjs` (built on the official `@lingo-app/node` SDK) imported all 13 kits — 774 assets, 45 sections, 17 palettes/70 colors — with zero failures. Lingo sections map to kit sections; color assets (stored as HSB in Lingo) convert to hex palettes per section. Fonts did not exist as file assets in the space. The script is idempotent (skips kits whose slug exists) and kept for reference.
 3. **Backup strategy.** S3 with versioning enabled covers most accidents. For deep-archive protection, configure an S3 Lifecycle rule to replicate to S3 Glacier Deep Archive or to a second bucket in another region. Decide before storing irreplaceable photos.
 
 ## Decision Log

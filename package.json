@@ -57,6 +57,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
+    "@lingo-app/node": "^3.2.0",
     "@playwright/test": "^1.49.1",
     "@tailwindcss/postcss": "^4.3.0",
     "@types/archiver": "^6.0.3",
