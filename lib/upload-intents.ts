@@ -11,7 +11,11 @@ import { taggingConfigured } from "@/lib/tagging";
 export const uploadIntentSchema = z.discriminatedUnion("intent", [
   z.object({ intent: z.literal("photo"), folderId: z.string().uuid() }),
   z.object({ intent: z.literal("portal-photo"), uploadToken: z.string().min(8) }),
-  z.object({ intent: z.literal("kit-file"), kitId: z.string().uuid() }),
+  z.object({
+    intent: z.literal("kit-file"),
+    kitId: z.string().uuid(),
+    sectionId: z.string().uuid().optional(),
+  }),
   z.object({ intent: z.literal("kit-cover"), kitId: z.string().uuid() }),
   z.object({ intent: z.literal("kit-source"), kitId: z.string().uuid() }),
   z.object({
@@ -170,6 +174,7 @@ export async function finalizeUpload(
       kit_id: intent.kitId,
       asset_type: "file",
       asset_id: file.id,
+      section_id: intent.sectionId ?? null,
     });
     if (error) {
       return { ok: false, status: 500, error: "Failed to add file to kit" };

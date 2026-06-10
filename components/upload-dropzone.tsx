@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 export type UploadIntent =
   | { intent: "photo"; folderId: string }
   | { intent: "portal-photo"; uploadToken: string }
-  | { intent: "kit-file"; kitId: string }
+  | { intent: "kit-file"; kitId: string; sectionId?: string }
   | { intent: "kit-cover"; kitId: string }
   | { intent: "kit-source"; kitId: string };
 
@@ -118,7 +118,7 @@ export async function uploadWithProgress(
   const formData = new FormData();
   formData.set("file", file);
   for (const [key, value] of Object.entries(intent)) {
-    formData.set(key, String(value));
+    if (value !== undefined) formData.set(key, String(value));
   }
   const direct = await xhrSend("POST", "/api/upload/direct", formData, onProgress);
   if (!direct.ok) {

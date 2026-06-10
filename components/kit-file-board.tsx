@@ -44,6 +44,7 @@ import {
   FileAssetCard,
   type FileAssetCardFile,
 } from "@/components/file-asset-card";
+import { KitFileUpload } from "@/components/kit-file-upload";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -166,6 +167,7 @@ function SectionHeader({
   onRename,
   onDelete,
   renameLabel = "Rename section",
+  actions,
 }: {
   title: string;
   count: number;
@@ -173,6 +175,7 @@ function SectionHeader({
   onRename?: () => void;
   onDelete?: () => void;
   renameLabel?: string;
+  actions?: React.ReactNode;
 }) {
   return (
     <div className="mb-3 flex items-center gap-2">
@@ -181,6 +184,7 @@ function SectionHeader({
         {title}
       </h3>
       <span className="text-xs text-muted-foreground/60">{count}</span>
+      {actions}
       {onRename ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -212,11 +216,13 @@ function SectionHeader({
 }
 
 function SortableSection({
+  kitId,
   section,
   items,
   onRename,
   onDelete,
 }: {
+  kitId: string;
   section: BoardSection;
   items: BoardFile[];
   onRename: () => void;
@@ -249,6 +255,14 @@ function SortableSection({
           count={items.length}
           onRename={onRename}
           onDelete={onDelete}
+          actions={
+            <KitFileUpload
+              kitId={kitId}
+              sectionId={section.id}
+              sectionName={section.name}
+              variant="section"
+            />
+          }
           dragHandle={
             <span
               aria-hidden
@@ -497,6 +511,7 @@ export function KitFileBoard({
                   : undefined
               }
               renameLabel="Name this section"
+              actions={<KitFileUpload kitId={kitId} variant="section" />}
             />
             <SectionBody containerId={UNSECTIONED} items={unsectionedItems} />
           </section>
@@ -510,6 +525,7 @@ export function KitFileBoard({
             {orderedSections.map((section) => (
               <SortableSection
                 key={section.id}
+                kitId={kitId}
                 section={section}
                 items={(containers[section.id] ?? [])
                   .map((id) => fileByAssetId.get(id))
