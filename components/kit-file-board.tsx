@@ -89,24 +89,26 @@ function SortableCard({ item }: { item: BoardFile }) {
     isDragging,
   } = useSortable({ id: item.kitAssetId });
 
+  // The whole card is the drag target — buttons inside still click fine
+  // because the sensor only activates after 6px of movement.
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cn("relative", isDragging && "z-10 opacity-40")}
+      {...attributes}
+      {...listeners}
+      className={cn(
+        "group/card relative cursor-grab active:cursor-grabbing",
+        isDragging && "z-10 opacity-40"
+      )}
     >
-      <button
-        type="button"
-        aria-label={`Drag ${item.file.original_filename}`}
-        {...attributes}
-        {...listeners}
-        className="absolute left-1.5 top-1.5 z-10 cursor-grab rounded bg-background/80 p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover/card:opacity-100 active:cursor-grabbing"
+      <span
+        aria-hidden
+        className="pointer-events-none absolute left-1.5 top-1.5 z-10 rounded bg-background/80 p-1 text-muted-foreground opacity-0 transition-opacity group-hover/card:opacity-100"
       >
         <GripVertical className="size-3.5" />
-      </button>
-      <div className="group/card">
-        <FileAssetCard kitAssetId={item.kitAssetId} file={item.file} canEdit />
-      </div>
+      </span>
+      <FileAssetCard kitAssetId={item.kitAssetId} file={item.file} canEdit />
     </div>
   );
 }
@@ -225,23 +227,27 @@ function SortableSection({
       aria-label={section.name}
       className={cn(isDragging && "z-10 opacity-50")}
     >
-      <SectionHeader
-        title={section.name}
-        count={items.length}
-        onRename={onRename}
-        onDelete={onDelete}
-        dragHandle={
-          <button
-            type="button"
-            aria-label={`Drag section ${section.name}`}
-            {...attributes}
-            {...listeners}
-            className="cursor-grab rounded p-0.5 text-muted-foreground/60 hover:text-foreground active:cursor-grabbing"
-          >
-            <GripVertical className="size-3.5" />
-          </button>
-        }
-      />
+      {/* The whole header row drags the section; menu clicks still work. */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing"
+      >
+        <SectionHeader
+          title={section.name}
+          count={items.length}
+          onRename={onRename}
+          onDelete={onDelete}
+          dragHandle={
+            <span
+              aria-hidden
+              className="rounded p-0.5 text-muted-foreground/60"
+            >
+              <GripVertical className="size-3.5" />
+            </span>
+          }
+        />
+      </div>
       <SectionBody containerId={section.id} items={items} />
     </section>
   );

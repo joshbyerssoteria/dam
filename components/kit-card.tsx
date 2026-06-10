@@ -17,13 +17,14 @@ export function KitCard({
 }) {
   return (
     <div className="group relative overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-muted-foreground/40">
-      <Link href={`/kits/${kit.slug}`} className="block">
+      <Link href={`/kits/${kit.slug}`} className="block" draggable={false}>
         <div className="flex aspect-[2/1] items-center justify-center bg-muted">
           {kit.cover_image_id ? (
             /* eslint-disable-next-line @next/next/no-img-element -- authenticated variant route */
             <img
               src={`/api/files/${kit.cover_image_id}?w=960`}
               alt=""
+              draggable={false}
               className="size-full object-cover"
             />
           ) : (
