@@ -16,7 +16,11 @@ export default async function AppLayout({
     await Promise.all([
       db.from("folders").select("id, name, parent_id, sort_order"),
       db.from("kit_folders").select("id, name, parent_id, sort_order"),
-      db.from("kits").select("id, slug, name, kit_folder_id").order("name"),
+      db
+        .from("kits")
+        .select("id, slug, name, kit_folder_id")
+        .order("sort_order")
+        .order("name"),
     ]);
 
   const photoTree = buildNavTree(folders ?? [], (id) => `/photos/${id}`);

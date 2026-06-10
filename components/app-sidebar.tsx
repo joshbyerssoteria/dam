@@ -7,12 +7,18 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
-  useDraggable,
   useDroppable,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   BookOpen,
   ChevronRight,
@@ -27,6 +33,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { moveKitToFolder } from "@/lib/actions/kit-folders";
+import { reorderKits } from "@/lib/actions/kits";
 import { cn } from "@/lib/utils";
 import type { AppRole } from "@/lib/database.types";
 import type { NavTreeNode } from "@/lib/nav-tree";
@@ -179,7 +186,10 @@ function TreeBranch({
   );
 }
 
-/** Kits tree branch: kit leaves drag; folder rows accept drops. */
+/**
+ * Kits tree branch: kit leaves sort among siblings and drop onto folders;
+ * folder rows accept drops. Kit children render inside a SortableContext.
+ */
 function KitsTreeBranch({
   node,
   depth,
@@ -200,16 +210,26 @@ function KitsTreeBranch({
     setNodeRef: setDragRef,
     attributes,
     listeners,
+    transform,
+    transition,
     isDragging,
-  } = useDraggable({
+  } = useSortable({
     id: `kit:${node.id}`,
     disabled: isFolder,
   });
+
+  const folderChildren = node.children.filter((c) => c.kind === "folder");
+  const kitChildren = node.children.filter((c) => c.kind === "leaf");
 
   return (
     <div ref={isFolder ? setDropRef : undefined}>
       <div
         ref={!isFolder ? setDragRef : undefined}
+        style={
+          !isFolder
+            ? { transform: CSS.Transform.toString(transform), transition }
+            : undefined
+        }
         className={cn(isDragging && "opacity-40")}
       >
         <BranchRow
@@ -226,7 +246,7 @@ function KitsTreeBranch({
       {node.children.length > 0 ? (
         <Collapse open={expanded}>
           <div>
-            {node.children.map((child) => (
+            {folderChildren.map((child) => (
               <KitsTreeBranch
                 key={child.id}
                 node={child}
@@ -234,6 +254,19 @@ function KitsTreeBranch({
                 pathname={pathname}
               />
             ))}
+            <SortableContext
+              items={kitChildren.map((child) => `kit:${child.id}`)}
+              strategy={verticalListSortingStrategy}
+            >
+              {kitChildren.map((child) => (
+                <KitsTreeBranch
+                  key={child.id}
+                  node={child}
+                  depth={depth + 1}
+                  pathname={pathname}
+                />
+              ))}
+            </SortableContext>
           </div>
         </Collapse>
       ) : null}
@@ -302,13 +335,49 @@ function KitsNavTreeArea({
       />
       {kitTree.length > 0 ? (
         <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
-          {kitTree.map((node) => (
-            <KitsTreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
-          ))}
+          {kitTree
+            .filter((node) => node.kind === "folder")
+            .map((node) => (
+              <KitsTreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
+            ))}
+          <SortableContext
+            items={kitTree
+              .filter((node) => node.kind === "leaf")
+              .map((node) => `kit:${node.id}`)}
+            strategy={verticalListSortingStrategy}
+          >
+            {kitTree
+              .filter((node) => node.kind === "leaf")
+              .map((node) => (
+                <KitsTreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
+              ))}
+          </SortableContext>
         </div>
       ) : null}
     </div>
   );
+}
+
+interface KitGroup {
+  parentId: string | null;
+  siblings: string[]; // kit ids in display order
+}
+
+function buildKitGroups(
+  nodes: NavTreeNode[],
+  parentId: string | null,
+  map: Map<string, KitGroup>
+) {
+  const kitIds = nodes
+    .filter((node) => node.kind === "leaf")
+    .map((node) => node.id);
+  for (const node of nodes) {
+    if (node.kind === "leaf") {
+      map.set(node.id, { parentId, siblings: kitIds });
+    } else {
+      buildKitGroups(node.children, node.id, map);
+    }
+  }
 }
 
 function KitsNav({
@@ -346,14 +415,51 @@ function KitsNav({
     const { active, over } = event;
     if (!over) return;
     const kitId = String(active.id).replace(/^kit:/, "");
-    const target = String(over.id).replace(/^kitfolder:/, "");
-    const result = await moveKitToFolder(kitId, target === "root" ? null : target);
-    if (result.ok) {
-      toast.success(target === "root" ? "Moved to Kits root" : "Kit moved");
-      router.refresh();
-    } else {
-      toast.error(result.error ?? "Failed to move kit");
+    const overId = String(over.id);
+
+    // Dropped on a folder row (or the Kits header) → move into it.
+    if (overId.startsWith("kitfolder:")) {
+      const target = overId.replace(/^kitfolder:/, "");
+      const result = await moveKitToFolder(kitId, target === "root" ? null : target);
+      if (result.ok) {
+        toast.success(target === "root" ? "Moved to Kits root" : "Kit moved");
+        router.refresh();
+      } else {
+        toast.error(result.error ?? "Failed to move kit");
+      }
+      return;
     }
+
+    // Dropped on another kit → reorder (same group) or move-and-position
+    // (different group).
+    const overKitId = overId.replace(/^kit:/, "");
+    const groups = new Map<string, KitGroup>();
+    buildKitGroups(kitTree, null, groups);
+    const activeGroup = groups.get(kitId);
+    const overGroup = groups.get(overKitId);
+    if (!activeGroup || !overGroup || kitId === overKitId) return;
+
+    let updates: Array<{ kitId: string; sortOrder: number; kitFolderId?: string | null }>;
+    if (activeGroup.parentId === overGroup.parentId) {
+      const next = arrayMove(
+        activeGroup.siblings,
+        activeGroup.siblings.indexOf(kitId),
+        activeGroup.siblings.indexOf(overKitId)
+      );
+      updates = next.map((id, index) => ({ kitId: id, sortOrder: index }));
+    } else {
+      const next = overGroup.siblings.filter((id) => id !== kitId);
+      next.splice(next.indexOf(overKitId), 0, kitId);
+      updates = next.map((id, index) => ({
+        kitId: id,
+        sortOrder: index,
+        ...(id === kitId ? { kitFolderId: overGroup.parentId } : {}),
+      }));
+    }
+
+    const result = await reorderKits(updates);
+    if (!result.ok) toast.error(result.error ?? "Failed to save order");
+    router.refresh();
   }
 
   const activeNode = activeKitId ? findNode(kitTree, activeKitId) : null;

@@ -165,6 +165,48 @@ export async function reorderKitSections(
   return { ok: true };
 }
 
+const kitOrderSchema = z.array(
+  z.object({
+    kitId: z.string().uuid(),
+    sortOrder: z.number().int().min(0).max(10000),
+    // Present when a drag also moves the kit into a different folder
+    // (null = kits root).
+    kitFolderId: z.string().uuid().nullable().optional(),
+  })
+).max(500);
+
+/** Persist a drag-reordered kit arrangement (and optional folder moves). */
+export async function reorderKits(
+  updates: Array<{
+    kitId: string;
+    sortOrder: number;
+    kitFolderId?: string | null;
+  }>
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await requireEditor();
+  if (!session) return { ok: false, error: "Not allowed" };
+
+  const parsed = kitOrderSchema.safeParse(updates);
+  if (!parsed.success) return { ok: false, error: "Invalid order" };
+
+  const db = await createClient();
+  for (const update of parsed.data) {
+    const { error } = await db
+      .from("kits")
+      .update({
+        sort_order: update.sortOrder,
+        ...(update.kitFolderId !== undefined
+          ? { kit_folder_id: update.kitFolderId }
+          : {}),
+      })
+      .eq("id", update.kitId);
+    if (error) return { ok: false, error: "Failed to save order" };
+  }
+
+  revalidatePath("/kits");
+  return { ok: true };
+}
+
 /**
  * Promote a section to its own kit: files (and a palette named after the
  * section, if any) move by reference into a new kit, optionally inside a
