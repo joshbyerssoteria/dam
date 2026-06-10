@@ -335,7 +335,8 @@ Decisions made during the build that adjust the plan above:
 5. **2026-06-10 — First sign-up becomes admin.** Bootstrap rule implemented as a database trigger; subsequent sign-ups default to viewer.
 6. **2026-06-10 — Presigned S3 uploads (supersedes the interim note in #1).** Browser uploads go straight to S3 via presigned PUT (`/api/upload/presign` → `/api/upload/complete`), fixing failures for files over Vercel's 4.5 MB body limit. The direct route remains for local dev. Requires a CORS rule on the bucket allowing PUT from the app origins.
 7. **2026-06-10 — SVG/raster transforms pulled forward from v2.** `/api/transform/[file_id]?format=png|jpg|webp&width=N` via `sharp`, session- or share-token-authorized. PDF output (resvg + pdf-lib) remains v2.
-8. **2026-06-10 — Schema extensions for kit organization.** `kit_folders` (nestable tree of kits, parallel to photo folders), `kit_sections` (named asset groups within a kit, drag-and-drop ordered via `kit_assets.section_id`/`sort_order`), and `fonts.source`/`external_ref` for Google Fonts and Adobe Fonts entries alongside uploaded font files.
+8. **2026-06-10 — Brand Guide integrated into the app.** The standalone brand site (branding.soteria.church) is superseded by an in-app Brand Guide section (`/brand` + Logos, Colors, Typography, Guidelines, Examples). Content is structured in `lib/brand.ts`, distilled from `branding/brand-guidelines.md` (still the written source of truth). Logo lockups and the curated photo set moved to `public/branding/` and serve statically.
+9. **2026-06-10 — Schema extensions for kit organization.** `kit_folders` (nestable tree of kits, parallel to photo folders), `kit_sections` (named asset groups within a kit, drag-and-drop ordered via `kit_assets.section_id`/`sort_order`), and `fonts.source`/`external_ref` for Google Fonts and Adobe Fonts entries alongside uploaded font files.
 
 ---
 

@@ -30,3 +30,5 @@ supabase/.branches/
 .DS_Store
 *.pem
 *.tsbuildinfo
+.DS_Store
+branding/.vercel/

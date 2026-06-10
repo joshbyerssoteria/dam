@@ -14,6 +14,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
+  BookOpen,
   ChevronRight,
   Images,
   Palette,
@@ -27,6 +28,14 @@ import { moveKitToFolder } from "@/lib/actions/kit-folders";
 import { cn } from "@/lib/utils";
 import type { AppRole } from "@/lib/database.types";
 import type { NavTreeNode } from "@/lib/nav-tree";
+
+const BRAND_GUIDE_LINKS = [
+  { href: "/brand/logos", label: "Logos" },
+  { href: "/brand/colors", label: "Colors" },
+  { href: "/brand/typography", label: "Typography" },
+  { href: "/brand/guidelines", label: "Guidelines" },
+  { href: "/brand/examples", label: "Examples" },
+] as const;
 
 const SECONDARY_NAV = [
   { href: "/search", label: "Search", icon: Search },
@@ -364,6 +373,33 @@ export function AppSidebar({
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+        <div>
+          <SectionLink
+            href="/brand"
+            label="Brand Guide"
+            icon={BookOpen}
+            pathname={pathname}
+          />
+          {pathname.startsWith("/brand") ? (
+            <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
+              {BRAND_GUIDE_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "block truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
+                    pathname.startsWith(link.href)
+                      ? "bg-accent font-medium text-accent-foreground"
+                      : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
         <div>
           <SectionLink
             href="/photos"
