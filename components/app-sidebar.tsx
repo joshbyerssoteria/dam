@@ -38,7 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-/* Soteria brand chrome: navy ground, white ink, gold rules. */
+/* Soteria brand chrome: off-white warm ground, navy ink, gold rules. */
 const GOLD = "#C2912D";
 
 const BRAND_GUIDE_LINKS = [
@@ -102,9 +102,9 @@ function BranchRow({
       className={cn(
         "group flex items-center rounded-md transition-colors",
         active
-          ? "bg-white/10 font-medium text-white"
-          : "text-white/70 hover:bg-white/5 hover:text-white",
-        isDropTarget && "bg-white/15 ring-1 ring-[#C2912D]"
+          ? "bg-white font-medium text-foreground"
+          : "text-muted-foreground hover:bg-white/60 hover:text-foreground",
+        isDropTarget && "bg-white ring-1 ring-[#C2912D]"
       )}
       style={{
         paddingLeft: `${depth * 12}px`,
@@ -116,7 +116,7 @@ function BranchRow({
           type="button"
           aria-label={expanded ? `Collapse ${node.name}` : `Expand ${node.name}`}
           onClick={onToggle}
-          className="flex size-5 shrink-0 items-center justify-center rounded hover:bg-white/10"
+          className="flex size-5 shrink-0 items-center justify-center rounded hover:bg-black/5"
         >
           <ChevronRight
             className={cn("size-3 transition-transform", expanded && "rotate-90")}
@@ -257,10 +257,10 @@ function SectionLink({
       className={cn(
         "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
         exactActive
-          ? "bg-white/10 font-medium text-white"
-          : "text-white/70 hover:bg-white/5 hover:text-white",
-        sectionActive && !exactActive && "text-white",
-        isDropTarget && "bg-white/15 ring-1 ring-[#C2912D]"
+          ? "bg-white font-medium text-foreground"
+          : "text-muted-foreground hover:bg-white/60 hover:text-foreground",
+        sectionActive && !exactActive && "text-foreground",
+        isDropTarget && "bg-white ring-1 ring-[#C2912D]"
       )}
       style={exactActive ? { boxShadow: `inset 2px 0 0 ${GOLD}` } : undefined}
     >
@@ -293,7 +293,7 @@ function KitsNavTreeArea({
         isDropTarget={rootIsOver}
       />
       {kitTree.length > 0 ? (
-        <div className="mb-1 ml-3 mt-0.5 border-l border-white/15 pl-1">
+        <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
           {kitTree.map((node) => (
             <KitsTreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
           ))}
@@ -323,7 +323,7 @@ function KitsNav({
       <div>
         <SectionLink href="/kits" label="Kits" icon={Palette} pathname={pathname} />
         {kitTree.length > 0 ? (
-          <div className="mb-1 ml-3 mt-0.5 border-l border-white/15 pl-1">
+          <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
             {kitTree.map((node) => (
               <TreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
             ))}
@@ -387,12 +387,12 @@ export function AppSidebar({
   const initial = (email[0] ?? "?").toUpperCase();
 
   return (
-    <aside className="flex h-svh w-60 shrink-0 flex-col bg-[#1B2A41] text-white">
+    <aside className="sticky top-0 flex h-svh w-60 shrink-0 flex-col border-r border-border bg-[#F2EEE7]">
       <div className="px-5 pb-6 pt-6">
         <Link href="/photos" className="block">
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
           <img
-            src="/branding/logos/horizontal-white.svg"
+            src="/branding/logos/horizontal-navy.svg"
             alt="Soteria Church"
             className="h-7 w-auto"
             draggable={false}
@@ -411,7 +411,7 @@ export function AppSidebar({
             pathname={pathname}
           />
           {pathname.startsWith("/brand") ? (
-            <div className="mb-1 ml-3 mt-0.5 border-l border-white/15 pl-1">
+            <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
               {BRAND_GUIDE_LINKS.map((link) => (
                 <div key={link.href}>
                   <Link
@@ -420,8 +420,8 @@ export function AppSidebar({
                       "block truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
                       pathname.startsWith(link.href) &&
                         !("children" in link && pathname !== link.href)
-                        ? "bg-white/10 font-medium text-white"
-                        : "text-white/70 hover:bg-white/5 hover:text-white"
+                        ? "bg-white font-medium text-foreground"
+                        : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
                     )}
                   >
                     {link.label}
@@ -434,8 +434,8 @@ export function AppSidebar({
                           className={cn(
                             "block truncate rounded-md py-1 pl-9 pr-2 text-[13px] transition-colors",
                             pathname.startsWith(child.href)
-                              ? "bg-white/10 font-medium text-white"
-                              : "text-white/70 hover:bg-white/5 hover:text-white"
+                              ? "bg-white font-medium text-foreground"
+                              : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
                           )}
                         >
                           {child.label}
@@ -456,7 +456,7 @@ export function AppSidebar({
             pathname={pathname}
           />
           {photoTree.length > 0 ? (
-            <div className="mb-1 ml-3 mt-0.5 border-l border-white/15 pl-1">
+            <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
               {photoTree.map((node) => (
                 <TreeBranch
                   key={node.id}
@@ -485,8 +485,8 @@ export function AppSidebar({
                 className={cn(
                   "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
                   active
-                    ? "bg-white/10 font-medium text-white"
-                    : "text-white/70 hover:bg-white/5 hover:text-white"
+                    ? "bg-white font-medium text-foreground"
+                    : "text-muted-foreground hover:bg-white/60 hover:text-foreground"
                 )}
                 style={active ? { boxShadow: `inset 2px 0 0 ${GOLD}` } : undefined}
               >
@@ -498,12 +498,12 @@ export function AppSidebar({
         </div>
       </nav>
 
-      <div className="border-t border-white/10 p-3">
+      <div className="border-t border-border p-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-white/5"
+              className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-white/60"
             >
               <span
                 className="flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
@@ -512,14 +512,14 @@ export function AppSidebar({
                 {initial}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm text-white" title={email}>
+                <span className="block truncate text-sm text-foreground" title={email}>
                   {email}
                 </span>
-                <span className="block text-xs uppercase tracking-wide text-white/50">
+                <span className="block text-xs uppercase tracking-wide text-muted-foreground">
                   {role}
                 </span>
               </span>
-              <ChevronsUpDown className="size-4 shrink-0 text-white/50" />
+              <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="start" className="w-56">
