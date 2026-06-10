@@ -1,6 +1,7 @@
 import {
   S3Client,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -93,6 +94,49 @@ export function getObjectStream(bucket: string, key: string): Readable | null {
     return createReadStream(filePath);
   }
   return null; // S3 objects stream via presigned URL redirect instead.
+}
+
+/** Size in bytes if the object exists, else null. */
+export async function headObjectSize(
+  bucket: string,
+  key: string
+): Promise<number | null> {
+  if (bucket === LOCAL_BUCKET) {
+    try {
+      const { statSync } = await import("fs");
+      return statSync(localPath(key)).size;
+    } catch {
+      return null;
+    }
+  }
+  try {
+    const result = await s3Client().send(
+      new HeadObjectCommand({ Bucket: bucket, Key: key })
+    );
+    return result.ContentLength ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Presigned PUT URL so the browser uploads straight to S3 — bypasses
+ * Vercel's 4.5 MB request body limit. Null when S3 is not configured.
+ */
+export async function presignedPutUrl(
+  key: string,
+  contentType: string
+): Promise<string | null> {
+  if (!s3Configured()) return null;
+  return getSignedUrl(
+    s3Client(),
+    new PutObjectCommand({
+      Bucket: process.env.S3_BUCKET_NAME!,
+      Key: key,
+      ContentType: contentType,
+    }),
+    { expiresIn: 60 * 15 }
+  );
 }
 
 /** Presigned GET URL for S3 objects; null for local-disk objects. */

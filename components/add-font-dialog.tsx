@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -16,26 +16,55 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+interface GoogleFamily {
+  family: string;
+  category: string;
+}
 
 export function AddFontDialog({ kitId }: { kitId: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Upload tab
   const [family, setFamily] = useState("");
   const [foundry, setFoundry] = useState("");
   const [licenseNote, setLicenseNote] = useState("");
-  const [saving, setSaving] = useState(false);
   const [fontId, setFontId] = useState<string | null>(null);
 
-  async function handleCreate() {
-    setSaving(true);
-    const result = await addFont({ kitId, family, foundry, licenseNote });
-    setSaving(false);
-    if (result.ok) {
-      setFontId(result.fontId);
-    } else {
-      toast.error(result.error);
-    }
-  }
+  // Google tab
+  const [googleList, setGoogleList] = useState<GoogleFamily[] | null>(null);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+  const [googleQuery, setGoogleQuery] = useState("");
+
+  // Adobe tab
+  const [adobeFamily, setAdobeFamily] = useState("");
+  const [adobeProjectId, setAdobeProjectId] = useState("");
+
+  useEffect(() => {
+    if (!open || googleList !== null) return;
+    void (async () => {
+      try {
+        const response = await fetch("/api/fonts/google");
+        if (!response.ok) throw new Error();
+        const body = (await response.json()) as { families: GoogleFamily[] };
+        setGoogleList(body.families);
+      } catch {
+        setGoogleError("Could not load the Google Fonts list");
+      }
+    })();
+  }, [open, googleList]);
+
+  const googleMatches = useMemo(() => {
+    if (!googleList) return [];
+    const query = googleQuery.trim().toLowerCase();
+    const matches = query
+      ? googleList.filter((item) => item.family.toLowerCase().includes(query))
+      : googleList;
+    return matches.slice(0, 30);
+  }, [googleList, googleQuery]);
 
   function reset(nextOpen: boolean) {
     setOpen(nextOpen);
@@ -44,7 +73,65 @@ export function AddFontDialog({ kitId }: { kitId: string }) {
       setFoundry("");
       setLicenseNote("");
       setFontId(null);
+      setGoogleQuery("");
+      setAdobeFamily("");
+      setAdobeProjectId("");
       router.refresh();
+    }
+  }
+
+  async function handleUploadCreate() {
+    setSaving(true);
+    const result = await addFont({
+      kitId,
+      family,
+      foundry,
+      licenseNote,
+      source: "upload",
+    });
+    setSaving(false);
+    if (result.ok) {
+      setFontId(result.fontId);
+    } else {
+      toast.error(result.error);
+    }
+  }
+
+  async function handleGooglePick(pick: GoogleFamily) {
+    setSaving(true);
+    const result = await addFont({
+      kitId,
+      family: pick.family,
+      foundry: "Google Fonts",
+      licenseNote: "Open source — fonts.google.com",
+      source: "google",
+      externalRef: pick.family,
+    });
+    setSaving(false);
+    if (result.ok) {
+      toast.success(`${pick.family} added`);
+      reset(false);
+    } else {
+      toast.error(result.error);
+    }
+  }
+
+  async function handleAdobeAdd() {
+    setSaving(true);
+    const result = await addFont({
+      kitId,
+      family: adobeFamily,
+      foundry: "Adobe Fonts",
+      licenseNote: "Licensed via Adobe Fonts subscription",
+      source: "adobe",
+      externalRef: adobeProjectId,
+    });
+    setSaving(false);
+    if (result.ok) {
+      toast.success(`${adobeFamily} added`);
+      reset(false);
+    } else {
+      toast.error(result.error);
     }
   }
 
@@ -56,9 +143,11 @@ export function AddFontDialog({ kitId }: { kitId: string }) {
           Font
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{fontId ? `Upload ${family} files` : "Add font"}</DialogTitle>
+          <DialogTitle>
+            {fontId ? `Upload ${family} files` : "Add font"}
+          </DialogTitle>
         </DialogHeader>
 
         {fontId ? (
@@ -73,43 +162,131 @@ export function AddFontDialog({ kitId }: { kitId: string }) {
             </DialogFooter>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="font-family">Family</Label>
+          <Tabs defaultValue="upload">
+            <TabsList className="w-full">
+              <TabsTrigger value="upload" className="flex-1">
+                Upload
+              </TabsTrigger>
+              <TabsTrigger value="google" className="flex-1">
+                Google Fonts
+              </TabsTrigger>
+              <TabsTrigger value="adobe" className="flex-1">
+                Adobe Fonts
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="upload" className="mt-4 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="font-family">Family</Label>
+                <Input
+                  id="font-family"
+                  value={family}
+                  onChange={(event) => setFamily(event.target.value)}
+                  placeholder="Ivar Display"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="font-foundry">Foundry (optional)</Label>
+                <Input
+                  id="font-foundry"
+                  value={foundry}
+                  onChange={(event) => setFoundry(event.target.value)}
+                  placeholder="Letters from Sweden"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="font-license">License note (optional)</Label>
+                <Input
+                  id="font-license"
+                  value={licenseNote}
+                  onChange={(event) => setLicenseNote(event.target.value)}
+                  placeholder="Desktop license — 5 seats"
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  onClick={() => void handleUploadCreate()}
+                  disabled={saving || !family.trim()}
+                >
+                  {saving ? "Adding…" : "Next: upload files"}
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+
+            <TabsContent value="google" className="mt-4 space-y-3">
               <Input
-                id="font-family"
-                value={family}
-                onChange={(event) => setFamily(event.target.value)}
-                placeholder="Inter"
+                autoFocus
+                value={googleQuery}
+                onChange={(event) => setGoogleQuery(event.target.value)}
+                placeholder="Search Google Fonts…"
+                aria-label="Search Google Fonts"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="font-foundry">Foundry (optional)</Label>
-              <Input
-                id="font-foundry"
-                value={foundry}
-                onChange={(event) => setFoundry(event.target.value)}
-                placeholder="rsms"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="font-license">License note (optional)</Label>
-              <Input
-                id="font-license"
-                value={licenseNote}
-                onChange={(event) => setLicenseNote(event.target.value)}
-                placeholder="SIL OFL — free for all use"
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                onClick={() => void handleCreate()}
-                disabled={saving || !family.trim()}
-              >
-                {saving ? "Adding…" : "Next: upload files"}
-              </Button>
-            </DialogFooter>
-          </div>
+              {googleError ? (
+                <p className="text-sm text-destructive">{googleError}</p>
+              ) : googleList === null ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  Loading font list…
+                </p>
+              ) : (
+                <ul className="max-h-64 divide-y divide-border overflow-y-auto rounded-md border border-border">
+                  {googleMatches.map((item) => (
+                    <li key={item.family}>
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => void handleGooglePick(item)}
+                        className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-accent"
+                      >
+                        <span>{item.family}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {item.category}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                  {googleMatches.length === 0 ? (
+                    <li className="px-3 py-6 text-center text-sm text-muted-foreground">
+                      No matches
+                    </li>
+                  ) : null}
+                </ul>
+              )}
+            </TabsContent>
+
+            <TabsContent value="adobe" className="mt-4 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="adobe-family">Font family name</Label>
+                <Input
+                  id="adobe-family"
+                  value={adobeFamily}
+                  onChange={(event) => setAdobeFamily(event.target.value)}
+                  placeholder="Proxima Nova"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="adobe-project">Web project ID</Label>
+                <Input
+                  id="adobe-project"
+                  value={adobeProjectId}
+                  onChange={(event) => setAdobeProjectId(event.target.value)}
+                  placeholder="abc1def"
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  From fonts.adobe.com → Web Projects — the ID in your embed
+                  code, e.g. use.typekit.net/<span className="font-mono">abc1def</span>.css
+                </p>
+              </div>
+              <DialogFooter>
+                <Button
+                  onClick={() => void handleAdobeAdd()}
+                  disabled={saving || !adobeFamily.trim() || !adobeProjectId.trim()}
+                >
+                  {saving ? "Adding…" : "Add Adobe font"}
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+          </Tabs>
         )}
       </DialogContent>
     </Dialog>

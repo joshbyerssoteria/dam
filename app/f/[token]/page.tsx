@@ -99,7 +99,11 @@ export default async function SharedFolderPage({
         ) : null}
       </header>
 
-      <PhotoGrid photos={items} srcPrefix={`/api/share/${token}/file`} />
+      <PhotoGrid
+        photos={items}
+        srcPrefix={`/api/share/${token}/file`}
+        shareToken={token}
+      />
     </div>
   );
 }

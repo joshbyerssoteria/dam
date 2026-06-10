@@ -1,19 +1,101 @@
-import { Download, FileIcon, Type } from "lucide-react";
 import type { KitContentData } from "@/lib/kit-data";
-import { formatBytes } from "@/lib/utils";
+import { FileAssetCard } from "@/components/file-asset-card";
+import { FontCard } from "@/components/font-card";
 import { PaletteCard } from "@/components/palette-card";
-import { KitFileActions } from "@/components/kit-asset-actions";
-import { Button } from "@/components/ui/button";
-
-function isPreviewableImage(mimeType: string): boolean {
-  return mimeType.startsWith("image/");
-}
 
 /**
- * All asset types of a kit on one page: files, palettes, fonts.
- * Renders for both the app (canEdit) and public share views (srcPrefix).
+ * Read-only kit rendering: files grouped by section, palettes, fonts.
+ * Used on public share pages and for viewers; editors get KitFileBoard
+ * for the file area instead (drag-and-drop).
  */
-export function KitContent({
+export function KitFilesSection({
+  data,
+  srcPrefix = "/api/files",
+  shareToken,
+}: {
+  data: KitContentData;
+  srcPrefix?: string;
+  shareToken?: string;
+}) {
+  if (data.files.length === 0) return null;
+
+  const groups: Array<{ key: string; title: string | null; files: typeof data.files }> = [];
+  const unsectioned = data.files.filter(
+    (item) =>
+      !item.sectionId ||
+      !data.sections.some((section) => section.id === item.sectionId)
+  );
+  if (unsectioned.length > 0) {
+    groups.push({
+      key: "none",
+      title: data.sections.length > 0 ? "Files" : null,
+      files: unsectioned,
+    });
+  }
+  for (const section of data.sections) {
+    const files = data.files.filter((item) => item.sectionId === section.id);
+    if (files.length > 0) {
+      groups.push({ key: section.id, title: section.name, files });
+    }
+  }
+
+  return (
+    <div className="space-y-10">
+      {groups.map((group) => (
+        <section key={group.key} aria-label={group.title ?? "Files"}>
+          <h2 className="mb-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {group.title ?? "Files"}
+          </h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {group.files.map(({ kitAssetId, file }) => (
+              <FileAssetCard
+                key={kitAssetId}
+                kitAssetId={kitAssetId}
+                file={file}
+                srcPrefix={srcPrefix}
+                shareToken={shareToken}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+export function KitPalettesSection({
+  data,
+  canEdit = false,
+}: {
+  data: KitContentData;
+  canEdit?: boolean;
+}) {
+  if (data.palettes.length === 0) return null;
+  return (
+    <section aria-labelledby="kit-palettes">
+      <h2
+        id="kit-palettes"
+        className="mb-4 text-xs font-medium uppercase tracking-wide text-muted-foreground"
+      >
+        Color palettes
+      </h2>
+      <div className="space-y-4">
+        {data.palettes.map(({ palette, colors }) => (
+          <PaletteCard
+            key={palette.id}
+            paletteId={palette.id}
+            name={palette.name}
+            description={palette.description}
+            colors={colors}
+            canEdit={canEdit}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function KitFontsSection({
   data,
   srcPrefix = "/api/files",
   canEdit = false,
@@ -22,9 +104,57 @@ export function KitContent({
   srcPrefix?: string;
   canEdit?: boolean;
 }) {
-  const { files, palettes, fonts } = data;
+  if (data.fonts.length === 0) return null;
+  return (
+    <section aria-labelledby="kit-fonts">
+      <h2
+        id="kit-fonts"
+        className="mb-4 text-xs font-medium uppercase tracking-wide text-muted-foreground"
+      >
+        Fonts
+      </h2>
+      <div className="space-y-3">
+        {data.fonts.map(({ font, files }) => (
+          <FontCard
+            key={font.id}
+            fontId={font.id}
+            family={font.family}
+            foundry={font.foundry}
+            licenseNote={font.license_note}
+            source={font.source}
+            externalRef={font.external_ref}
+            files={files.map(({ fontFile, file }) => ({
+              fontFileId: fontFile.id,
+              fileId: file.id,
+              filename: file.original_filename,
+              weight: fontFile.weight,
+              style: fontFile.style,
+            }))}
+            srcPrefix={srcPrefix}
+            canEdit={canEdit}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** Full read-only kit body (share pages, viewers). */
+export function KitContent({
+  data,
+  srcPrefix = "/api/files",
+  shareToken,
+  canEdit = false,
+}: {
+  data: KitContentData;
+  srcPrefix?: string;
+  shareToken?: string;
+  canEdit?: boolean;
+}) {
   const empty =
-    files.length === 0 && palettes.length === 0 && fonts.length === 0;
+    data.files.length === 0 &&
+    data.palettes.length === 0 &&
+    data.fonts.length === 0;
 
   if (empty) {
     return (
@@ -36,151 +166,9 @@ export function KitContent({
 
   return (
     <div className="space-y-12">
-      {files.length > 0 ? (
-        <section aria-labelledby="kit-files">
-          <h2
-            id="kit-files"
-            className="mb-4 text-xs font-medium uppercase tracking-wide text-muted-foreground"
-          >
-            Files
-          </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {files.map(({ kitAssetId, file }) => (
-              <div
-                key={kitAssetId}
-                className="group overflow-hidden rounded-lg border border-border bg-card"
-              >
-                <div className="flex aspect-[4/3] items-center justify-center bg-muted">
-                  {isPreviewableImage(file.mime_type) ? (
-                    /* eslint-disable-next-line @next/next/no-img-element -- authenticated variant route */
-                    <img
-                      src={`${srcPrefix}/${file.id}${file.mime_type === "image/svg+xml" ? "" : "?w=480"}`}
-                      alt={file.original_filename}
-                      loading="lazy"
-                      className="size-full object-contain p-4"
-                    />
-                  ) : (
-                    <FileIcon
-                      className="size-8 text-muted-foreground"
-                      strokeWidth={1.25}
-                    />
-                  )}
-                </div>
-                <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-medium">
-                      {file.original_filename}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatBytes(file.file_size)}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center">
-                    <Button variant="ghost" size="icon" asChild>
-                      <a
-                        href={`${srcPrefix}/${file.id}?download=1`}
-                        aria-label={`Download ${file.original_filename}`}
-                      >
-                        <Download className="size-4" />
-                      </a>
-                    </Button>
-                    {canEdit ? <KitFileActions kitAssetId={kitAssetId} /> : null}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {palettes.length > 0 ? (
-        <section aria-labelledby="kit-palettes">
-          <h2
-            id="kit-palettes"
-            className="mb-4 text-xs font-medium uppercase tracking-wide text-muted-foreground"
-          >
-            Color palettes
-          </h2>
-          <div className="space-y-4">
-            {palettes.map(({ palette, colors }) => (
-              <PaletteCard
-                key={palette.id}
-                paletteId={palette.id}
-                name={palette.name}
-                description={palette.description}
-                colors={colors}
-                canEdit={canEdit}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {fonts.length > 0 ? (
-        <section aria-labelledby="kit-fonts">
-          <h2
-            id="kit-fonts"
-            className="mb-4 text-xs font-medium uppercase tracking-wide text-muted-foreground"
-          >
-            Fonts
-          </h2>
-          <div className="space-y-3">
-            {fonts.map(({ font, files: fontFiles }) => (
-              <div
-                key={font.id}
-                className="rounded-lg border border-border bg-card p-5"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <Type
-                      className="size-5 text-muted-foreground"
-                      strokeWidth={1.5}
-                    />
-                    <div>
-                      <h3 className="text-sm font-medium">{font.family}</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {[font.foundry, font.license_note]
-                          .filter(Boolean)
-                          .join(" · ") || "No license note"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                {fontFiles.length > 0 ? (
-                  <ul className="mt-4 space-y-1">
-                    {fontFiles.map(({ fontFile, file }) => (
-                      <li
-                        key={fontFile.id}
-                        className="flex items-center justify-between gap-4 text-sm"
-                      >
-                        <span className="truncate">
-                          {file.original_filename}
-                          {fontFile.weight ? (
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              {fontFile.weight}
-                              {fontFile.style ? ` ${fontFile.style}` : ""}
-                            </span>
-                          ) : null}
-                        </span>
-                        <a
-                          href={`${srcPrefix}/${file.id}?download=1`}
-                          className="shrink-0 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                        >
-                          Download
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    No files uploaded yet.
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <KitFilesSection data={data} srcPrefix={srcPrefix} shareToken={shareToken} />
+      <KitPalettesSection data={data} canEdit={canEdit} />
+      <KitFontsSection data={data} srcPrefix={srcPrefix} canEdit={canEdit} />
     </div>
   );
 }

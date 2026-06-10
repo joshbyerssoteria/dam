@@ -16,18 +16,38 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-export function NewKitDialog() {
+const NO_FOLDER = "__root__";
+
+export function NewKitDialog({
+  folders,
+  defaultFolderId,
+}: {
+  folders: Array<{ id: string; name: string }>;
+  defaultFolderId: string | null;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [folderId, setFolderId] = useState(defaultFolderId ?? NO_FOLDER);
   const [saving, setSaving] = useState(false);
 
   async function handleCreate() {
     setSaving(true);
-    const result = await createKit({ name, description });
+    const result = await createKit({
+      name,
+      description,
+      kitFolderId: folderId === NO_FOLDER ? null : folderId,
+    });
     setSaving(false);
     if (result.ok) {
       setOpen(false);
@@ -77,6 +97,24 @@ export function NewKitDialog() {
               rows={3}
             />
           </div>
+          {folders.length > 0 ? (
+            <div className="space-y-2">
+              <Label>Folder</Label>
+              <Select value={folderId} onValueChange={setFolderId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_FOLDER}>No folder (Kits root)</SelectItem>
+                  {folders.map((folder) => (
+                    <SelectItem key={folder.id} value={folder.id}>
+                      {folder.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
           <DialogFooter>
             <Button type="submit" disabled={saving || !name.trim()}>
               {saving ? "Creating…" : "Create kit"}

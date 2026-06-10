@@ -6,12 +6,14 @@ import type {
   FontFileRow,
   FontRow,
   KitRow,
+  KitSectionRow,
   PaletteRow,
 } from "@/lib/database.types";
 
 export interface KitContentData {
   kit: KitRow;
-  files: Array<{ kitAssetId: string; file: FileRow }>;
+  sections: KitSectionRow[];
+  files: Array<{ kitAssetId: string; sectionId: string | null; file: FileRow }>;
   palettes: Array<{ palette: PaletteRow; colors: ColorRow[] }>;
   fonts: Array<{
     font: FontRow;
@@ -39,13 +41,15 @@ export async function loadKitContent(
     .filter((asset) => asset.asset_type === "file")
     .map((asset) => asset.asset_id);
 
-  const [filesResult, palettesResult, fontsResult] = await Promise.all([
-    fileIds.length > 0
-      ? db.from("files").select("*").in("id", fileIds)
-      : Promise.resolve({ data: [] as FileRow[] }),
-    db.from("palettes").select("*").eq("kit_id", kit.id).order("sort_order").order("created_at"),
-    db.from("fonts").select("*").eq("kit_id", kit.id).order("sort_order").order("created_at"),
-  ]);
+  const [filesResult, palettesResult, fontsResult, sectionsResult] =
+    await Promise.all([
+      fileIds.length > 0
+        ? db.from("files").select("*").in("id", fileIds)
+        : Promise.resolve({ data: [] as FileRow[] }),
+      db.from("palettes").select("*").eq("kit_id", kit.id).order("sort_order").order("created_at"),
+      db.from("fonts").select("*").eq("kit_id", kit.id).order("sort_order").order("created_at"),
+      db.from("kit_sections").select("*").eq("kit_id", kit.id).order("sort_order").order("created_at"),
+    ]);
 
   const fileRows = filesResult.data ?? [];
   const fileById = new Map(fileRows.map((file) => [file.id, file]));
@@ -53,7 +57,9 @@ export async function loadKitContent(
     .filter((asset) => asset.asset_type === "file")
     .flatMap((asset) => {
       const file = fileById.get(asset.asset_id);
-      return file ? [{ kitAssetId: asset.id, file }] : [];
+      return file
+        ? [{ kitAssetId: asset.id, sectionId: asset.section_id, file }]
+        : [];
     });
 
   const paletteRows = palettesResult.data ?? [];
@@ -98,5 +104,5 @@ export async function loadKitContent(
       }),
   }));
 
-  return { kit, files, palettes, fonts };
+  return { kit, sections: sectionsResult.data ?? [], files, palettes, fonts };
 }

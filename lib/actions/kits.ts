@@ -16,6 +16,7 @@ const HEX_RE = /^#?[0-9a-fA-F]{6}$/;
 export async function createKit(input: {
   name: string;
   description: string;
+  kitFolderId?: string | null;
 }): Promise<{ ok: true; slug: string } | { ok: false; error: string }> {
   const session = await requireEditor();
   if (!session) return { ok: false, error: "Not allowed" };
@@ -34,6 +35,7 @@ export async function createKit(input: {
     name,
     slug,
     description: input.description.trim() || null,
+    kit_folder_id: input.kitFolderId ?? null,
   });
   if (error) {
     return {
@@ -44,6 +46,124 @@ export async function createKit(input: {
 
   revalidatePath("/kits");
   return { ok: true, slug };
+}
+
+export async function updateKit(input: {
+  kitId: string;
+  name: string;
+  description: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const session = await requireEditor();
+  if (!session) return { ok: false, error: "Not allowed" };
+
+  const name = input.name.trim();
+  if (!name) return { ok: false, error: "Name required" };
+
+  // Slug stays stable so existing URLs and share links keep working.
+  const db = await createClient();
+  const { error } = await db
+    .from("kits")
+    .update({
+      name,
+      description: input.description.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.kitId);
+  if (error) return { ok: false, error: "Failed to update kit" };
+
+  revalidatePath("/kits");
+  return { ok: true };
+}
+
+export async function createKitSection(
+  kitId: string,
+  name: string
+): Promise<{ ok: true; sectionId: string } | { ok: false; error: string }> {
+  const session = await requireEditor();
+  if (!session) return { ok: false, error: "Not allowed" };
+  const trimmed = name.trim();
+  if (!trimmed) return { ok: false, error: "Section name required" };
+
+  const db = await createClient();
+  const { count } = await db
+    .from("kit_sections")
+    .select("id", { count: "exact", head: true })
+    .eq("kit_id", kitId);
+  const { data: section, error } = await db
+    .from("kit_sections")
+    .insert({ kit_id: kitId, name: trimmed, sort_order: count ?? 0 })
+    .select("id")
+    .single();
+  if (error || !section) return { ok: false, error: "Failed to create section" };
+
+  revalidatePath("/kits");
+  return { ok: true, sectionId: section.id };
+}
+
+export async function renameKitSection(
+  sectionId: string,
+  name: string
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await requireEditor();
+  if (!session) return { ok: false, error: "Not allowed" };
+  const trimmed = name.trim();
+  if (!trimmed) return { ok: false, error: "Section name required" };
+
+  const db = await createClient();
+  const { error } = await db
+    .from("kit_sections")
+    .update({ name: trimmed })
+    .eq("id", sectionId);
+  if (error) return { ok: false, error: "Failed to rename section" };
+
+  revalidatePath("/kits");
+  return { ok: true };
+}
+
+export async function deleteKitSection(
+  sectionId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await requireEditor();
+  if (!session) return { ok: false, error: "Not allowed" };
+
+  // Assets in the section become unsectioned (FK on delete set null).
+  const db = await createClient();
+  const { error } = await db.from("kit_sections").delete().eq("id", sectionId);
+  if (error) return { ok: false, error: "Failed to delete section" };
+
+  revalidatePath("/kits");
+  return { ok: true };
+}
+
+const reorderSchema = z.array(
+  z.object({
+    kitAssetId: z.string().uuid(),
+    sectionId: z.string().uuid().nullable(),
+    sortOrder: z.number().int().min(0).max(10000),
+  })
+).max(500);
+
+/** Persist a drag-and-drop arrangement: section membership + order. */
+export async function reorderKitAssets(
+  updates: Array<{ kitAssetId: string; sectionId: string | null; sortOrder: number }>
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await requireEditor();
+  if (!session) return { ok: false, error: "Not allowed" };
+
+  const parsed = reorderSchema.safeParse(updates);
+  if (!parsed.success) return { ok: false, error: "Invalid arrangement" };
+
+  const db = await createClient();
+  for (const update of parsed.data) {
+    const { error } = await db
+      .from("kit_assets")
+      .update({ section_id: update.sectionId, sort_order: update.sortOrder })
+      .eq("id", update.kitAssetId);
+    if (error) return { ok: false, error: "Failed to save arrangement" };
+  }
+
+  revalidatePath("/kits");
+  return { ok: true };
 }
 
 export async function deleteKit(
@@ -142,16 +262,22 @@ const fontSchema = z.object({
   family: z.string().trim().min(1).max(120),
   foundry: z.string().trim().max(120),
   licenseNote: z.string().trim().max(500),
+  source: z.enum(["upload", "google", "adobe"]).default("upload"),
+  // Google: family name. Adobe: web project id from fonts.adobe.com.
+  externalRef: z.string().trim().max(200).default(""),
 });
 
 export async function addFont(
-  input: z.infer<typeof fontSchema>
+  input: z.input<typeof fontSchema>
 ): Promise<{ ok: true; fontId: string } | { ok: false; error: string }> {
   const session = await requireEditor();
   if (!session) return { ok: false, error: "Not allowed" };
 
   const parsed = fontSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Invalid font details" };
+  if (parsed.data.source !== "upload" && !parsed.data.externalRef) {
+    return { ok: false, error: "Missing font reference" };
+  }
 
   const db = await createClient();
   const { data: font, error } = await db
@@ -161,6 +287,8 @@ export async function addFont(
       family: parsed.data.family,
       foundry: parsed.data.foundry || null,
       license_note: parsed.data.licenseNote || null,
+      source: parsed.data.source,
+      external_ref: parsed.data.externalRef || null,
     })
     .select("id")
     .single();

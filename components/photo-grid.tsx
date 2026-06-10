@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Download, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { deletePhoto } from "@/lib/actions/folders";
 import { formatBytes, formatDate, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DownloadMenu } from "@/components/download-menu";
 
 export interface PhotoGridItem {
   id: string;
@@ -34,10 +35,12 @@ export interface PhotoGridItem {
 export function PhotoGrid({
   photos,
   srcPrefix = "/api/files",
+  shareToken,
   allowDelete = false,
 }: {
   photos: PhotoGridItem[];
   srcPrefix?: string;
+  shareToken?: string;
   allowDelete?: boolean;
 }) {
   const router = useRouter();
@@ -239,12 +242,13 @@ export function PhotoGrid({
                   Delete
                 </Button>
               ) : null}
-              <Button size="sm" asChild>
-                <a href={`${srcPrefix}/${open.fileId}?download=1`}>
-                  <Download className="size-4" />
-                  Original
-                </a>
-              </Button>
+              <DownloadMenu
+                fileId={open.fileId}
+                mimeType="image/jpeg"
+                srcPrefix={srcPrefix}
+                shareToken={shareToken}
+                size="sm"
+              />
             </div>
           </aside>
         </div>

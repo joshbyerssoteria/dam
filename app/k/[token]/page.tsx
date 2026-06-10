@@ -66,7 +66,11 @@ export default async function SharedKitPage({
         ) : null}
       </header>
 
-      <KitContent data={data} srcPrefix={`/api/share/${token}/file`} />
+      <KitContent
+        data={data}
+        srcPrefix={`/api/share/${token}/file`}
+        shareToken={token}
+      />
     </div>
   );
 }

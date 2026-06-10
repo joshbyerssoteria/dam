@@ -12,6 +12,7 @@ const PUBLIC_PREFIXES = [
   "/api/share",
   "/api/upload",
   "/api/inngest",
+  "/api/transform", // enforces session-or-share-token itself
 ];
 
 function isPublicPath(pathname: string): boolean {

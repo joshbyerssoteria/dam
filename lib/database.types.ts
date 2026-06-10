@@ -44,6 +44,7 @@ export type KitRow = {
   share_password_hash: string | null;
   share_expires_at: string | null;
   cover_image_id: string | null;
+  kit_folder_id: string | null;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -54,6 +55,26 @@ export type KitAssetRow = {
   kit_id: string;
   asset_type: KitAssetType;
   asset_id: string;
+  section_id: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export type KitFolderRow = {
+  id: string;
+  space_id: string;
+  parent_id: string | null;
+  slug: string;
+  name: string;
+  description: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export type KitSectionRow = {
+  id: string;
+  kit_id: string;
+  name: string;
   sort_order: number;
   created_at: string;
 }
@@ -79,12 +100,16 @@ export type ColorRow = {
   sort_order: number;
 }
 
+export type FontSource = "upload" | "google" | "adobe";
+
 export type FontRow = {
   id: string;
   kit_id: string;
   family: string;
   foundry: string | null;
   license_note: string | null;
+  source: FontSource;
+  external_ref: string | null;
   sort_order: number;
   created_at: string;
 }
@@ -214,6 +239,8 @@ export type Database = {
       files: TableDef<FileRow>;
       kits: TableDef<KitRow>;
       kit_assets: TableDef<KitAssetRow>;
+      kit_folders: TableDef<KitFolderRow>;
+      kit_sections: TableDef<KitSectionRow>;
       palettes: TableDef<PaletteRow>;
       colors: TableDef<ColorRow>;
       fonts: TableDef<FontRow>;

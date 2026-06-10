@@ -7,10 +7,12 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 
+// Mirrors lib/upload-intents.ts (kept local — that module is server-only).
 type UploadIntent =
   | { intent: "photo"; folderId: string }
   | { intent: "portal-photo"; uploadToken: string }
-  | { intent: "kit-file"; kitId: string };
+  | { intent: "kit-file"; kitId: string }
+  | { intent: "kit-cover"; kitId: string };
 
 interface FileUploadState {
   name: string;
@@ -19,44 +21,109 @@ interface FileUploadState {
   error?: string;
 }
 
-function uploadWithProgress(
-  file: File,
-  intent: UploadIntent,
-  onProgress: (percent: number) => void
-): Promise<{ ok: boolean; error?: string }> {
+function xhrSend(
+  method: string,
+  url: string,
+  body: FormData | File,
+  onProgress: (percent: number) => void,
+  contentType?: string
+): Promise<{ ok: boolean; status: number; responseText: string }> {
   return new Promise((resolve) => {
-    const formData = new FormData();
-    formData.set("file", file);
-    for (const [key, value] of Object.entries(intent)) {
-      formData.set(key, value);
-    }
-
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/upload/direct");
+    xhr.open(method, url);
+    if (contentType) xhr.setRequestHeader("Content-Type", contentType);
     xhr.upload.addEventListener("progress", (event) => {
       if (event.lengthComputable) {
         onProgress(Math.round((event.loaded / event.total) * 100));
       }
     });
-    xhr.addEventListener("load", () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve({ ok: true });
-      } else {
-        let message = `Upload failed (${xhr.status})`;
-        try {
-          const body = JSON.parse(xhr.responseText) as { error?: string };
-          if (body.error) message = body.error;
-        } catch {
-          // keep default message
-        }
-        resolve({ ok: false, error: message });
-      }
-    });
-    xhr.addEventListener("error", () =>
-      resolve({ ok: false, error: "Network error" })
+    xhr.addEventListener("load", () =>
+      resolve({
+        ok: xhr.status >= 200 && xhr.status < 300,
+        status: xhr.status,
+        responseText: xhr.responseText,
+      })
     );
-    xhr.send(formData);
+    xhr.addEventListener("error", () =>
+      resolve({ ok: false, status: 0, responseText: "" })
+    );
+    xhr.send(body);
   });
+}
+
+function errorFrom(responseText: string, status: number): string {
+  try {
+    const body = JSON.parse(responseText) as { error?: string };
+    if (body.error) return body.error;
+  } catch {
+    // fall through
+  }
+  return status === 0 ? "Network error" : `Upload failed (${status})`;
+}
+
+/**
+ * Upload one file: ask the server for a presigned S3 URL (bypasses Vercel's
+ * 4.5 MB body limit); if S3 isn't configured, fall back to the direct route.
+ */
+async function uploadWithProgress(
+  file: File,
+  intent: UploadIntent,
+  onProgress: (percent: number) => void
+): Promise<{ ok: boolean; error?: string }> {
+  const mimeType = file.type || "application/octet-stream";
+
+  const presignResponse = await fetch("/api/upload/presign", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      filename: file.name,
+      mimeType,
+      fileSize: file.size,
+      intent,
+    }),
+  });
+  if (!presignResponse.ok) {
+    const text = await presignResponse.text();
+    return { ok: false, error: errorFrom(text, presignResponse.status) };
+  }
+  const presign = (await presignResponse.json()) as
+    | { mode: "direct" }
+    | { mode: "s3"; url: string; key: string };
+
+  if (presign.mode === "s3") {
+    // Browser → S3, then register the upload.
+    const put = await xhrSend("PUT", presign.url, file, onProgress, mimeType);
+    if (!put.ok) {
+      return { ok: false, error: "Storage upload failed — check S3 CORS configuration" };
+    }
+    const complete = await fetch("/api/upload/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        key: presign.key,
+        filename: file.name,
+        mimeType,
+        intent,
+      }),
+    });
+    if (!complete.ok) {
+      const text = await complete.text();
+      return { ok: false, error: errorFrom(text, complete.status) };
+    }
+    return { ok: true };
+  }
+
+  // Local/dev fallback: file passes through the server route.
+  const formData = new FormData();
+  formData.set("file", file);
+  for (const [key, value] of Object.entries(intent)) {
+    formData.set(key, String(value));
+  }
+  const direct = await xhrSend("POST", "/api/upload/direct", formData, onProgress);
+  if (!direct.ok) {
+    return { ok: false, error: errorFrom(direct.responseText, direct.status) };
+  }
+  return { ok: true };
 }
 
 export function UploadDropzone({
