@@ -504,7 +504,9 @@ export function AppSidebar({
 
   return (
     <aside className="sticky top-0 flex h-svh w-60 shrink-0 flex-col border-r border-border bg-white">
-      <div className="px-3 pb-5 pt-5">
+      {/* 22px = nav container (12px) + item padding (10px), so the logo
+          aligns with the menu items' content edge */}
+      <div className="px-[22px] pb-5 pt-6">
         <Link href="/photos" className="block">
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
           <img
