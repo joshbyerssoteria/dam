@@ -85,30 +85,31 @@ export async function loadKitContent(
         : [];
     });
 
+  // Second stage runs as one parallel batch (colors, font files, source file).
   const paletteRows = palettesResult.data ?? [];
   const paletteIds = paletteRows.map((palette) => palette.id);
-  const { data: colorRows } =
-    paletteIds.length > 0
-      ? await db
-          .from("colors")
-          .select("*")
-          .in("palette_id", paletteIds)
-          .order("sort_order")
-      : { data: [] as ColorRow[] };
-  const palettes = paletteRows.map((palette) => ({
-    palette,
-    colors: (colorRows ?? []).filter(
-      (color) => color.palette_id === palette.id
-    ),
-  }));
-
   const fontRows = fontsResult.data ?? [];
   const fontIds = fontRows.map((font) => font.id);
-  const { data: fontFileRows } =
+
+  const [colorsResult, fontFilesResult, sourceFileResult] = await Promise.all([
+    paletteIds.length > 0
+      ? db.from("colors").select("*").in("palette_id", paletteIds).order("sort_order")
+      : Promise.resolve({ data: [] as ColorRow[] }),
     fontIds.length > 0
-      ? await db.from("font_files").select("*").in("font_id", fontIds)
-      : { data: [] as FontFileRow[] };
-  const fontFileList = fontFileRows ?? [];
+      ? db.from("font_files").select("*").in("font_id", fontIds)
+      : Promise.resolve({ data: [] as FontFileRow[] }),
+    kit.source_file_id
+      ? db.from("files").select("*").eq("id", kit.source_file_id).single()
+      : Promise.resolve({ data: null as FileRow | null }),
+  ]);
+
+  const colorRows = colorsResult.data ?? [];
+  const palettes = paletteRows.map((palette) => ({
+    palette,
+    colors: colorRows.filter((color) => color.palette_id === palette.id),
+  }));
+
+  const fontFileList = fontFilesResult.data ?? [];
   const fontFileFileIds = fontFileList.map((fontFile) => fontFile.file_id);
   const { data: fontBlobRows } =
     fontFileFileIds.length > 0
@@ -127,15 +128,7 @@ export async function loadKitContent(
       }),
   }));
 
-  let sourceFile: FileRow | null = null;
-  if (kit.source_file_id) {
-    const { data } = await db
-      .from("files")
-      .select("*")
-      .eq("id", kit.source_file_id)
-      .single();
-    sourceFile = data ?? null;
-  }
+  const sourceFile = sourceFileResult.data ?? null;
 
   return {
     kit,

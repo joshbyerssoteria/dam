@@ -110,10 +110,7 @@ function BranchRow({
           : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground",
         isDropTarget && "bg-[#F2EEE7] ring-1 ring-[#C2912D]"
       )}
-      style={{
-        paddingLeft: `${depth * 12}px`,
-        ...(active ? { boxShadow: `inset 2px 0 0 ${GOLD}` } : {}),
-      }}
+      style={{ paddingLeft: `${depth * 12}px` }}
     >
       {hasChildren ? (
         <button
@@ -265,6 +262,7 @@ function SectionLink({
     <Link
       ref={dropRef as React.Ref<HTMLAnchorElement>}
       href={href}
+      prefetch={true}
       className={cn(
         "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
         exactActive
@@ -273,7 +271,6 @@ function SectionLink({
         sectionActive && !exactActive && "text-foreground",
         isDropTarget && "bg-[#F2EEE7] ring-1 ring-[#C2912D]"
       )}
-      style={exactActive ? { boxShadow: `inset 2px 0 0 ${GOLD}` } : undefined}
     >
       <Icon className="size-4" strokeWidth={1.75} />
       {label}
@@ -568,7 +565,6 @@ export function AppSidebar({
                     ? "bg-[#F2EEE7] font-medium text-foreground"
                     : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
                 )}
-                style={active ? { boxShadow: `inset 2px 0 0 ${GOLD}` } : undefined}
               >
                 <item.icon className="size-4" strokeWidth={1.75} />
                 {item.label}

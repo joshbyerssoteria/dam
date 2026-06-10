@@ -17,46 +17,43 @@ export default async function KitFolderPage({
   params: Promise<{ folderId: string }>;
 }) {
   const { folderId } = await params;
-  const session = await getSessionProfile();
   const db = await createClient();
 
-  const { data: folder } = await db
-    .from("kit_folders")
-    .select("*")
-    .eq("id", folderId)
-    .single();
+  // One round trip: session, the whole (small) kit-folder tree, this
+  // folder's kits. Breadcrumbs and subfolders compute in memory.
+  const [session, { data: allFolders }, { data: kits }] = await Promise.all([
+    getSessionProfile(),
+    db
+      .from("kit_folders")
+      .select("id, name, parent_id, description, sort_order")
+      .order("name"),
+    db
+      .from("kits")
+      .select("id, slug, name, description, cover_image_id")
+      .eq("kit_folder_id", folderId)
+      .order("sort_order")
+      .order("name"),
+  ]);
+
+  const folderList = allFolders ?? [];
+  const folderById = new Map(folderList.map((f) => [f.id, f]));
+  const folder = folderById.get(folderId);
   if (!folder) notFound();
 
-  // Breadcrumbs up the kit-folder tree (bounded against cycles).
   const crumbs: Array<{ id: string; name: string }> = [];
   let parentId = folder.parent_id;
   for (let depth = 0; parentId && depth < 20; depth += 1) {
-    const { data: parent } = await db
-      .from("kit_folders")
-      .select("id, name, parent_id")
-      .eq("id", parentId)
-      .single();
+    const parent = folderById.get(parentId);
     if (!parent) break;
     crumbs.unshift({ id: parent.id, name: parent.name });
     parentId = parent.parent_id;
   }
 
-  const [{ data: subfolders }, { data: kits }, { data: allFolders }] =
-    await Promise.all([
-      db
-        .from("kit_folders")
-        .select("id, name")
-        .eq("parent_id", folder.id)
-        .order("sort_order")
-        .order("name"),
-      db
-        .from("kits")
-        .select("id, slug, name, description, cover_image_id")
-        .eq("kit_folder_id", folder.id)
-        .order("sort_order")
-        .order("name"),
-      db.from("kit_folders").select("id, name").order("name"),
-    ]);
+  const subfolders = folderList
+    .filter((f) => f.parent_id === folder.id)
+    .sort(
+      (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)
+    );
 
   const role = session?.profile.role ?? "viewer";
   const canEdit = role !== "viewer";
@@ -67,7 +64,10 @@ export default async function KitFolderPage({
         {canEdit ? (
           <>
             <NewKitFolderDialog parentId={folder.id} />
-            <NewKitDialog folders={allFolders ?? []} defaultFolderId={folder.id} />
+            <NewKitDialog
+              folders={folderList.map(({ id, name }) => ({ id, name }))}
+              defaultFolderId={folder.id}
+            />
             <KitFolderActions
               folderId={folder.id}
               folderName={folder.name}

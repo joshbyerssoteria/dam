@@ -29,22 +29,25 @@ export async function createClient() {
   );
 }
 
-/** Current user + profile, or null when signed out. Cached per request. */
+/**
+ * Current user + profile, or null when signed out. Cached per request.
+ * Uses getClaims (local JWT verification with cached JWKS) instead of
+ * getUser — avoids a network round-trip to the auth server on every page.
+ */
 export const getSessionProfile = cache(
   async (): Promise<{ userId: string; profile: ProfileRow } | null> => {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return null;
+    const { data } = await supabase.auth.getClaims();
+    const userId = data?.claims?.sub;
+    if (!userId) return null;
 
     const { data: profile } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", user.id)
+      .eq("id", userId)
       .single();
     if (!profile) return null;
 
-    return { userId: user.id, profile };
+    return { userId, profile };
   }
 );

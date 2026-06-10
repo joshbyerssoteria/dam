@@ -46,11 +46,10 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh the session if needed. Do not insert logic between client
-  // creation and getUser() — see Supabase SSR docs.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims verifies the JWT locally (cached JWKS) and still refreshes
+  // expired sessions — much faster than getUser's network round-trip.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ?? null;
 
   const { pathname } = request.nextUrl;
 

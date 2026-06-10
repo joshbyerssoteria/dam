@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { createClient, getSessionProfile } from "@/lib/supabase/server";
-import type { FolderRow } from "@/lib/database.types";
 import { FolderCard } from "@/components/folder-card";
 import { NewFolderDialog } from "@/components/new-folder-dialog";
 import { FolderActions } from "@/components/folder-actions";
@@ -14,74 +13,60 @@ import { UploadDropzone } from "@/components/upload-dropzone";
 
 export const metadata: Metadata = { title: "Photos" };
 
-async function buildBreadcrumbs(
-  db: Awaited<ReturnType<typeof createClient>>,
-  folder: FolderRow
-): Promise<Array<{ id: string; name: string }>> {
-  const crumbs: Array<{ id: string; name: string }> = [];
-  let parentId = folder.parent_id;
-  // Walk up the tree (bounded to avoid cycles).
-  for (let depth = 0; parentId && depth < 20; depth += 1) {
-    const { data: parent } = await db
-      .from("folders")
-      .select("id, name, parent_id")
-      .eq("id", parentId)
-      .single();
-    if (!parent) break;
-    crumbs.unshift({ id: parent.id, name: parent.name });
-    parentId = parent.parent_id;
-  }
-  return crumbs;
-}
-
 export default async function FolderPage({
   params,
 }: {
   params: Promise<{ folderId: string }>;
 }) {
   const { folderId } = await params;
-  const session = await getSessionProfile();
   const db = await createClient();
 
-  const { data: folder } = await db
-    .from("folders")
-    .select("*")
-    .eq("id", folderId)
-    .single();
-  if (!folder) notFound();
-
-  const [crumbs, { data: subfolders }, { data: photos }] = await Promise.all([
-    buildBreadcrumbs(db, folder),
-    db
-      .from("folders")
-      .select("id, name")
-      .eq("parent_id", folder.id)
-      .order("sort_order")
-      .order("name"),
+  // One round trip: session, the full folder tree (small — breadcrumbs and
+  // subfolder counts compute in memory), and this folder's photos.
+  const [session, { data: allFolders }, { data: photos }] = await Promise.all([
+    getSessionProfile(),
+    db.from("folders").select("id, name, parent_id, description, sort_order"),
     db
       .from("photos")
       .select("*, files(*)")
-      .eq("folder_id", folder.id)
+      .eq("folder_id", folderId)
       .order("created_at", { ascending: false }),
   ]);
 
-  const subfolderList = subfolders ?? [];
+  const folderList = allFolders ?? [];
+  const folderById = new Map(folderList.map((f) => [f.id, f]));
+  const folder = folderById.get(folderId);
+  if (!folder) notFound();
+
+  // Breadcrumbs: walk up in memory (bounded against cycles).
+  const crumbs: Array<{ id: string; name: string }> = [];
+  let parentId = folder.parent_id;
+  for (let depth = 0; parentId && depth < 20; depth += 1) {
+    const parent = folderById.get(parentId);
+    if (!parent) break;
+    crumbs.unshift({ id: parent.id, name: parent.name });
+    parentId = parent.parent_id;
+  }
+
+  const subfolderList = folderList
+    .filter((f) => f.parent_id === folder.id)
+    .sort(
+      (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)
+    );
+
+  // Photo counts: one parallel count per subfolder; subfolder counts from
+  // the in-memory tree.
   const subfolderCounts = await Promise.all(
     subfolderList.map(async (subfolder) => {
-      const [{ count: photoCount }, { count: subCount }] = await Promise.all([
-        db
-          .from("photos")
-          .select("id", { count: "exact", head: true })
-          .eq("folder_id", subfolder.id),
-        db
-          .from("folders")
-          .select("id", { count: "exact", head: true })
-          .eq("parent_id", subfolder.id),
-      ]);
+      const { count: photoCount } = await db
+        .from("photos")
+        .select("id", { count: "exact", head: true })
+        .eq("folder_id", subfolder.id);
       return {
         ...subfolder,
         photoCount: photoCount ?? 0,
-        subfolderCount: subCount ?? 0,
+        subfolderCount: folderList.filter((f) => f.parent_id === subfolder.id)
+          .length,
       };
     })
   );
