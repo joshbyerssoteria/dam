@@ -50,7 +50,7 @@ export function CopySnippet({ code }: { code: string }) {
 
   return (
     <div className="relative">
-      <pre className="overflow-x-auto rounded-lg border border-border bg-muted/50 p-4 font-mono text-xs leading-relaxed">
+      <pre className="overflow-x-auto border border-border bg-muted/50 p-4 font-mono text-xs leading-relaxed">
         {code}
       </pre>
       <button

@@ -16,7 +16,7 @@ export function PortalUploader({ token }: { token: string }) {
 
   if (confirmed) {
     return (
-      <div className="rounded-lg border border-border bg-card p-10 text-center">
+      <div className="border border-border bg-card p-10 text-center">
         <CheckCircle2
           className="mx-auto size-8 text-foreground"
           strokeWidth={1.5}

@@ -224,7 +224,7 @@ export function UploadDropzone({
           if (!busy) void handleFiles(event.dataTransfer.files);
         }}
         className={cn(
-          "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-6 py-10 text-center transition-colors",
+          "flex cursor-pointer flex-col items-center justify-center gap-2 border border-dashed px-6 py-10 text-center transition-colors",
           dragging
             ? "border-foreground bg-accent"
             : "border-border hover:border-muted-foreground/50",

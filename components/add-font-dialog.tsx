@@ -164,15 +164,9 @@ export function AddFontDialog({ kitId }: { kitId: string }) {
         ) : (
           <Tabs defaultValue="upload">
             <TabsList className="w-full">
-              <TabsTrigger value="upload" className="flex-1">
-                Upload
-              </TabsTrigger>
-              <TabsTrigger value="google" className="flex-1">
-                Google Fonts
-              </TabsTrigger>
-              <TabsTrigger value="adobe" className="flex-1">
-                Adobe Fonts
-              </TabsTrigger>
+              <TabsTrigger value="upload">Upload</TabsTrigger>
+              <TabsTrigger value="google">Google Fonts</TabsTrigger>
+              <TabsTrigger value="adobe">Adobe Fonts</TabsTrigger>
             </TabsList>
 
             <TabsContent value="upload" className="mt-4 space-y-4">
@@ -323,7 +317,7 @@ function FontFileUpload({ fontId }: { fontId: string }) {
 
   return (
     <div>
-      <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border px-6 py-8 text-center text-sm text-muted-foreground hover:border-muted-foreground/50">
+      <label className="flex cursor-pointer flex-col items-center justify-center gap-1 border border-dashed border-border px-6 py-8 text-center text-sm text-muted-foreground hover:border-muted-foreground/50">
         {busy ? "Uploading…" : "Click to choose font files"}
         <input
           type="file"

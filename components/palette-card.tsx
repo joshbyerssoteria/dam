@@ -77,7 +77,7 @@ export function PaletteCard({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card">
+    <div className="border border-border bg-card">
       <div className="flex items-start justify-between gap-4 px-5 pt-4">
         <div>
           <h3 className="text-sm font-medium">{name}</h3>

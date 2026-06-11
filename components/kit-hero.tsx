@@ -224,7 +224,7 @@ export function KitHero({
   return (
     <section
       aria-label="Brand essentials"
-      className="overflow-hidden rounded-lg border border-border bg-card"
+      className="overflow-hidden border border-border bg-card"
     >
       {/* Source file + 16:9 thumbnail */}
       <div className="flex flex-col sm:flex-row">

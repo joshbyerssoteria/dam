@@ -459,7 +459,8 @@ export function PhotoGrid({
           aria-modal="true"
           aria-label={open.originalFilename}
         >
-          <div className="relative flex min-w-0 flex-1 items-center justify-center bg-neutral-950">
+          {/* Brand: navy is the dark ground — no gray/black surfaces. */}
+          <div className="relative flex min-w-0 flex-1 items-center justify-center bg-[#1B2A41]">
             {/* eslint-disable-next-line @next/next/no-img-element -- authenticated variant route */}
             <img
               src={`${srcPrefix}/${open.fileId}?w=1600`}
@@ -470,7 +471,7 @@ export function PhotoGrid({
               type="button"
               aria-label="Close"
               onClick={() => setOpenIndex(null)}
-              className="absolute left-4 top-4 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+              className="absolute left-4 top-4 rounded-full bg-[#1B2A41]/60 p-2 text-white hover:bg-[#1B2A41]/80"
             >
               <X className="size-4" />
             </button>
@@ -480,7 +481,7 @@ export function PhotoGrid({
                   type="button"
                   aria-label="Previous photo"
                   onClick={() => step(-1)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-[#1B2A41]/60 p-2 text-white hover:bg-[#1B2A41]/80"
                 >
                   <ChevronLeft className="size-5" />
                 </button>
@@ -488,7 +489,7 @@ export function PhotoGrid({
                   type="button"
                   aria-label="Next photo"
                   onClick={() => step(1)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-[#1B2A41]/60 p-2 text-white hover:bg-[#1B2A41]/80"
                 >
                   <ChevronRight className="size-5" />
                 </button>

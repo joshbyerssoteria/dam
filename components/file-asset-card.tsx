@@ -29,7 +29,7 @@ export function FileAssetCard({
     isImage || isPdfLike(file.mime_type, file.original_filename);
 
   return (
-    <div className="group overflow-hidden rounded-lg border border-border bg-card">
+    <div className="group overflow-hidden border border-border bg-card">
       <div className="flex aspect-[4/3] items-center justify-center bg-muted">
         {previewable ? (
           /* eslint-disable-next-line @next/next/no-img-element -- authenticated variant route */

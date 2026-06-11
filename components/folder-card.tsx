@@ -21,7 +21,7 @@ export function FolderCard({
   return (
     <Link
       href={`/photos/${id}`}
-      className="group flex items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:border-muted-foreground/40"
+      className="group flex items-center gap-3 border border-border bg-card p-4 transition-colors hover:border-muted-foreground/40"
     >
       <Folder
         className="size-5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"

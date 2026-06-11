@@ -74,7 +74,7 @@ function DroppableFolderCard({ folder }: { folder: DndFolder }) {
       ref={setNodeRef}
       href={`/kits/f/${folder.id}`}
       className={cn(
-        "group flex items-center gap-3 rounded-lg border bg-card p-4 transition-colors",
+        "group flex items-center gap-3 border bg-card p-4 transition-colors",
         isOver
           ? "border-foreground bg-accent"
           : "border-border hover:border-muted-foreground/40"
@@ -188,7 +188,7 @@ export function KitsDndGrid({
               <Link
                 key={folder.id}
                 href={`/kits/f/${folder.id}`}
-                className="group flex items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:border-muted-foreground/40"
+                className="group flex items-center gap-3 border border-border bg-card p-4 transition-colors hover:border-muted-foreground/40"
               >
                 <FolderCardInner folder={folder} />
               </Link>
@@ -241,7 +241,7 @@ export function KitsDndGrid({
 
       <DragOverlay>
         {activeKit ? (
-          <div className="w-56 rounded-lg border border-border bg-card px-4 py-3 shadow-lg">
+          <div className="w-56 border border-border bg-card px-4 py-3 shadow-lg">
             <p className="truncate text-sm font-medium">{activeKit.name}</p>
           </div>
         ) : null}

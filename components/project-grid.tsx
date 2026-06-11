@@ -99,7 +99,7 @@ export function ProjectGrid({
       </div>
       <DragOverlay>
         {activeProject ? (
-          <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-lg">
+          <div className="flex items-center gap-3 border border-border bg-card p-4 shadow-lg">
             <FolderKanban
               className="size-5 text-muted-foreground"
               strokeWidth={1.5}
@@ -142,7 +142,7 @@ function StaticProjectCard({ project }: { project: ProjectGridItem }) {
   return (
     <Link
       href={`/photos/projects/${project.id}`}
-      className="group flex items-center gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:border-muted-foreground/40"
+      className="group flex items-center gap-3 border border-border bg-card p-4 transition-colors hover:border-muted-foreground/40"
     >
       <CardInner project={project} />
     </Link>
@@ -173,7 +173,7 @@ function DraggableProjectCard({
         {...attributes}
         {...listeners}
         className={cn(
-          "group flex items-center gap-3 rounded-lg border p-4 transition-colors",
+          "group flex items-center gap-3 border p-4 transition-colors",
           // Match the sidebar's unmistakable gold drop target.
           isOver
             ? "border-[#C2912D] bg-[#C2912D] text-white ring-2 ring-[#C2912D]"

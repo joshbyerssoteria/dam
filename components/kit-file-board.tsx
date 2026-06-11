@@ -151,7 +151,7 @@ function SectionBody({
       <div
         ref={setNodeRef}
         className={cn(
-          "grid min-h-24 grid-cols-2 gap-3 rounded-lg p-1 transition-colors sm:grid-cols-3 lg:grid-cols-4",
+          "grid min-h-24 grid-cols-2 gap-3 p-1 transition-colors sm:grid-cols-3 lg:grid-cols-4",
           isOver && "bg-accent/50",
           items.length === 0 &&
             "items-center justify-center border border-dashed border-border"
@@ -588,13 +588,13 @@ export function KitFileBoard({
 
         <DragOverlay>
           {active?.type === "asset" && fileByAssetId.get(active.id) ? (
-            <div className="w-48 rounded-lg border border-border bg-card px-3 py-2 shadow-lg">
+            <div className="w-48 border border-border bg-card px-3 py-2 shadow-lg">
               <p className="truncate text-xs font-medium">
                 {fileByAssetId.get(active.id)!.file.original_filename}
               </p>
             </div>
           ) : active?.type === "section" && sectionById.get(active.id) ? (
-            <div className="rounded-lg border border-border bg-card px-4 py-2 shadow-lg">
+            <div className="border border-border bg-card px-4 py-2 shadow-lg">
               <p className="text-xs font-medium uppercase tracking-wide">
                 {sectionById.get(active.id)!.name}
               </p>

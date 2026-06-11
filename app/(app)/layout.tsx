@@ -45,6 +45,7 @@ export default async function AppLayout({
       <AppSidebar
         role={session.profile.role}
         email={session.profile.email}
+        displayName={session.profile.display_name}
         photoTree={photoTree}
         projectTree={projectTree}
         kitTree={kitTree}

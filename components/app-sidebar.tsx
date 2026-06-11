@@ -52,9 +52,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-/* Soteria brand chrome: off-white warm ground, navy ink, gold rules. */
-const GOLD = "#C2912D";
-
 const SECONDARY_NAV = [
   { href: "/shares", label: "Share links", icon: Link2, roles: ["admin", "editor"] },
   { href: "/upload-links", label: "Upload links", icon: UploadCloud, roles: ["admin"] },
@@ -991,22 +988,41 @@ function BrandGuideNav({ pathname }: { pathname: string }) {
   );
 }
 
+/**
+ * Two-letter initials per the Brand Guide avatar spec: first + last word of
+ * the display name, falling back to the email's local part.
+ */
+function initialsFor(displayName: string | null | undefined, email: string): string {
+  const source =
+    displayName?.trim() ||
+    (email.split("@")[0] ?? "").replace(/[._-]+/g, " ").trim();
+  const words = source.split(/\s+/).filter(Boolean);
+  const first = words[0];
+  const last = words[words.length - 1];
+  if (!first) return "?";
+  const letters =
+    words.length >= 2 && last ? `${first[0]}${last[0]}` : first.slice(0, 2);
+  return letters.toUpperCase();
+}
+
 export function AppSidebar({
   role,
   email,
+  displayName,
   photoTree,
   projectTree,
   kitTree,
 }: {
   role: AppRole;
   email: string;
+  displayName?: string | null;
   photoTree: NavTreeNode[];
   projectTree: NavTreeNode[];
   kitTree: NavTreeNode[];
 }) {
   const pathname = usePathname();
   const canEdit = role !== "viewer";
-  const initial = (email[0] ?? "?").toUpperCase();
+  const initials = initialsFor(displayName, email);
 
   return (
     <aside className="sticky top-0 flex h-svh w-60 shrink-0 flex-col border-r border-border bg-white">
@@ -1072,15 +1088,14 @@ export function AppSidebar({
               type="button"
               className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-[#F2EEE7]/70"
             >
-              <span
-                className="flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
-                style={{ backgroundColor: GOLD }}
-              >
-                {initial}
+              {/* Brand avatar: circular two-letter initials on a 20% gold
+                  tint with navy ink — never a solid gold fill. */}
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#C2912D]/20 text-xs font-bold text-[#1B2A41]">
+                {initials}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm text-foreground" title={email}>
-                  {email}
+                  {displayName?.trim() || email}
                 </span>
                 <span className="block text-xs uppercase tracking-wide text-muted-foreground">
                   {role}
