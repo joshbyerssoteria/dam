@@ -25,6 +25,8 @@ export const org = {
   /** Path under public/ to the primary horizontal logo. */
   logoPath:
     process.env.NEXT_PUBLIC_ORG_LOGO_PATH ?? "/branding/logos/horizontal-navy.svg",
+  /** IANA timezone of the org — drives the time-of-day greeting on Home. */
+  timezone: process.env.NEXT_PUBLIC_ORG_TIMEZONE ?? "America/Chicago",
   /**
    * The Brand Guide section (/brand, lib/brand.ts, public/branding/) is org
    * content, not app code. Forks run with it off until they replace the

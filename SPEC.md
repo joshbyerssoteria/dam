@@ -321,6 +321,7 @@ NEXT_PUBLIC_APP_NAME=
 NEXT_PUBLIC_ORG_CONTACT_TEAM=
 NEXT_PUBLIC_LOGIN_EMAIL_PLACEHOLDER=
 NEXT_PUBLIC_ORG_LOGO_PATH=
+NEXT_PUBLIC_ORG_TIMEZONE=             # IANA tz for the home greeting; default America/Chicago
 NEXT_PUBLIC_BRAND_GUIDE=              # "off" hides the built-in Brand Guide
 NEXT_PUBLIC_EVENT_TYPES=              # comma-separated tagging taxonomy override
 ```

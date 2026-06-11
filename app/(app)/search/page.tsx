@@ -5,7 +5,12 @@ import { embeddingsConfigured } from "@/lib/embeddings";
 
 export const metadata: Metadata = { title: "Search" };
 
-export default function SearchPage() {
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
   const semantic = embeddingsConfigured();
 
   return (
@@ -19,7 +24,7 @@ export default function SearchPage() {
         }
       />
       <div className="p-8">
-        <SearchClient />
+        <SearchClient initialQuery={q ?? ""} />
       </div>
     </div>
   );

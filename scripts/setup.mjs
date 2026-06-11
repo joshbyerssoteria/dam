@@ -59,6 +59,7 @@ const appName = await ask("App name shown in titles", "NEXT_PUBLIC_APP_NAME", { 
 const contactTeam = await ask("Contact team wording (“Contact the …”)", "NEXT_PUBLIC_ORG_CONTACT_TEAM", { fallback: `${orgName} comms team` });
 const emailPlaceholder = await ask("Login email placeholder", "NEXT_PUBLIC_LOGIN_EMAIL_PLACEHOLDER", { fallback: "you@example.org" });
 const logoPath = await ask("Logo path under public/", "NEXT_PUBLIC_ORG_LOGO_PATH", { fallback: "/branding/logos/horizontal-navy.svg" });
+const timezone = await ask("Timezone (IANA, for the home greeting)", "NEXT_PUBLIC_ORG_TIMEZONE", { fallback: "America/Chicago" });
 const brandGuide = await ask("Enable built-in Brand Guide? (on/off)", "NEXT_PUBLIC_BRAND_GUIDE", { fallback: "off" });
 const eventTypes = await ask("Photo event types (comma-separated, blank = default)", "NEXT_PUBLIC_EVENT_TYPES");
 
@@ -97,6 +98,7 @@ const lines = [
   `NEXT_PUBLIC_ORG_CONTACT_TEAM=${contactTeam}`,
   `NEXT_PUBLIC_LOGIN_EMAIL_PLACEHOLDER=${emailPlaceholder}`,
   `NEXT_PUBLIC_ORG_LOGO_PATH=${logoPath}`,
+  `NEXT_PUBLIC_ORG_TIMEZONE=${timezone}`,
   `NEXT_PUBLIC_BRAND_GUIDE=${brandGuide}`,
   ...(eventTypes ? [`NEXT_PUBLIC_EVENT_TYPES=${eventTypes}`] : []),
   "",

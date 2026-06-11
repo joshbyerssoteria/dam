@@ -8,8 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { SearchResponseItem } from "@/app/api/search/route";
 
-export function SearchClient() {
-  const [query, setQuery] = useState("");
+export function SearchClient({ initialQuery = "" }: { initialQuery?: string }) {
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResponseItem[] | null>(null);
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
