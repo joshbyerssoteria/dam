@@ -53,8 +53,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const SECONDARY_NAV = [
-  { href: "/shares", label: "Share links", icon: Link2, roles: ["admin", "editor"] },
-  { href: "/upload-links", label: "Upload links", icon: UploadCloud, roles: ["admin"] },
+  { href: "/shares", label: "Share Links", icon: Link2, roles: ["admin", "editor"] },
+  { href: "/upload-links", label: "Upload Links", icon: UploadCloud, roles: ["admin"] },
 ] as const;
 
 /** Animated expand/collapse — content stays mounted so toggling is instant. */
