@@ -22,6 +22,7 @@ export function NewProjectDialog({ parentId }: { parentId: string | null }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+  const label = parentId ? "New sub-project" : "New project";
 
   async function handleCreate() {
     setSaving(true);
@@ -41,12 +42,12 @@ export function NewProjectDialog({ parentId }: { parentId: string | null }) {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <FolderKanban className="size-4" />
-          New project
+          {label}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>New project</DialogTitle>
+          <DialogTitle>{label}</DialogTitle>
         </DialogHeader>
         <form
           onSubmit={(event) => {
