@@ -240,6 +240,8 @@ export const APP_UI_RULES = [
   "Focus is one gold ring around the whole interactive row or control — never around an inner text fragment of a composite row.",
   "Hover and pressed washes are navy or off-white tints (e.g. navy at 5%) — never black or gray washes.",
   "Density: app chrome runs 13–14px type; eyebrow labels mark sections.",
+  "Asset preview grounds (thumbnails, file cards, photo cells) use neutral light gray #F6F6F6 (the `asset` token) — a deliberate exception to “no grays”: the warm off-white is chrome, and a neutral ground doesn't tint the artwork being previewed.",
+  "Empty sections don't reserve space. For editors, an empty section collapses to one slim row carrying its add action; for viewers it disappears entirely.",
 ] as const;
 
 // ---------------------------------------------------------------------------

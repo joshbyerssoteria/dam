@@ -23,6 +23,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-asset: var(--asset);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -62,6 +63,9 @@
   --border: #e5dfd1;
   --input: #e5dfd1;
   --ring: var(--gold);
+  /* Asset preview ground — deliberately neutral (not the warm off-white) so
+     artwork being previewed isn't tinted. See brand guide → Application UI. */
+  --asset: #f6f6f6;
 }
 
 .dark {

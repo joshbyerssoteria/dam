@@ -30,7 +30,7 @@ export function FileAssetCard({
 
   return (
     <div className="group overflow-hidden border border-border bg-card">
-      <div className="flex aspect-[4/3] items-center justify-center bg-muted">
+      <div className="flex aspect-[4/3] items-center justify-center bg-asset">
         {previewable ? (
           /* eslint-disable-next-line @next/next/no-img-element -- authenticated variant route */
           <img

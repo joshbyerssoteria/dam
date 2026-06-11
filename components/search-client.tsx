@@ -86,7 +86,7 @@ export function SearchClient({ initialQuery = "" }: { initialQuery?: string }) {
               <Link
                 key={result.photoId}
                 href={`/photos/${result.folderId}`}
-                className="group relative aspect-square overflow-hidden bg-muted"
+                className="group relative aspect-square overflow-hidden bg-asset"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element -- authenticated variant route */}
                 <img

@@ -284,7 +284,7 @@ export function PhotoGrid({
                     : setOpenIndex(index)
                 }
                 className={cn(
-                  "size-full overflow-hidden bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring",
+                  "size-full overflow-hidden bg-asset focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring",
                   isSelected && "ring-2 ring-inset ring-[#C2912D]"
                 )}
               >

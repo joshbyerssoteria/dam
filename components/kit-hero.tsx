@@ -228,7 +228,7 @@ export function KitHero({
     >
       {/* Source file + 16:9 thumbnail */}
       <div className="flex flex-col sm:flex-row">
-        <div className="group relative aspect-video shrink-0 bg-muted sm:w-80">
+        <div className="group relative aspect-video shrink-0 bg-asset sm:w-80">
           {coverImageId ? (
             /* eslint-disable-next-line @next/next/no-img-element -- authenticated variant route */
             <img
@@ -349,40 +349,34 @@ export function KitHero({
         </div>
       </div>
 
-      {/* Main palette */}
-      {palette || canEdit ? (
+      {/* Main palette — full section only when one exists */}
+      {palette ? (
         <div className="border-t border-border px-6 py-5">
           <div className="mb-3 flex items-center justify-between gap-4">
             <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {palette ? `Palette · ${palette.name}` : "Palette"}
+              Palette · {palette.name}
             </h3>
             {canEdit ? (
               <div className="flex items-center gap-1">
-                {palette ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Delete palette ${palette.name}`}
-                    className="size-7 text-muted-foreground hover:text-destructive"
-                    onClick={() => void handleDeletePalette(palette.id)}
-                  >
-                    <Trash2 className="size-3.5" />
-                  </Button>
-                ) : null}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Delete palette ${palette.name}`}
+                  className="size-7 text-muted-foreground hover:text-destructive"
+                  onClick={() => void handleDeletePalette(palette.id)}
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
                 <AddPaletteDialog kitId={kitId} />
               </div>
             ) : null}
           </div>
-          {palette ? (
-            <ColorSwatchRow colors={palette.colors} />
-          ) : (
-            <p className="text-sm text-muted-foreground">No palette yet.</p>
-          )}
+          <ColorSwatchRow colors={palette.colors} />
         </div>
       ) : null}
 
-      {/* Fonts */}
-      {fonts.length > 0 || canEdit ? (
+      {/* Fonts — full section only when at least one exists */}
+      {fonts.length > 0 ? (
         <div className="border-t border-border px-6 py-5">
           <div className="mb-1 flex items-center justify-between gap-4">
             <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -390,20 +384,34 @@ export function KitHero({
             </h3>
             {canEdit ? <AddFontDialog kitId={kitId} /> : null}
           </div>
-          {fonts.length > 0 ? (
-            <div className="divide-y divide-border/60">
-              {fonts.map((font) => (
-                <FontRow
-                  key={font.id}
-                  font={font}
-                  srcPrefix={srcPrefix}
-                  canEdit={canEdit}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No fonts yet.</p>
-          )}
+          <div className="divide-y divide-border/60">
+            {fonts.map((font) => (
+              <FontRow
+                key={font.id}
+                font={font}
+                srcPrefix={srcPrefix}
+                canEdit={canEdit}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Whatever's missing collapses into one slim add-row for editors;
+          viewers see nothing — an empty section is dead space for them. */}
+      {canEdit && (!palette || fonts.length === 0) ? (
+        <div className="flex items-center justify-between gap-4 border-t border-border px-6 py-3">
+          <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {!palette && fonts.length === 0
+              ? "Palette & fonts"
+              : !palette
+                ? "Palette"
+                : "Fonts"}
+          </h3>
+          <div className="flex items-center gap-1.5">
+            {!palette ? <AddPaletteDialog kitId={kitId} /> : null}
+            {fonts.length === 0 ? <AddFontDialog kitId={kitId} /> : null}
+          </div>
         </div>
       ) : null}
     </section>

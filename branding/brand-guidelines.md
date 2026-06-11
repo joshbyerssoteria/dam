@@ -438,6 +438,12 @@ weight, hover drama, and motion speed.
 - Hover/pressed washes are **navy or off-white tints** (e.g. navy @ 5%) —
   never black or gray washes, same as everywhere else in the system.
 - Density: app chrome runs 13–14px type; eyebrow labels mark sections.
+- **Asset preview grounds use neutral light gray `#F6F6F6`** (the `asset`
+  token) — a deliberate exception to "no grays." The warm off-white belongs
+  to chrome; a neutral ground doesn't tint the artwork being previewed.
+- **Empty sections don't reserve space.** For editors, an empty section
+  collapses to one slim row carrying its add action; for viewers it
+  disappears entirely.
 
 ---
 

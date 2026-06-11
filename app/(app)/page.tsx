@@ -159,7 +159,7 @@ export default async function HomePage() {
               <Link
                 key={photo.id}
                 href={`/photos/${photo.folder_id}`}
-                className="group relative aspect-square overflow-hidden bg-muted"
+                className="group relative aspect-square overflow-hidden bg-asset"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element -- authenticated variant route */}
                 <img
