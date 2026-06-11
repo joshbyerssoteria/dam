@@ -434,32 +434,51 @@ function SectionLink({
 }) {
   const sectionActive = pathname === href || pathname.startsWith(`${href}/`);
   const exactActive = sectionActive && pathname === href;
-  const link = (
-    <Link
-      ref={dropRef as React.Ref<HTMLAnchorElement>}
-      href={href}
-      prefetch={true}
-      // Clicking the label both navigates and opens the section (Brand
-      // Guide / Projects pattern); the chevron toggles without navigating.
-      onClick={expandable ? onToggle : undefined}
+  // Active / hover / drop-target appearance for the whole row.
+  const stateClasses = cn(
+    exactActive
+      ? "bg-[#F2EEE7] font-medium text-foreground"
+      : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground",
+    sectionActive && !exactActive && "text-foreground",
+    isDropTarget && "bg-[#F2EEE7] ring-1 ring-[#C2912D]"
+  );
+
+  if (!expandable) {
+    return (
+      <Link
+        ref={dropRef as React.Ref<HTMLAnchorElement>}
+        href={href}
+        prefetch={true}
+        className={cn(
+          "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+          stateClasses
+        )}
+      >
+        <Icon className="size-4" strokeWidth={1.75} />
+        {label}
+      </Link>
+    );
+  }
+
+  // Expandable: the highlight lives on the row so it wraps the chevron too
+  // (Brand Guide pattern). The label still navigates + opens the section.
+  return (
+    <div
       className={cn(
-        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors focus-visible:outline-none",
-        expandable && "min-w-0 flex-1",
-        exactActive
-          ? "bg-[#F2EEE7] font-medium text-foreground"
-          : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground",
-        sectionActive && !exactActive && "text-foreground",
-        isDropTarget && "bg-[#F2EEE7] ring-1 ring-[#C2912D]"
+        "flex items-center rounded-md transition-colors has-[a:focus-visible]:ring-1 has-[a:focus-visible]:ring-ring",
+        stateClasses
       )}
     >
-      <Icon className="size-4" strokeWidth={1.75} />
-      {label}
-    </Link>
-  );
-  if (!expandable) return link;
-  return (
-    <div className="flex items-center rounded-md has-[a:focus-visible]:ring-1 has-[a:focus-visible]:ring-ring">
-      {link}
+      <Link
+        ref={dropRef as React.Ref<HTMLAnchorElement>}
+        href={href}
+        prefetch={true}
+        onClick={onToggle}
+        className="flex min-w-0 flex-1 items-center gap-2.5 px-2.5 py-1.5 text-sm focus-visible:outline-none"
+      >
+        <Icon className="size-4" strokeWidth={1.75} />
+        {label}
+      </Link>
       <button
         type="button"
         aria-label={expanded ? `Collapse ${label}` : `Expand ${label}`}
@@ -1107,7 +1126,7 @@ export function AppSidebar({
           <img
             src={org.logoPath}
             alt={org.fullName}
-            className="h-auto w-40"
+            className="h-auto w-[178px]"
             draggable={false}
           />
         </Link>
