@@ -53,8 +53,19 @@ if (!TOKEN) {
   process.exit(1);
 }
 
+/** fetch with an abort timeout so a stalled request can't hang a batch. */
+async function fetchT(url, options = {}, timeoutMs = 90000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function api(path, options = {}) {
-  const r = await fetch(API + path, {
+  const r = await fetchT(API + path, {
     ...options,
     headers: {
       Authorization: "Bearer " + TOKEN,
@@ -181,10 +192,58 @@ async function ensureFolder(name, parentId) {
 }
 
 const ARCHIVE_ROOT = "Photo Archive";
+const CONCURRENCY = 10; // parallel download→S3 pipelines
 let imported = 0, skipped = 0, failed = 0;
 const started = Date.now();
 
-console.log(`${dryRun ? "[DRY RUN] " : ""}Importing ${albums.length} album(s)…\n`);
+async function importPhoto(album, folderId, photo) {
+  const filename = sanitize(photo.fileName || photo.name || `photo-${photo.id}`);
+  const key = `photos/zenfolio/${photo.id}/${filename}`;
+
+  const { data: existing } = await supabase
+    .from("files").select("id").eq("s3_key", key).maybeSingle();
+  if (existing) { skipped += 1; return; }
+
+  try {
+    const url = await downloadUrl(album.id, photo.id);
+    const resp = await fetchT(url, {}, 120000); // 2 min for large originals
+    if (!resp.ok) throw new Error(`download ${resp.status}`);
+    const buffer = Buffer.from(await resp.arrayBuffer());
+    const contentType = resp.headers.get("content-type") || "image/jpeg";
+
+    await s3.send(new PutObjectCommand({
+      Bucket: process.env.S3_BUCKET_NAME, Key: key, Body: buffer, ContentType: contentType,
+    }));
+    const { data: fileRow, error: fileError } = await supabase
+      .from("files")
+      .insert({
+        s3_key: key, s3_bucket: process.env.S3_BUCKET_NAME, mime_type: contentType,
+        original_filename: filename, file_size: buffer.byteLength,
+        width: photo.width ?? null, height: photo.height ?? null, uploaded_by: null,
+      })
+      .select("id").single();
+    if (fileError) throw new Error(fileError.message);
+
+    const { error: photoError } = await supabase.from("photos").insert({
+      folder_id: folderId, file_id: fileRow.id,
+      taken_at: photo.dateCreated ?? null, ai_tags: [],
+    });
+    if (photoError) throw new Error(photoError.message);
+
+    imported += 1;
+    if (imported % 100 === 0) {
+      const rate = imported / ((Date.now() - started) / 60000);
+      const gb = (imported * 0.02).toFixed(1);
+      console.log(`   … ${imported} imported (${failed} failed) — ${rate.toFixed(0)}/min, ~${gb}GB`);
+    }
+  } catch (error) {
+    failed += 1;
+    console.warn(`   ! ${filename}: ${error.message}`);
+    if (/token rejected/.test(error.message)) process.exit(1);
+  }
+}
+
+console.log(`${dryRun ? "[DRY RUN] " : ""}Importing ${albums.length} album(s), concurrency ${CONCURRENCY}…\n`);
 const archiveRootId = dryRun ? "dry" : await ensureFolder(ARCHIVE_ROOT, null);
 
 for (const album of albums) {
@@ -196,51 +255,17 @@ for (const album of albums) {
   console.log(`■ ${[...album.path, album.title].join(" / ")} — ${photos.length} photos`);
   if (dryRun) continue;
 
-  for (const photo of photos) {
-    const filename = sanitize(photo.fileName || photo.name || `photo-${photo.id}`);
-    const key = `photos/zenfolio/${photo.id}/${filename}`;
-
-    const { data: existing } = await supabase
-      .from("files").select("id").eq("s3_key", key).maybeSingle();
-    if (existing) { skipped += 1; continue; }
-
-    try {
-      const url = await downloadUrl(album.id, photo.id);
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error(`download ${resp.status}`);
-      const buffer = Buffer.from(await resp.arrayBuffer());
-      const contentType = resp.headers.get("content-type") || "image/jpeg";
-
-      await s3.send(new PutObjectCommand({
-        Bucket: process.env.S3_BUCKET_NAME, Key: key, Body: buffer, ContentType: contentType,
-      }));
-      const { data: fileRow, error: fileError } = await supabase
-        .from("files")
-        .insert({
-          s3_key: key, s3_bucket: process.env.S3_BUCKET_NAME, mime_type: contentType,
-          original_filename: filename, file_size: buffer.byteLength,
-          width: photo.width ?? null, height: photo.height ?? null, uploaded_by: null,
-        })
-        .select("id").single();
-      if (fileError) throw new Error(fileError.message);
-
-      const { error: photoError } = await supabase.from("photos").insert({
-        folder_id: folderId, file_id: fileRow.id,
-        taken_at: photo.dateCreated ?? null, ai_tags: [],
-      });
-      if (photoError) throw new Error(photoError.message);
-
-      imported += 1;
-      if (imported % 100 === 0) {
-        const rate = imported / ((Date.now() - started) / 60000);
-        console.log(`   … ${imported} imported (${failed} failed) — ${rate.toFixed(0)}/min`);
-      }
-    } catch (error) {
-      failed += 1;
-      console.warn(`   ! ${filename}: ${error.message}`);
-      if (/token rejected/.test(error.message)) process.exit(1);
+  // Continuous worker pool: a slow/timed-out photo never blocks the others.
+  let cursor = 0;
+  async function worker() {
+    while (cursor < photos.length) {
+      const photo = photos[cursor++];
+      await importPhoto(album, folderId, photo);
     }
   }
+  await Promise.all(
+    Array.from({ length: Math.min(CONCURRENCY, photos.length) }, worker)
+  );
 }
 
 console.log(`\nDone. Imported ${imported}, skipped ${skipped}, failed ${failed}.`);
