@@ -1,0 +1,31 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "demo-church",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "NEXT_PUBLIC_ORG_NAME=Grace Fellowship",
+        "NEXT_PUBLIC_ORG_FULL_NAME=Grace Fellowship Church",
+        "NEXT_PUBLIC_APP_NAME=Grace Assets",
+        "NEXT_PUBLIC_ORG_CONTACT_TEAM=Grace media team",
+        "NEXT_PUBLIC_LOGIN_EMAIL_PLACEHOLDER=you@gracefellowship.org",
+        "NEXT_PUBLIC_ORG_LOGO_PATH=/demo/grace-logo.svg",
+        "NEXT_PUBLIC_BRAND_GUIDE=off",
+        "npm",
+        "run",
+        "dev",
+        "--",
+        "-p",
+        "3000"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "soteria",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "-p", "3000"],
+      "port": 3000
+    }
+  ]
+}

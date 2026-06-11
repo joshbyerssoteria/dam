@@ -44,7 +44,10 @@ export async function batchMovePhotos(input: {
 const batchSchema = z.object({
   photoIds: z.array(z.string().uuid()).min(1).max(500),
   addTags: z.array(z.string().trim().min(1).max(60)).max(30),
-  eventType: z.enum(EVENT_TYPES).nullable(),
+  eventType: z
+    .string()
+    .refine((value) => EVENT_TYPES.includes(value), "Unknown event type")
+    .nullable(),
   photographerName: z.string().trim().max(120).nullable(),
 });
 

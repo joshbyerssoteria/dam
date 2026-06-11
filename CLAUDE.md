@@ -74,6 +74,8 @@ Shared infrastructure: `files` (S3-backed blobs), `share_links`, `upload_tokens`
 - Tests: Vitest for units, Playwright for critical flows (upload, share access, tagging pipeline).
 - Database migrations via Supabase CLI, checked into `supabase/migrations/`.
 - Roles enforced via Supabase **RLS**: `admin` (full control), `editor` (upload/organize/share, no deletes of others' uploads, no user mgmt), `viewer` (read-only).
+- **No hardcoded org identity in app code.** App name, church name, logo path, contact wording, and the tagging event-type taxonomy come from `lib/config.ts` (env-driven white-label config with Soteria defaults — the app is packaged for other churches as single-tenant deployments; see `docs/PACKAGING.md`). The Brand Guide (`/brand`, `lib/brand.ts`, `public/branding/`) is Soteria-specific content and is the one allowed exception.
+- Keep new tables/queries **space-scoped** (`space_id`) — it keeps the future hosted multi-tenant option open.
 
 ## Design Principles
 

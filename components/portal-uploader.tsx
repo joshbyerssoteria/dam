@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
+import { org } from "@/lib/config";
 
 /**
  * Photographer portal uploader: generous drop zone, per-file progress, and a
@@ -24,7 +25,7 @@ export function PortalUploader({ token }: { token: string }) {
           {totalUploaded} photo{totalUploaded === 1 ? "" : "s"} delivered
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Thank you! The Soteria team has your photos. Tagging and indexing
+          Thank you! The {org.name} team has your photos. Tagging and indexing
           run automatically — you&apos;re all done.
         </p>
         <Button

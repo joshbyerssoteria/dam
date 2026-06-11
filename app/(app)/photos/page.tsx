@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { createClient, getSessionProfile } from "@/lib/supabase/server";
-import { FolderCard } from "@/components/folder-card";
+import { PhotoFolderGrid } from "@/components/photo-folder-grid";
 import { NewFolderDialog } from "@/components/new-folder-dialog";
 import { PageHeader } from "@/components/page-header";
 
@@ -61,17 +61,7 @@ export default async function PhotosPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {counts.map((folder) => (
-              <FolderCard
-                key={folder.id}
-                id={folder.id}
-                name={folder.name}
-                photoCount={folder.photoCount}
-                subfolderCount={folder.subfolderCount}
-              />
-            ))}
-          </div>
+          <PhotoFolderGrid folders={counts} canEdit={canEdit} />
         )}
       </div>
     </div>

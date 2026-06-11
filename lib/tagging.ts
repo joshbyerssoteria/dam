@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 
-export const EVENT_TYPES = [
+const DEFAULT_EVENT_TYPES = [
   "worship_service",
   "baptism",
   "kids_ministry",
@@ -14,11 +14,28 @@ export const EVENT_TYPES = [
   "other",
 ] as const;
 
+/**
+ * Event taxonomy used by the tagging prompt and photo filters. Per-deployment
+ * override via NEXT_PUBLIC_EVENT_TYPES (comma-separated); "other" is always
+ * present as the fallback bucket. Stored as plain text in the DB, so changing
+ * the list never breaks existing rows.
+ */
+export const EVENT_TYPES: readonly string[] = (() => {
+  const raw = process.env.NEXT_PUBLIC_EVENT_TYPES;
+  if (!raw) return DEFAULT_EVENT_TYPES;
+  const types = raw.split(",").map((type) => type.trim()).filter(Boolean);
+  if (!types.includes("other")) types.push("other");
+  return types;
+})();
+
 const tagResultSchema = z.object({
   tags: z.array(z.string()).min(1).max(20),
   scene: z.string(),
   caption: z.string(),
-  event_type: z.enum(EVENT_TYPES).catch("other"),
+  event_type: z
+    .string()
+    .catch("other")
+    .transform((value) => (EVENT_TYPES.includes(value) ? value : "other")),
 });
 
 export type TagResult = z.infer<typeof tagResultSchema>;
@@ -27,14 +44,15 @@ export function taggingConfigured(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY);
 }
 
-// Prompt is specified verbatim in SPEC.md — keep in sync.
+// Prompt is specified verbatim in SPEC.md — keep in sync. The event_type
+// list is interpolated so per-deployment taxonomies flow into the prompt.
 const TAGGING_PROMPT = `You are analyzing a photograph from a church event archive for a Digital Asset Management system. Return ONLY valid JSON with these fields:
 
 {
   "tags": ["array of 5-15 specific descriptive tags covering people, actions, settings, objects, mood"],
   "scene": "one-sentence factual description of what is happening",
   "caption": "one descriptive sentence optimized for semantic search — include people, action, setting, emotional tone",
-  "event_type": "one of: worship_service, baptism, kids_ministry, students, men, women, conference, fellowship, outdoor, other"
+  "event_type": "one of: ${EVENT_TYPES.join(", ")}"
 }`;
 
 const SUPPORTED_MEDIA_TYPES = [

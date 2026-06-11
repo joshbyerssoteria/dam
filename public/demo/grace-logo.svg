@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 48" role="img" aria-label="Grace Fellowship Church">
+  <!-- Demo-church logo used only for white-label demos; safe to delete. -->
+  <g fill="#1B3A2D" font-family="Georgia, 'Times New Roman', serif">
+    <text x="0" y="33" font-size="28" font-weight="700" letter-spacing="1">GRACE</text>
+    <text x="108" y="33" font-size="28" font-weight="400" letter-spacing="4">FELLOWSHIP</text>
+  </g>
+  <rect x="0" y="42" width="340" height="2" fill="#9A7B4F"/>
+</svg>

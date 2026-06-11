@@ -4,6 +4,11 @@ Custom Digital Asset Management for Soteria Church — replaces Lingo (brand
 kits) and Zenfolio (photo archive). See [SPEC.md](SPEC.md) for the full spec;
 it is the source of truth.
 
+**Deploying this for another church?** The app is packaged as a white-label,
+single-tenant deployment kit: run `npm run setup` and follow
+[docs/SELF_HOSTING.md](docs/SELF_HOSTING.md). Strategy background in
+[docs/PACKAGING.md](docs/PACKAGING.md).
+
 ## Stack
 
 Next.js 15 (App Router, TypeScript strict) · Supabase (Postgres + Auth +

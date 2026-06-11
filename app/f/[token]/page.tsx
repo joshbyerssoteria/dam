@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Download } from "lucide-react";
 import { tryCreateAdminClient } from "@/lib/supabase/admin";
 import { NotConfigured } from "@/components/not-configured";
+import { org } from "@/lib/config";
 import {
   collectFolderSubtreeIds,
   isShareUnlocked,
@@ -78,7 +79,7 @@ export default async function SharedFolderPage({
       <header className="mb-8 flex items-start justify-between gap-6">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Soteria Assets — shared folder
+            {org.appName} — shared folder
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">
             {resolved.folder.name}

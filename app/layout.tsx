@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { org } from "@/lib/config";
 import "./globals.css";
 
 const inter = Inter({
@@ -15,10 +16,10 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Soteria Assets",
-    template: "%s · Soteria Assets",
+    default: org.appName,
+    template: `%s · ${org.appName}`,
   },
-  description: "Digital asset management for Soteria Church",
+  description: `Digital asset management for ${org.fullName}`,
 };
 
 export default function RootLayout({

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { createKit } from "@/lib/actions/kits";
+import { org } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -84,7 +85,7 @@ export function NewKitDialog({
               autoFocus
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Soteria Brand"
+              placeholder={`${org.name} Brand`}
             />
           </div>
           <div className="space-y-2">

@@ -89,9 +89,7 @@ async function api(path, options = {}) {
  */
 function collectAlbums(node, path = []) {
   const out = [];
-  const title = node.a;
   const children = node.f ?? [];
-  const nextPath = node.x && title && path.length >= 0 ? path : path;
   for (const child of children) {
     const isAlbum = child.e === true || (child.g != null && !(child.f && child.f.length));
     if (child.f && child.f.length && child.e !== true) {

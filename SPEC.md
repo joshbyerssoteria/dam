@@ -39,7 +39,7 @@ Soteria is a multi-site church in West Des Moines, Iowa. This project replaces t
 
 ## Non-Goals (v1)
 
-- Multi-tenancy beyond Soteria (Visual Theology, Infinite Design Co. are future spaces)
+- Multi-tenancy beyond Soteria (Visual Theology, Infinite Design Co. are future spaces). Note: the app is **packaged for other churches as single-tenant deployments** (one church = one instance) — see `docs/PACKAGING.md`; that is distinct from in-app multi-tenancy, which remains a non-goal.
 - Real-time collaboration or approval workflows
 - Video transcoding
 - Native mobile apps (responsive web only)
@@ -208,6 +208,10 @@ You are analyzing a photograph from a church event archive for a Digital Asset M
 }
 ```
 
+The `event_type` list above is the default taxonomy; white-label deployments
+override it with `NEXT_PUBLIC_EVENT_TYPES` (comma-separated, `other` always
+included), and `lib/tagging.ts` interpolates the active list into the prompt.
+
 4. Embed the `caption` with `text-embedding-3-small` → 1536-dim vector
 5. Store all fields on the photo row
 
@@ -302,6 +306,17 @@ OPENAI_API_KEY=
 RESEND_API_KEY=
 INNGEST_EVENT_KEY=
 INNGEST_SIGNING_KEY=
+INNGEST_APP_ID=                       # default soteria-dam; stable per deployment
+
+# White-label identity (all optional — defaults are Soteria's; lib/config.ts)
+NEXT_PUBLIC_ORG_NAME=
+NEXT_PUBLIC_ORG_FULL_NAME=
+NEXT_PUBLIC_APP_NAME=
+NEXT_PUBLIC_ORG_CONTACT_TEAM=
+NEXT_PUBLIC_LOGIN_EMAIL_PLACEHOLDER=
+NEXT_PUBLIC_ORG_LOGO_PATH=
+NEXT_PUBLIC_BRAND_GUIDE=              # "off" hides the built-in Brand Guide
+NEXT_PUBLIC_EVENT_TYPES=              # comma-separated tagging taxonomy override
 ```
 
 ## Repository Conventions
@@ -337,6 +352,7 @@ Decisions made during the build that adjust the plan above:
 7. **2026-06-10 — SVG/raster transforms pulled forward from v2.** `/api/transform/[file_id]?format=png|jpg|webp&width=N` via `sharp`, session- or share-token-authorized. PDF output (resvg + pdf-lib) remains v2.
 8. **2026-06-10 — Brand Guide integrated into the app.** The standalone brand site (branding.soteria.church) is superseded by an in-app Brand Guide section (`/brand` + Logos, Colors, Typography, Guidelines, Examples). Content is structured in `lib/brand.ts`, distilled from `branding/brand-guidelines.md` (still the written source of truth). Logo lockups and the curated photo set moved to `public/branding/` and serve statically.
 9. **2026-06-10 — Schema extensions for kit organization.** `kit_folders` (nestable tree of kits, parallel to photo folders), `kit_sections` (named asset groups within a kit, drag-and-drop ordered via `kit_assets.section_id`/`sort_order`), and `fonts.source`/`external_ref` for Google Fonts and Adobe Fonts entries alongside uploaded font files.
+10. **2026-06-10 — Packaged for other churches as a single-tenant deployment kit.** Strategy in `docs/PACKAGING.md`, runbook in `docs/SELF_HOSTING.md`. Org identity (app name, church name, contact wording, logo, login placeholder) is env-driven through `lib/config.ts` with Soteria defaults, so Soteria's deployment needs no env changes. The Brand Guide is treated as Soteria's replaceable "brand pack" and can be disabled with `NEXT_PUBLIC_BRAND_GUIDE=off`; the tagging event-type taxonomy is overridable via `NEXT_PUBLIC_EVENT_TYPES`; `npm run setup` provisions `.env.local` and renames the seeded space. In-app multi-tenancy remains a non-goal; the space-scoped schema is preserved so a hosted multi-tenant offering stays possible later.
 
 ---
 

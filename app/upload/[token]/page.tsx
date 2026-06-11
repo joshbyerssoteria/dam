@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { tryCreateAdminClient } from "@/lib/supabase/admin";
 import { NotConfigured } from "@/components/not-configured";
+import { org } from "@/lib/config";
 import { isTokenLive } from "@/lib/tokens";
 import { PortalUploader } from "@/components/portal-uploader";
 
@@ -31,15 +32,15 @@ export default async function UploadPortalPage({
       <div className="flex min-h-svh items-center justify-center px-6">
         <div className="max-w-sm text-center">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Soteria Assets
+            {org.appName}
           </p>
           <h1 className="mt-2 text-lg font-semibold tracking-tight">
             {capped ? "Upload limit reached" : "This upload link is no longer active"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {capped
-              ? "This link has received its maximum number of files. Contact the Soteria comms team if you have more to deliver."
-              : "The link may have expired or been revoked. Contact the Soteria comms team for a new one."}
+              ? `This link has received its maximum number of files. Contact the ${org.contactTeam} if you have more to deliver.`
+              : `The link may have expired or been revoked. Contact the ${org.contactTeam} for a new one.`}
           </p>
         </div>
       </div>
@@ -61,7 +62,7 @@ export default async function UploadPortalPage({
     <div className="mx-auto flex min-h-svh max-w-2xl flex-col px-6 py-12">
       <header>
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Soteria Assets — photographer upload
+          {org.appName} — photographer upload
         </p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">
           {uploadToken.photographer_name

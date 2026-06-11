@@ -64,6 +64,52 @@ export async function renameFolder(
   return { ok: true };
 }
 
+/**
+ * Move a folder under a new parent (or to the root with null). Guards
+ * against moving a folder into itself or one of its own descendants, which
+ * would orphan a subtree.
+ */
+export async function moveFolder(
+  folderId: string,
+  newParentId: string | null
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await getSessionProfile();
+  if (!session || session.profile.role === "viewer") {
+    return { ok: false, error: "Not allowed" };
+  }
+  if (folderId === newParentId) {
+    return { ok: false, error: "A folder can't contain itself" };
+  }
+
+  const db = await createClient();
+
+  if (newParentId) {
+    // Walk up from the target; if we reach folderId, the move is a cycle.
+    const { data: allFolders } = await db
+      .from("folders")
+      .select("id, parent_id");
+    const parentOf = new Map(
+      (allFolders ?? []).map((f) => [f.id, f.parent_id])
+    );
+    let cursor: string | null = newParentId;
+    for (let depth = 0; cursor && depth < 100; depth += 1) {
+      if (cursor === folderId) {
+        return { ok: false, error: "Can't move a folder into its own subfolder" };
+      }
+      cursor = parentOf.get(cursor) ?? null;
+    }
+  }
+
+  const { error } = await db
+    .from("folders")
+    .update({ parent_id: newParentId })
+    .eq("id", folderId);
+  if (error) return { ok: false, error: "Failed to move folder" };
+
+  revalidatePath("/photos");
+  return { ok: true };
+}
+
 export async function deleteFolder(
   folderId: string
 ): Promise<{ ok: boolean; error?: string }> {

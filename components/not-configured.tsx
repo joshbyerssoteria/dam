@@ -1,9 +1,11 @@
+import { org } from "@/lib/config";
+
 export function NotConfigured() {
   return (
     <div className="flex min-h-svh items-center justify-center px-6">
       <div className="max-w-sm text-center">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Soteria Assets
+          {org.appName}
         </p>
         <h1 className="mt-2 text-lg font-semibold tracking-tight">
           Sharing is not configured

@@ -1,4 +1,5 @@
 import { EventSchemas, Inngest } from "inngest";
+import { inngestAppId } from "@/lib/config";
 
 type Events = {
   "photo/uploaded": {
@@ -9,6 +10,6 @@ type Events = {
 };
 
 export const inngest = new Inngest({
-  id: "soteria-dam",
+  id: inngestAppId,
   schemas: new EventSchemas().fromRecord<Events>(),
 });

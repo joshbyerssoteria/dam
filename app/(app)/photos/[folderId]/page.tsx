@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { createClient, getSessionProfile } from "@/lib/supabase/server";
-import { FolderCard } from "@/components/folder-card";
+import { PhotoFolderGrid } from "@/components/photo-folder-grid";
 import { NewFolderDialog } from "@/components/new-folder-dialog";
 import { FolderActions } from "@/components/folder-actions";
 import { PageHeader } from "@/components/page-header";
@@ -158,17 +158,7 @@ export default async function FolderPage({
         ) : null}
 
         {subfolderCounts.length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {subfolderCounts.map((subfolder) => (
-              <FolderCard
-                key={subfolder.id}
-                id={subfolder.id}
-                name={subfolder.name}
-                photoCount={subfolder.photoCount}
-                subfolderCount={subfolder.subfolderCount}
-              />
-            ))}
-          </div>
+          <PhotoFolderGrid folders={subfolderCounts} canEdit={canEdit} />
         ) : null}
 
         <PhotoGrid

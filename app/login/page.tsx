@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { org } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,8 +45,8 @@ function LoginForm() {
         <div className="mb-10">
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
           <img
-            src="/branding/logos/horizontal-navy.svg"
-            alt="Soteria Church"
+            src={org.logoPath}
+            alt={org.fullName}
             className="h-9 w-auto"
           />
           <p className="mt-4 text-sm text-muted-foreground">
@@ -71,7 +72,7 @@ function LoginForm() {
                 type="email"
                 required
                 autoFocus
-                placeholder="you@soteria.church"
+                placeholder={org.loginEmailPlaceholder}
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
               />

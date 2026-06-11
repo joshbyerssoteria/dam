@@ -7,6 +7,8 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  pointerWithin,
+  useDraggable,
   useDroppable,
   useSensor,
   useSensors,
@@ -34,7 +36,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { moveKitToFolder } from "@/lib/actions/kit-folders";
+import { moveFolder } from "@/lib/actions/folders";
 import { reorderKits } from "@/lib/actions/kits";
+import { org } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import type { AppRole } from "@/lib/database.types";
 import type { NavTreeNode } from "@/lib/nav-tree";
@@ -174,6 +178,68 @@ function TreeBranch({
           <div>
             {node.children.map((child) => (
               <TreeBranch
+                key={child.id}
+                node={child}
+                depth={depth + 1}
+                pathname={pathname}
+              />
+            ))}
+          </div>
+        </Collapse>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Photo-folder tree branch with drag-and-drop: every folder is both a drag
+ * source (move it elsewhere) and a drop target (nest another folder under
+ * it). Dropping onto the Photos header moves a folder to the root.
+ */
+function PhotoTreeBranch({
+  node,
+  depth,
+  pathname,
+}: {
+  node: NavTreeNode;
+  depth: number;
+  pathname: string;
+}) {
+  const [expanded, setExpanded] = useState(() => containsActive(node, pathname));
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: `photofolder:${node.id}`,
+  });
+  const {
+    setNodeRef: setDragRef,
+    attributes,
+    listeners,
+    transform,
+    isDragging,
+  } = useDraggable({ id: `photo:${node.id}` });
+
+  return (
+    <div ref={setDropRef}>
+      <div
+        ref={setDragRef}
+        style={transform ? { transform: CSS.Translate.toString(transform) } : undefined}
+        className={cn(isDragging && "opacity-40")}
+      >
+        <BranchRow
+          node={node}
+          depth={depth}
+          pathname={pathname}
+          expanded={expanded}
+          onToggle={() => setExpanded((current) => !current)}
+          onExpand={() => setExpanded((current) => !current)}
+          isDropTarget={isOver}
+          dragProps={{ ...attributes, ...listeners }}
+        />
+      </div>
+      {node.children.length > 0 ? (
+        <Collapse open={expanded}>
+          <div>
+            {node.children.map((child) => (
+              <PhotoTreeBranch
                 key={child.id}
                 node={child}
                 depth={depth + 1}
@@ -486,6 +552,137 @@ function KitsNav({
   );
 }
 
+/** Photos header + favorites + tree, with the root as a drop target. */
+function PhotosNavArea({
+  photoTree,
+  pathname,
+}: {
+  photoTree: NavTreeNode[];
+  pathname: string;
+}) {
+  const { setNodeRef: rootDropRef, isOver } = useDroppable({
+    id: "photofolder:root",
+  });
+  return (
+    <div>
+      <SectionLink
+        href="/photos"
+        label="Photos"
+        icon={Images}
+        pathname={pathname}
+        dropRef={rootDropRef}
+        isDropTarget={isOver}
+      />
+      <div className="mb-0.5 ml-3 mt-0.5 border-l border-border pl-1">
+        <Link
+          href="/photos/favorites"
+          className={cn(
+            "flex items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
+            pathname === "/photos/favorites"
+              ? "bg-[#F2EEE7] font-medium text-foreground"
+              : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
+          )}
+        >
+          <Heart className="size-3" />
+          Favorites
+        </Link>
+      </div>
+      {photoTree.length > 0 ? (
+        <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
+          {photoTree.map((node) => (
+            <PhotoTreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PhotosNav({
+  photoTree,
+  pathname,
+  canEdit,
+}: {
+  photoTree: NavTreeNode[];
+  pathname: string;
+  canEdit: boolean;
+}) {
+  const router = useRouter();
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  if (!canEdit) {
+    return (
+      <div>
+        <SectionLink href="/photos" label="Photos" icon={Images} pathname={pathname} />
+        <div className="mb-0.5 ml-3 mt-0.5 border-l border-border pl-1">
+          <Link
+            href="/photos/favorites"
+            className={cn(
+              "flex items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
+              pathname === "/photos/favorites"
+                ? "bg-[#F2EEE7] font-medium text-foreground"
+                : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
+            )}
+          >
+            <Heart className="size-3" />
+            Favorites
+          </Link>
+        </div>
+        {photoTree.length > 0 ? (
+          <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
+            {photoTree.map((node) => (
+              <TreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    setActiveId(null);
+    const { active, over } = event;
+    if (!over) return;
+    const folderId = String(active.id).replace(/^photo:/, "");
+    const target = String(over.id).replace(/^photofolder:/, "");
+    if (folderId === target) return;
+
+    const result = await moveFolder(folderId, target === "root" ? null : target);
+    if (result.ok) {
+      toast.success(target === "root" ? "Moved to top level" : "Folder moved");
+      router.refresh();
+    } else {
+      toast.error(result.error ?? "Failed to move folder");
+    }
+  }
+
+  const activeNode = activeId ? findNode(photoTree, activeId) : null;
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={pointerWithin}
+      onDragStart={(event) =>
+        setActiveId(String(event.active.id).replace(/^photo:/, ""))
+      }
+      onDragEnd={(event) => void handleDragEnd(event)}
+      onDragCancel={() => setActiveId(null)}
+    >
+      <PhotosNavArea photoTree={photoTree} pathname={pathname} />
+      <DragOverlay>
+        {activeNode ? (
+          <div className="rounded-md border border-border bg-card px-3 py-1.5 text-[13px] shadow-lg">
+            {activeNode.name}
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
+
 /**
  * Brand Guide group: expands instantly on click (no waiting on navigation)
  * with an animated submenu; Examples nests its own collapsible group.
@@ -620,8 +817,8 @@ export function AppSidebar({
         <Link href="/photos" className="block">
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
           <img
-            src="/branding/logos/horizontal-navy.svg"
-            alt="Soteria Church"
+            src={org.logoPath}
+            alt={org.fullName}
             className="h-auto w-full"
             draggable={false}
           />
@@ -631,42 +828,9 @@ export function AppSidebar({
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
         <SectionLink href="/search" label="Search" icon={Search} pathname={pathname} />
 
-        <BrandGuideNav pathname={pathname} />
+        {org.brandGuideEnabled ? <BrandGuideNav pathname={pathname} /> : null}
 
-        <div>
-          <SectionLink
-            href="/photos"
-            label="Photos"
-            icon={Images}
-            pathname={pathname}
-          />
-          <div className="mb-0.5 ml-3 mt-0.5 border-l border-border pl-1">
-            <Link
-              href="/photos/favorites"
-              className={cn(
-                "flex items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
-                pathname === "/photos/favorites"
-                  ? "bg-[#F2EEE7] font-medium text-foreground"
-                  : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
-              )}
-            >
-              <Heart className="size-3" />
-              Favorites
-            </Link>
-          </div>
-          {photoTree.length > 0 ? (
-            <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
-              {photoTree.map((node) => (
-                <TreeBranch
-                  key={node.id}
-                  node={node}
-                  depth={0}
-                  pathname={pathname}
-                />
-              ))}
-            </div>
-          ) : null}
-        </div>
+        <PhotosNav photoTree={photoTree} pathname={pathname} canEdit={canEdit} />
 
         <KitsNav kitTree={kitTree} pathname={pathname} canEdit={canEdit} />
 

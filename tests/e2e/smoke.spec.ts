@@ -1,8 +1,11 @@
 import { expect, test } from "@playwright/test";
 
+// White-label aware: the deployment's org name comes from env (lib/config.ts).
+const orgFullName = process.env.NEXT_PUBLIC_ORG_FULL_NAME ?? "Soteria Church";
+
 test("login page renders the magic link form", async ({ page }) => {
   await page.goto("/login");
-  await expect(page.getByRole("heading", { name: "Soteria Assets" })).toBeVisible();
+  await expect(page.getByAltText(orgFullName)).toBeVisible();
   await expect(page.getByLabel("Email")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Send magic link" })

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Check,
@@ -100,6 +100,8 @@ export function PhotoGrid({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [tagDialogOpen, setTagDialogOpen] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  // Anchor for shift-click range selection.
+  const lastIndexRef = useRef<number | null>(null);
   const open = openIndex !== null ? photos[openIndex] : null;
 
   const serverFavorites = favoriteIds.join(",");
@@ -163,13 +165,35 @@ export function PhotoGrid({
     }
   }
 
-  function toggleSelected(photoId: string) {
+  function toggleSelected(index: number, shiftKey = false) {
+    const photo = photos[index];
+    if (!photo) return;
+    const anchor = lastIndexRef.current;
+    if (shiftKey && anchor !== null) {
+      // Select the contiguous range between the anchor and this photo.
+      const from = Math.min(anchor, index);
+      const to = Math.max(anchor, index);
+      setSelected((current) => {
+        const next = new Set(current);
+        for (let i = from; i <= to; i += 1) {
+          const p = photos[i];
+          if (p) next.add(p.id);
+        }
+        return next;
+      });
+      return;
+    }
+    lastIndexRef.current = index;
     setSelected((current) => {
       const next = new Set(current);
-      if (next.has(photoId)) next.delete(photoId);
-      else next.add(photoId);
+      if (next.has(photo.id)) next.delete(photo.id);
+      else next.add(photo.id);
       return next;
     });
+  }
+
+  function selectAll() {
+    setSelected(new Set(photos.map((p) => p.id)));
   }
 
   async function handleBatchFavorite() {
@@ -193,8 +217,31 @@ export function PhotoGrid({
     );
   }
 
+  const allSelected = selected.size === photos.length;
+
   return (
     <>
+      {allowBatch ? (
+        <div className="mb-3 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => (allSelected ? setSelected(new Set()) : selectAll())}
+            className="text-sm font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            {allSelected ? "Clear selection" : `Select all ${photos.length}`}
+          </button>
+          {selectionActive ? (
+            <span className="text-sm text-muted-foreground">
+              {selected.size} selected
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">
+              Tip: shift-click to select a range
+            </span>
+          )}
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {photos.map((photo, index) => {
           const isSelected = selected.has(photo.id);
@@ -203,9 +250,9 @@ export function PhotoGrid({
             <div key={photo.id} className="group relative aspect-square">
               <button
                 type="button"
-                onClick={() =>
+                onClick={(event) =>
                   selectionActive && allowBatch
-                    ? toggleSelected(photo.id)
+                    ? toggleSelected(index, event.shiftKey)
                     : setOpenIndex(index)
                 }
                 className={cn(
@@ -230,7 +277,7 @@ export function PhotoGrid({
                 <button
                   type="button"
                   aria-label={isSelected ? "Deselect photo" : "Select photo"}
-                  onClick={() => toggleSelected(photo.id)}
+                  onClick={(event) => toggleSelected(index, event.shiftKey)}
                   className={cn(
                     "absolute right-2 top-2 flex size-6 items-center justify-center rounded-full border transition-opacity",
                     isSelected
