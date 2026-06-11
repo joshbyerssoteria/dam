@@ -19,6 +19,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
+import heicConvert from "heic-convert";
 import { readFileSync } from "fs";
 
 for (const line of readFileSync(".env.local", "utf8").split("\n")) {
@@ -54,6 +55,47 @@ const supabase = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 const s3 = new S3Client({ region: process.env.AWS_REGION });
+
+/** Retry on rate limits / transient server errors with exponential backoff. */
+async function withRetry(label, fn, attempts = 6) {
+  let delay = 2000;
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      const m = /→ (\d{3})/.exec(error.message);
+      const status = m ? Number(m[1]) : 0;
+      const retryable = status === 429 || status === 529 || (status >= 500 && status < 600);
+      if (!retryable || i === attempts - 1) throw error;
+      await new Promise((r) => setTimeout(r, delay + Math.random() * 1000));
+      delay = Math.min(delay * 2, 60000);
+    }
+  }
+  throw new Error(`${label}: exhausted retries`);
+}
+
+/** HEIC/HEIF magic: an ISO-BMFF "ftyp" box with a heic-family brand. */
+function isHeif(buffer) {
+  if (buffer.length < 12) return false;
+  if (buffer.toString("latin1", 4, 8) !== "ftyp") return false;
+  const brand = buffer.toString("latin1", 8, 12);
+  return ["heic", "heix", "heif", "mif1", "msf1", "hevc"].includes(brand);
+}
+
+/** Resize for Claude vision; transparently decode HEIC first (sharp can't). */
+async function toVariantJpeg(original) {
+  let source = original;
+  if (isHeif(original)) {
+    source = Buffer.from(
+      await heicConvert({ buffer: original, format: "JPEG", quality: 0.9 })
+    );
+  }
+  return sharp(source)
+    .rotate()
+    .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality: 80 })
+    .toBuffer();
+}
 
 // Prompt is specified verbatim in SPEC.md — keep in sync with lib/tagging.ts.
 const TAGGING_PROMPT = `You are analyzing a photograph from a church event archive for a Digital Asset Management system. Return ONLY valid JSON with these fields:
@@ -143,14 +185,10 @@ async function processPhoto(photo) {
     new GetObjectCommand({ Bucket: file.s3_bucket, Key: file.s3_key })
   );
   const original = Buffer.from(await object.Body.transformToByteArray());
-  const variant = await sharp(original)
-    .rotate()
-    .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
-    .jpeg({ quality: 80 })
-    .toBuffer();
+  const variant = await toVariantJpeg(original);
 
-  const result = await claudeTag(variant.toString("base64"));
-  const embedding = await embed(result.caption);
+  const result = await withRetry("claude", () => claudeTag(variant.toString("base64")));
+  const embedding = await withRetry("openai", () => embed(result.caption));
 
   const { error } = await supabase
     .from("photos")
