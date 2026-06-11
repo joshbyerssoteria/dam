@@ -720,19 +720,21 @@ function ProjectsGroup({
 
   return (
     <div>
-      <div className="flex items-center rounded-md has-[a:focus-visible]:ring-1 has-[a:focus-visible]:ring-ring">
+      <div
+        className={cn(
+          "flex items-center rounded-md transition-colors has-[a:focus-visible]:ring-1 has-[a:focus-visible]:ring-ring",
+          pathname === "/photos/projects"
+            ? "bg-[#F2EEE7] font-medium text-foreground"
+            : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground",
+          isDropTarget &&
+            "bg-[#C2912D] font-medium text-white ring-2 ring-[#C2912D] ring-offset-1"
+        )}
+      >
         <Link
           ref={dropRef as React.Ref<HTMLAnchorElement>}
           href="/photos/projects"
           onClick={() => setOpen((current) => !current)}
-          className={cn(
-            "flex min-w-0 flex-1 items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors focus-visible:outline-none",
-            pathname === "/photos/projects"
-              ? "bg-[#F2EEE7] font-medium text-foreground"
-              : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground",
-            isDropTarget &&
-              "bg-[#C2912D] font-medium text-white ring-2 ring-[#C2912D] ring-offset-1"
-          )}
+          className="flex min-w-0 flex-1 items-center gap-1.5 truncate py-1 pl-5 pr-2 text-[13px] focus-visible:outline-none"
         >
           <FolderKanban className="size-3" />
           Projects
