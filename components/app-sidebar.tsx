@@ -25,6 +25,7 @@ import {
   BookOpen,
   ChevronRight,
   ChevronsUpDown,
+  FolderKanban,
   Heart,
   Images,
   LogOut,
@@ -37,6 +38,7 @@ import {
 import { toast } from "sonner";
 import { moveKitToFolder } from "@/lib/actions/kit-folders";
 import { moveFolder } from "@/lib/actions/folders";
+import { moveProject } from "@/lib/actions/projects";
 import { reorderKits } from "@/lib/actions/kits";
 import { org } from "@/lib/config";
 import { cn } from "@/lib/utils";
@@ -245,6 +247,68 @@ function PhotoTreeBranch({
           <div>
             {node.children.map((child) => (
               <PhotoTreeBranch
+                key={child.id}
+                node={child}
+                depth={depth + 1}
+                pathname={pathname}
+              />
+            ))}
+          </div>
+        </Collapse>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Project tree branch: same drag-and-drop shape as PhotoTreeBranch, with
+ * `projectdrag:`/`projectdrop:` ids so project moves never cross over into
+ * folder moves inside the shared Photos DndContext.
+ */
+function ProjectTreeBranch({
+  node,
+  depth,
+  pathname,
+}: {
+  node: NavTreeNode;
+  depth: number;
+  pathname: string;
+}) {
+  const [expanded, setExpanded] = useState(() => containsActive(node, pathname));
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: `projectdrop:${node.id}`,
+  });
+  const {
+    setNodeRef: setDragRef,
+    attributes,
+    listeners,
+    isDragging,
+  } = useDraggable({ id: `projectdrag:${node.id}` });
+
+  const setRowRef = (element: HTMLElement | null) => {
+    setDropRef(element);
+    setDragRef(element);
+  };
+
+  return (
+    <div>
+      <div ref={setRowRef} className={cn(isDragging && "opacity-30")}>
+        <BranchRow
+          node={node}
+          depth={depth}
+          pathname={pathname}
+          expanded={expanded}
+          onToggle={() => setExpanded((current) => !current)}
+          onExpand={() => setExpanded((current) => !current)}
+          isDropTarget={isOver && !isDragging}
+          dragProps={{ ...attributes, ...listeners }}
+        />
+      </div>
+      {node.children.length > 0 ? (
+        <Collapse open={expanded}>
+          <div>
+            {node.children.map((child) => (
+              <ProjectTreeBranch
                 key={child.id}
                 node={child}
                 depth={depth + 1}
@@ -564,17 +628,21 @@ function KitsNav({
   );
 }
 
-/** Photos header + favorites + tree, with the root as a drop target. */
+/** Photos header + favorites + projects + tree, with the root as a drop target. */
 function PhotosNavArea({
   photoTree,
+  projectTree,
   pathname,
 }: {
   photoTree: NavTreeNode[];
+  projectTree: NavTreeNode[];
   pathname: string;
 }) {
   const { setNodeRef: rootDropRef, isOver } = useDroppable({
     id: "photofolder:root",
   });
+  const { setNodeRef: projectsRootDropRef, isOver: projectsRootIsOver } =
+    useDroppable({ id: "projectdrop:root" });
   return (
     <div>
       <SectionLink
@@ -598,6 +666,25 @@ function PhotosNavArea({
           <Heart className="size-3" />
           Favorites
         </Link>
+        {/* Dropping a project here moves it back to the top level. */}
+        <Link
+          ref={projectsRootDropRef as React.Ref<HTMLAnchorElement>}
+          href="/photos/projects"
+          className={cn(
+            "flex items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
+            pathname === "/photos/projects"
+              ? "bg-[#F2EEE7] font-medium text-foreground"
+              : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground",
+            projectsRootIsOver &&
+              "bg-[#C2912D] font-medium text-white ring-2 ring-[#C2912D] ring-offset-1"
+          )}
+        >
+          <FolderKanban className="size-3" />
+          Projects
+        </Link>
+        {projectTree.map((node) => (
+          <ProjectTreeBranch key={node.id} node={node} depth={1} pathname={pathname} />
+        ))}
       </div>
       {photoTree.length > 0 ? (
         <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
@@ -612,10 +699,12 @@ function PhotosNavArea({
 
 function PhotosNav({
   photoTree,
+  projectTree,
   pathname,
   canEdit,
 }: {
   photoTree: NavTreeNode[];
+  projectTree: NavTreeNode[];
   pathname: string;
   canEdit: boolean;
 }) {
@@ -623,6 +712,7 @@ function PhotosNav({
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
+  // Full dnd id (with prefix) so the overlay knows which tree to search.
   const [activeId, setActiveId] = useState<string | null>(null);
 
   if (!canEdit) {
@@ -642,6 +732,21 @@ function PhotosNav({
             <Heart className="size-3" />
             Favorites
           </Link>
+          <Link
+            href="/photos/projects"
+            className={cn(
+              "flex items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
+              pathname === "/photos/projects"
+                ? "bg-[#F2EEE7] font-medium text-foreground"
+                : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
+            )}
+          >
+            <FolderKanban className="size-3" />
+            Projects
+          </Link>
+          {projectTree.map((node) => (
+            <TreeBranch key={node.id} node={node} depth={1} pathname={pathname} />
+          ))}
         </div>
         {photoTree.length > 0 ? (
           <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
@@ -658,34 +763,66 @@ function PhotosNav({
     setActiveId(null);
     const { active, over } = event;
     if (!over) return;
-    const folderId = String(active.id).replace(/^photo:/, "");
-    const target = String(over.id).replace(/^photofolder:/, "");
-    if (folderId === target) return;
+    const activeKey = String(active.id);
+    const overKey = String(over.id);
 
-    const result = await moveFolder(folderId, target === "root" ? null : target);
-    if (result.ok) {
-      if (!result.unchanged) {
-        toast.success(target === "root" ? "Moved to top level" : "Folder moved");
-        router.refresh();
+    // Folder dragged — only folder rows (and the Photos header) accept it.
+    if (activeKey.startsWith("photo:")) {
+      if (!overKey.startsWith("photofolder:")) return;
+      const folderId = activeKey.replace(/^photo:/, "");
+      const target = overKey.replace(/^photofolder:/, "");
+      if (folderId === target) return;
+
+      const result = await moveFolder(folderId, target === "root" ? null : target);
+      if (result.ok) {
+        if (!result.unchanged) {
+          toast.success(target === "root" ? "Moved to top level" : "Folder moved");
+          router.refresh();
+        }
+      } else {
+        toast.error(result.error ?? "Failed to move folder");
       }
-    } else {
-      toast.error(result.error ?? "Failed to move folder");
+      return;
+    }
+
+    // Project dragged — only project rows (and the Projects header) accept it.
+    if (activeKey.startsWith("projectdrag:")) {
+      if (!overKey.startsWith("projectdrop:")) return;
+      const projectId = activeKey.replace(/^projectdrag:/, "");
+      const target = overKey.replace(/^projectdrop:/, "");
+      if (projectId === target) return;
+
+      const result = await moveProject(projectId, target === "root" ? null : target);
+      if (result.ok) {
+        if (!result.unchanged) {
+          toast.success(target === "root" ? "Moved to top level" : "Project moved");
+          router.refresh();
+        }
+      } else {
+        toast.error(result.error ?? "Failed to move project");
+      }
     }
   }
 
-  const activeNode = activeId ? findNode(photoTree, activeId) : null;
+  const activeNode = activeId
+    ? activeId.startsWith("projectdrag:")
+      ? findNode(projectTree, activeId.replace(/^projectdrag:/, ""))
+      : findNode(photoTree, activeId.replace(/^photo:/, ""))
+    : null;
 
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={pointerWithin}
-      onDragStart={(event) =>
-        setActiveId(String(event.active.id).replace(/^photo:/, ""))
-      }
+      onDragStart={(event) => setActiveId(String(event.active.id))}
       onDragEnd={(event) => void handleDragEnd(event)}
       onDragCancel={() => setActiveId(null)}
     >
-      <PhotosNavArea photoTree={photoTree} pathname={pathname} />
+      <PhotosNavArea
+        photoTree={photoTree}
+        projectTree={projectTree}
+        pathname={pathname}
+      />
       <DragOverlay>
         {activeNode ? (
           <div className="rounded-md border border-border bg-card px-3 py-1.5 text-[13px] shadow-lg">
@@ -811,11 +948,13 @@ export function AppSidebar({
   role,
   email,
   photoTree,
+  projectTree,
   kitTree,
 }: {
   role: AppRole;
   email: string;
   photoTree: NavTreeNode[];
+  projectTree: NavTreeNode[];
   kitTree: NavTreeNode[];
 }) {
   const pathname = usePathname();
@@ -828,7 +967,7 @@ export function AppSidebar({
           aligns with the menu items' content edge. 88px matches PageHeader
           height so page titles center with the logo. */}
       <div className="flex h-[88px] items-center px-[22px]">
-        <Link href="/photos" className="block">
+        <Link href="/" className="block">
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
           <img
             src={org.logoPath}
@@ -844,7 +983,12 @@ export function AppSidebar({
 
         {org.brandGuideEnabled ? <BrandGuideNav pathname={pathname} /> : null}
 
-        <PhotosNav photoTree={photoTree} pathname={pathname} canEdit={canEdit} />
+        <PhotosNav
+          photoTree={photoTree}
+          projectTree={projectTree}
+          pathname={pathname}
+          canEdit={canEdit}
+        />
 
         <KitsNav kitTree={kitTree} pathname={pathname} canEdit={canEdit} />
 

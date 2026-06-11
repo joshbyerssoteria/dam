@@ -185,6 +185,24 @@ export type PhotoFavoriteRow = {
   created_at: string;
 }
 
+export type ProjectRow = {
+  id: string;
+  space_id: string;
+  parent_id: string | null;
+  name: string;
+  description: string | null;
+  sort_order: number;
+  created_by: string | null;
+  created_at: string;
+}
+
+export type ProjectPhotoRow = {
+  project_id: string;
+  photo_id: string;
+  added_by: string | null;
+  added_at: string;
+}
+
 export type DownloadLogRow = {
   id: string;
   share_token: string;
@@ -257,6 +275,8 @@ export type Database = {
       share_links: TableDef<ShareLinkRow>;
       upload_tokens: TableDef<UploadTokenRow>;
       photo_favorites: TableDef<PhotoFavoriteRow>;
+      projects: TableDef<ProjectRow>;
+      project_photos: TableDef<ProjectPhotoRow>;
       download_log: TableDef<DownloadLogRow>;
       upload_log: TableDef<UploadLogRow>;
     };

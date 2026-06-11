@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import sharp from "sharp";
 import { createClient, getSessionProfile } from "@/lib/supabase/server";
 import { getObjectBuffer, presignedGetUrl } from "@/lib/storage";
 import { isImageMime } from "@/lib/upload";
 import { isPdfLike, renderPdfFirstPage } from "@/lib/pdf-preview";
+import { loadImage } from "@/lib/image-decode";
 
 export const runtime = "nodejs";
 
@@ -62,7 +62,7 @@ export async function GET(
         );
       }
     }
-    const variant = await sharp(source)
+    const variant = await (await loadImage(source))
       .rotate()
       .resize(width, undefined, { withoutEnlargement: true })
       .webp({ quality: 78 })

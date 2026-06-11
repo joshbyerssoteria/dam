@@ -8,6 +8,8 @@ import {
   ChevronRight,
   Download,
   FolderInput,
+  FolderKanban,
+  FolderMinus,
   Heart,
   Tags,
   Trash2,
@@ -17,6 +19,11 @@ import { toast } from "sonner";
 import { createFolder, deletePhoto } from "@/lib/actions/folders";
 import { favoriteMany, setFavorite } from "@/lib/actions/favorites";
 import { batchMovePhotos, batchUpdatePhotos } from "@/lib/actions/photos-batch";
+import {
+  addPhotosToProject,
+  createProject,
+  removePhotosFromProject,
+} from "@/lib/actions/projects";
 import { EVENT_TYPES } from "@/lib/tagging";
 import { formatBytes, formatDate, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -81,6 +88,8 @@ export function PhotoGrid({
   canEditMeta = false,
   favoriteIds = [],
   folders = [],
+  projects,
+  projectId,
 }: {
   photos: PhotoGridItem[];
   srcPrefix?: string;
@@ -91,6 +100,10 @@ export function PhotoGrid({
   canEditMeta?: boolean;
   favoriteIds?: string[];
   folders?: GridFolder[];
+  /** When provided, the batch bar offers "Add to project". */
+  projects?: GridFolder[];
+  /** When set, the grid shows project photos and offers "Remove" (unlink). */
+  projectId?: string;
 }) {
   const router = useRouter();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -100,6 +113,7 @@ export function PhotoGrid({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [tagDialogOpen, setTagDialogOpen] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [projectDialogOpen, setProjectDialogOpen] = useState(false);
   // Anchor for shift-click range selection.
   const lastIndexRef = useRef<number | null>(null);
   const open = openIndex !== null ? photos[openIndex] : null;
@@ -204,6 +218,20 @@ export function PhotoGrid({
       toast.success(`${ids.length} added to Favorites`);
     } else {
       toast.error(result.error ?? "Failed to favorite");
+    }
+  }
+
+  /** Unlink the selection from the current project — photos stay put. */
+  async function handleBatchRemoveFromProject() {
+    if (!projectId) return;
+    const ids = [...selected];
+    const result = await removePhotosFromProject(projectId, ids);
+    if (result.ok) {
+      toast.success(`${ids.length} removed from project — photos stay in their folders`);
+      setSelected(new Set());
+      router.refresh();
+    } else {
+      toast.error(result.error ?? "Failed to remove from project");
     }
   }
 
@@ -345,6 +373,26 @@ export function PhotoGrid({
                 Move
               </Button>
             ) : null}
+            {canEditMeta && projects ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setProjectDialogOpen(true)}
+              >
+                <FolderKanban className="size-4" />
+                Add to project
+              </Button>
+            ) : null}
+            {canEditMeta && projectId ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => void handleBatchRemoveFromProject()}
+              >
+                <FolderMinus className="size-4" />
+                Remove
+              </Button>
+            ) : null}
             {canEditMeta ? (
               <Button
                 size="sm"
@@ -389,6 +437,18 @@ export function PhotoGrid({
               router.refresh();
             }}
           />
+          {projects ? (
+            <AddToProjectDialog
+              open={projectDialogOpen}
+              onOpenChange={setProjectDialogOpen}
+              photoIds={[...selected]}
+              projects={projects}
+              onDone={() => {
+                setSelected(new Set());
+                router.refresh();
+              }}
+            />
+          ) : null}
         </>
       ) : null}
 
@@ -780,6 +840,119 @@ function BatchMoveDialog({
         <DialogFooter>
           <Button onClick={() => void handleMove()} disabled={moving || !canApply}>
             {moving ? "Moving…" : creatingNew ? "Create & move" : "Move photos"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Link the selection to a project (existing or newly created). Photos are
+ * referenced, never moved or copied — they stay in their folders.
+ */
+function AddToProjectDialog({
+  open,
+  onOpenChange,
+  photoIds,
+  projects,
+  onDone,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  photoIds: string[];
+  projects: GridFolder[];
+  onDone: () => void;
+}) {
+  const [destinationId, setDestinationId] = useState<string>("");
+  const [newProjectName, setNewProjectName] = useState("");
+  const [adding, setAdding] = useState(false);
+  const options = useMemo(() => flattenFolders(projects), [projects]);
+
+  const creatingNew = newProjectName.trim().length > 0;
+  const canApply = creatingNew || destinationId !== "";
+
+  async function handleAdd() {
+    setAdding(true);
+    let targetId = destinationId;
+
+    if (creatingNew) {
+      // New project goes inside the selected project (or at the top level).
+      const created = await createProject({
+        name: newProjectName.trim(),
+        parentId: destinationId || null,
+      });
+      if (!created.ok) {
+        setAdding(false);
+        toast.error(created.error);
+        return;
+      }
+      targetId = created.projectId;
+    }
+
+    const result = await addPhotosToProject(targetId, photoIds);
+    setAdding(false);
+    if (result.ok) {
+      toast.success(`${photoIds.length} photo(s) added to project`);
+      onOpenChange(false);
+      setNewProjectName("");
+      setDestinationId("");
+      onDone();
+    } else {
+      toast.error(result.error ?? "Failed to add to project");
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add {photoIds.length} photo(s) to a project</DialogTitle>
+          <DialogDescription>
+            Photos are linked, not moved — they stay in their folders. Pick a
+            project, or name a new one to create it
+            {destinationId ? " inside the selected project" : " at the top level"}.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          {options.length > 0 ? (
+            <div className="space-y-2">
+              <Label>Project</Label>
+              <Select value={destinationId} onValueChange={setDestinationId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choose a project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {options.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+          <div className="space-y-2">
+            <Label htmlFor="new-project-name">
+              {options.length > 0 ? "New project (optional)" : "New project"}
+            </Label>
+            <Input
+              id="new-project-name"
+              value={newProjectName}
+              onChange={(event) => setNewProjectName(event.target.value)}
+              placeholder="e.g. Fall sermon series"
+            />
+            {creatingNew ? (
+              <p className="text-xs text-muted-foreground">
+                Photos will be added to the new project
+                {destinationId ? " inside the selected project." : "."}
+              </p>
+            ) : null}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={() => void handleAdd()} disabled={adding || !canApply}>
+            {adding ? "Adding…" : creatingNew ? "Create & add" : "Add to project"}
           </Button>
         </DialogFooter>
       </DialogContent>

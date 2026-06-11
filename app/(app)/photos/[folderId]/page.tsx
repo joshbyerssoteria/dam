@@ -23,18 +23,24 @@ export default async function FolderPage({
 
   // One round trip: session, the full folder tree (small — breadcrumbs and
   // subfolder counts compute in memory), and this folder's photos.
-  const [session, { data: allFolders }, { data: photos }, { data: favorites }] =
-    await Promise.all([
-      getSessionProfile(),
-      db.from("folders").select("id, name, parent_id, description, sort_order"),
-      db
-        .from("photos")
-        .select("*, files(*)")
-        .eq("folder_id", folderId)
-        .order("created_at", { ascending: false }),
-      // RLS scopes favorites to the signed-in user.
-      db.from("photo_favorites").select("photo_id"),
-    ]);
+  const [
+    session,
+    { data: allFolders },
+    { data: photos },
+    { data: favorites },
+    { data: projects },
+  ] = await Promise.all([
+    getSessionProfile(),
+    db.from("folders").select("id, name, parent_id, description, sort_order"),
+    db
+      .from("photos")
+      .select("*, files(*)")
+      .eq("folder_id", folderId)
+      .order("created_at", { ascending: false }),
+    // RLS scopes favorites to the signed-in user.
+    db.from("photo_favorites").select("photo_id"),
+    db.from("projects").select("id, name, parent_id"),
+  ]);
   const favoriteIds = (favorites ?? []).map((row) => row.photo_id);
 
   const folderList = allFolders ?? [];
@@ -173,6 +179,7 @@ export default async function FolderPage({
             name,
             parent_id,
           }))}
+          projects={projects ?? []}
         />
       </div>
     </div>

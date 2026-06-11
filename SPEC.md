@@ -105,6 +105,12 @@ photos (
   taken_at, photographer_name, uploaded_by, created_at
 )
 
+-- Projects: nestable, team-shared collections that REFERENCE photos for a
+-- piece of work. Photos are linked, never moved or copied; deleting a
+-- project (or unlinking a photo) only removes link rows.
+projects       (id, space_id, parent_id, name, description, sort_order, created_by, created_at)
+project_photos (project_id, photo_id, added_by, added_at)
+
 -- Sharing and uploads
 share_links (
   id, token UNIQUE, target_type, target_id,
@@ -353,6 +359,7 @@ Decisions made during the build that adjust the plan above:
 8. **2026-06-10 — Brand Guide integrated into the app.** The standalone brand site (branding.soteria.church) is superseded by an in-app Brand Guide section (`/brand` + Logos, Colors, Typography, Guidelines, Examples). Content is structured in `lib/brand.ts`, distilled from `branding/brand-guidelines.md` (still the written source of truth). Logo lockups and the curated photo set moved to `public/branding/` and serve statically.
 9. **2026-06-10 — Schema extensions for kit organization.** `kit_folders` (nestable tree of kits, parallel to photo folders), `kit_sections` (named asset groups within a kit, drag-and-drop ordered via `kit_assets.section_id`/`sort_order`), and `fonts.source`/`external_ref` for Google Fonts and Adobe Fonts entries alongside uploaded font files.
 10. **2026-06-10 — Packaged for other churches as a single-tenant deployment kit.** Strategy in `docs/PACKAGING.md`, runbook in `docs/SELF_HOSTING.md`. Org identity (app name, church name, contact wording, logo, login placeholder) is env-driven through `lib/config.ts` with Soteria defaults, so Soteria's deployment needs no env changes. The Brand Guide is treated as Soteria's replaceable "brand pack" and can be disabled with `NEXT_PUBLIC_BRAND_GUIDE=off`; the tagging event-type taxonomy is overridable via `NEXT_PUBLIC_EVENT_TYPES`; `npm run setup` provisions `.env.local` and renames the seeded space. In-app multi-tenancy remains a non-goal; the space-scoped schema is preserved so a hosted multi-tenant offering stays possible later.
+11. **2026-06-11 — Projects: reference-based photo collections.** A second lightweight hierarchy under the Photos nav (alongside Favorites, which Projects may eventually replace): `projects` (nested via `parent_id`) + `project_photos` join. Photos are linked, never moved or copied — deleting a project, a subproject, or unlinking a photo never touches the photo row or its file. Editors and admins create, rename, re-nest (drag-and-drop in sidebar and card grid), and delete projects (deletion is safe by design, so it is not admin-only like folder deletion); viewers read. Photos join a project via the batch bar's "Add to project" (with inline project creation) from any folder, the Favorites page, or another project; the project page offers batch "Remove" (unlink). Routes: `/photos/projects` and `/photos/projects/[projectId]`.
 
 ---
 

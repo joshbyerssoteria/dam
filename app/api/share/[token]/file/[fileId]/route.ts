@@ -1,7 +1,6 @@
 import { createHash } from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import sharp from "sharp";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getObjectBuffer, presignedGetUrl } from "@/lib/storage";
 import {
@@ -12,6 +11,7 @@ import {
 } from "@/lib/share-access";
 import { isImageMime } from "@/lib/upload";
 import { isPdfLike, renderPdfFirstPage } from "@/lib/pdf-preview";
+import { loadImage } from "@/lib/image-decode";
 
 export const runtime = "nodejs";
 
@@ -92,7 +92,7 @@ export async function GET(
         );
       }
     }
-    const variant = await sharp(source)
+    const variant = await (await loadImage(source))
       .rotate()
       .resize(width, undefined, { withoutEnlargement: true })
       .webp({ quality: 78 })

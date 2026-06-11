@@ -12,9 +12,10 @@ export default async function AppLayout({
   if (!session) redirect("/login");
 
   const db = await createClient();
-  const [{ data: folders }, { data: kitFolders }, { data: kits }] =
+  const [{ data: folders }, { data: projects }, { data: kitFolders }, { data: kits }] =
     await Promise.all([
       db.from("folders").select("id, name, parent_id, sort_order"),
+      db.from("projects").select("id, name, parent_id, sort_order"),
       db.from("kit_folders").select("id, name, parent_id, sort_order"),
       db
         .from("kits")
@@ -24,6 +25,10 @@ export default async function AppLayout({
     ]);
 
   const photoTree = buildNavTree(folders ?? [], (id) => `/photos/${id}`);
+  const projectTree = buildNavTree(
+    projects ?? [],
+    (id) => `/photos/projects/${id}`
+  );
   const kitTree = buildNavTree(
     kitFolders ?? [],
     (id) => `/kits/f/${id}`,
@@ -41,6 +46,7 @@ export default async function AppLayout({
         role={session.profile.role}
         email={session.profile.email}
         photoTree={photoTree}
+        projectTree={projectTree}
         kitTree={kitTree}
       />
       <main className="min-w-0 flex-1">{children}</main>
