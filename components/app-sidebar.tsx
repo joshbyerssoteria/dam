@@ -75,11 +75,6 @@ function Collapse({
   );
 }
 
-function containsActive(node: NavTreeNode, pathname: string): boolean {
-  if (pathname === node.href || pathname.startsWith(`${node.href}/`)) return true;
-  return node.children.some((child) => containsActive(child, pathname));
-}
-
 function findNode(nodes: NavTreeNode[], id: string): NavTreeNode | null {
   for (const node of nodes) {
     if (node.id === id) return node;
@@ -164,7 +159,7 @@ function TreeBranch({
   depth: number;
   pathname: string;
 }) {
-  const [expanded, setExpanded] = useState(() => containsActive(node, pathname));
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <div>
@@ -208,7 +203,7 @@ function PhotoTreeBranch({
   depth: number;
   pathname: string;
 }) {
-  const [expanded, setExpanded] = useState(() => containsActive(node, pathname));
+  const [expanded, setExpanded] = useState(false);
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `photofolder:${node.id}`,
   });
@@ -273,7 +268,7 @@ function ProjectTreeBranch({
   depth: number;
   pathname: string;
 }) {
-  const [expanded, setExpanded] = useState(() => containsActive(node, pathname));
+  const [expanded, setExpanded] = useState(false);
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `projectdrop:${node.id}`,
   });
@@ -334,7 +329,7 @@ function KitsTreeBranch({
   depth: number;
   pathname: string;
 }) {
-  const [expanded, setExpanded] = useState(() => containsActive(node, pathname));
+  const [expanded, setExpanded] = useState(false);
   const isFolder = node.kind === "folder";
 
   const { setNodeRef: setDropRef, isOver } = useDroppable({
@@ -423,6 +418,9 @@ function SectionLink({
   pathname,
   dropRef,
   isDropTarget = false,
+  expandable = false,
+  expanded = false,
+  onToggle,
 }: {
   href: string;
   label: string;
@@ -430,16 +428,23 @@ function SectionLink({
   pathname: string;
   dropRef?: (element: HTMLElement | null) => void;
   isDropTarget?: boolean;
+  expandable?: boolean;
+  expanded?: boolean;
+  onToggle?: () => void;
 }) {
   const sectionActive = pathname === href || pathname.startsWith(`${href}/`);
   const exactActive = sectionActive && pathname === href;
-  return (
+  const link = (
     <Link
       ref={dropRef as React.Ref<HTMLAnchorElement>}
       href={href}
       prefetch={true}
+      // Clicking the label both navigates and opens the section (Brand
+      // Guide / Projects pattern); the chevron toggles without navigating.
+      onClick={expandable ? onToggle : undefined}
       className={cn(
-        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors focus-visible:outline-none",
+        expandable && "min-w-0 flex-1",
         exactActive
           ? "bg-[#F2EEE7] font-medium text-foreground"
           : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground",
@@ -451,15 +456,38 @@ function SectionLink({
       {label}
     </Link>
   );
+  if (!expandable) return link;
+  return (
+    <div className="flex items-center rounded-md has-[a:focus-visible]:ring-1 has-[a:focus-visible]:ring-ring">
+      {link}
+      <button
+        type="button"
+        aria-label={expanded ? `Collapse ${label}` : `Expand ${label}`}
+        onClick={onToggle}
+        className="mr-1.5 flex size-5 shrink-0 items-center justify-center rounded hover:bg-[#1B2A41]/5"
+      >
+        <ChevronRight
+          className={cn(
+            "size-3 transition-transform duration-200",
+            expanded && "rotate-90"
+          )}
+        />
+      </button>
+    </div>
+  );
 }
 
 /** Rendered inside DndContext so the root droppable hook has a provider. */
 function KitsNavTreeArea({
   kitTree,
   pathname,
+  open,
+  onToggle,
 }: {
   kitTree: NavTreeNode[];
   pathname: string;
+  open: boolean;
+  onToggle: () => void;
 }) {
   const { setNodeRef: rootDropRef, isOver: rootIsOver } = useDroppable({
     id: "kitfolder:root",
@@ -474,28 +502,33 @@ function KitsNavTreeArea({
         pathname={pathname}
         dropRef={rootDropRef}
         isDropTarget={rootIsOver}
+        expandable
+        expanded={open}
+        onToggle={onToggle}
       />
-      {kitTree.length > 0 ? (
-        <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
-          {kitTree
-            .filter((node) => node.kind === "folder")
-            .map((node) => (
-              <KitsTreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
-            ))}
-          <SortableContext
-            items={kitTree
-              .filter((node) => node.kind === "leaf")
-              .map((node) => `kit:${node.id}`)}
-            strategy={verticalListSortingStrategy}
-          >
+      <Collapse open={open}>
+        {kitTree.length > 0 ? (
+          <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
             {kitTree
-              .filter((node) => node.kind === "leaf")
+              .filter((node) => node.kind === "folder")
               .map((node) => (
                 <KitsTreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
               ))}
-          </SortableContext>
-        </div>
-      ) : null}
+            <SortableContext
+              items={kitTree
+                .filter((node) => node.kind === "leaf")
+                .map((node) => `kit:${node.id}`)}
+              strategy={verticalListSortingStrategy}
+            >
+              {kitTree
+                .filter((node) => node.kind === "leaf")
+                .map((node) => (
+                  <KitsTreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
+                ))}
+            </SortableContext>
+          </div>
+        ) : null}
+      </Collapse>
     </div>
   );
 }
@@ -536,18 +569,30 @@ function KitsNav({
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
   const [activeKitId, setActiveKitId] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const toggle = () => setOpen((current) => !current);
 
   if (!canEdit) {
     return (
       <div>
-        <SectionLink href="/kits" label="Kits" icon={Palette} pathname={pathname} />
-        {kitTree.length > 0 ? (
-          <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
-            {kitTree.map((node) => (
-              <TreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
-            ))}
-          </div>
-        ) : null}
+        <SectionLink
+          href="/kits"
+          label="Kits"
+          icon={Palette}
+          pathname={pathname}
+          expandable
+          expanded={open}
+          onToggle={toggle}
+        />
+        <Collapse open={open}>
+          {kitTree.length > 0 ? (
+            <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
+              {kitTree.map((node) => (
+                <TreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
+              ))}
+            </div>
+          ) : null}
+        </Collapse>
       </div>
     );
   }
@@ -615,7 +660,12 @@ function KitsNav({
       onDragEnd={(event) => void handleDragEnd(event)}
       onDragCancel={() => setActiveKitId(null)}
     >
-      <KitsNavTreeArea kitTree={kitTree} pathname={pathname} />
+      <KitsNavTreeArea
+        kitTree={kitTree}
+        pathname={pathname}
+        open={open}
+        onToggle={toggle}
+      />
       <DragOverlay>
         {activeNode ? (
           <div className="rounded-md border border-border bg-card px-3 py-1.5 text-[13px] shadow-lg">
@@ -645,9 +695,7 @@ function ProjectsGroup({
   dropRef?: (element: HTMLElement | null) => void;
   isDropTarget?: boolean;
 }) {
-  const [open, setOpen] = useState(() =>
-    pathname.startsWith("/photos/projects")
-  );
+  const [open, setOpen] = useState(false);
   const hasProjects = projectTree.length > 0;
   const Branch = draggable ? ProjectTreeBranch : TreeBranch;
 
@@ -704,10 +752,14 @@ function PhotosNavArea({
   photoTree,
   projectTree,
   pathname,
+  open,
+  onToggle,
 }: {
   photoTree: NavTreeNode[];
   projectTree: NavTreeNode[];
   pathname: string;
+  open: boolean;
+  onToggle: () => void;
 }) {
   const { setNodeRef: rootDropRef, isOver } = useDroppable({
     id: "photofolder:root",
@@ -723,36 +775,41 @@ function PhotosNavArea({
         pathname={pathname}
         dropRef={rootDropRef}
         isDropTarget={isOver}
+        expandable
+        expanded={open}
+        onToggle={onToggle}
       />
-      <div className="mb-0.5 ml-3 mt-0.5 border-l border-border pl-1">
-        <Link
-          href="/photos/favorites"
-          className={cn(
-            "flex items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
-            pathname === "/photos/favorites"
-              ? "bg-[#F2EEE7] font-medium text-foreground"
-              : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
-          )}
-        >
-          <Heart className="size-3" />
-          Favorites
-        </Link>
-        {/* Dropping a project on the header moves it back to the top level. */}
-        <ProjectsGroup
-          projectTree={projectTree}
-          pathname={pathname}
-          draggable
-          dropRef={projectsRootDropRef}
-          isDropTarget={projectsRootIsOver}
-        />
-      </div>
-      {photoTree.length > 0 ? (
-        <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
-          {photoTree.map((node) => (
-            <PhotoTreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
-          ))}
+      <Collapse open={open}>
+        <div className="mb-0.5 ml-3 mt-0.5 border-l border-border pl-1">
+          <Link
+            href="/photos/favorites"
+            className={cn(
+              "flex items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
+              pathname === "/photos/favorites"
+                ? "bg-[#F2EEE7] font-medium text-foreground"
+                : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
+            )}
+          >
+            <Heart className="size-3" />
+            Favorites
+          </Link>
+          {/* Dropping a project on the header moves it back to the top level. */}
+          <ProjectsGroup
+            projectTree={projectTree}
+            pathname={pathname}
+            draggable
+            dropRef={projectsRootDropRef}
+            isDropTarget={projectsRootIsOver}
+          />
         </div>
-      ) : null}
+        {photoTree.length > 0 ? (
+          <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
+            {photoTree.map((node) => (
+              <PhotoTreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
+            ))}
+          </div>
+        ) : null}
+      </Collapse>
     </div>
   );
 }
@@ -774,33 +831,45 @@ function PhotosNav({
   );
   // Full dnd id (with prefix) so the overlay knows which tree to search.
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const toggle = () => setOpen((current) => !current);
 
   if (!canEdit) {
     return (
       <div>
-        <SectionLink href="/photos" label="Photos" icon={Images} pathname={pathname} />
-        <div className="mb-0.5 ml-3 mt-0.5 border-l border-border pl-1">
-          <Link
-            href="/photos/favorites"
-            className={cn(
-              "flex items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
-              pathname === "/photos/favorites"
-                ? "bg-[#F2EEE7] font-medium text-foreground"
-                : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
-            )}
-          >
-            <Heart className="size-3" />
-            Favorites
-          </Link>
-          <ProjectsGroup projectTree={projectTree} pathname={pathname} />
-        </div>
-        {photoTree.length > 0 ? (
-          <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
-            {photoTree.map((node) => (
-              <TreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
-            ))}
+        <SectionLink
+          href="/photos"
+          label="Photos"
+          icon={Images}
+          pathname={pathname}
+          expandable
+          expanded={open}
+          onToggle={toggle}
+        />
+        <Collapse open={open}>
+          <div className="mb-0.5 ml-3 mt-0.5 border-l border-border pl-1">
+            <Link
+              href="/photos/favorites"
+              className={cn(
+                "flex items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
+                pathname === "/photos/favorites"
+                  ? "bg-[#F2EEE7] font-medium text-foreground"
+                  : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
+              )}
+            >
+              <Heart className="size-3" />
+              Favorites
+            </Link>
+            <ProjectsGroup projectTree={projectTree} pathname={pathname} />
           </div>
-        ) : null}
+          {photoTree.length > 0 ? (
+            <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
+              {photoTree.map((node) => (
+                <TreeBranch key={node.id} node={node} depth={0} pathname={pathname} />
+              ))}
+            </div>
+          ) : null}
+        </Collapse>
       </div>
     );
   }
@@ -868,6 +937,8 @@ function PhotosNav({
         photoTree={photoTree}
         projectTree={projectTree}
         pathname={pathname}
+        open={open}
+        onToggle={toggle}
       />
       <DragOverlay>
         {activeNode ? (
@@ -885,10 +956,8 @@ function PhotosNav({
  * with an animated submenu; Examples nests its own collapsible group.
  */
 function BrandGuideNav({ pathname }: { pathname: string }) {
-  const [open, setOpen] = useState(() => pathname.startsWith("/brand"));
-  const [examplesOpen, setExamplesOpen] = useState(() =>
-    pathname.startsWith("/brand/examples")
-  );
+  const [open, setOpen] = useState(false);
+  const [examplesOpen, setExamplesOpen] = useState(false);
 
   function subLink(href: string, label: string, indent: "pl-5" | "pl-9") {
     const active = pathname.startsWith(href);
