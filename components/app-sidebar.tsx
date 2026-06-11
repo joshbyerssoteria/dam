@@ -628,6 +628,78 @@ function KitsNav({
   );
 }
 
+/**
+ * Collapsible Projects group: pinned link + chevron (Brand Guide pattern),
+ * with the project tree inside. In edit mode the link doubles as the
+ * move-to-root drop target and branches are draggable.
+ */
+function ProjectsGroup({
+  projectTree,
+  pathname,
+  draggable = false,
+  dropRef,
+  isDropTarget = false,
+}: {
+  projectTree: NavTreeNode[];
+  pathname: string;
+  draggable?: boolean;
+  dropRef?: (element: HTMLElement | null) => void;
+  isDropTarget?: boolean;
+}) {
+  const [open, setOpen] = useState(() =>
+    pathname.startsWith("/photos/projects")
+  );
+  const hasProjects = projectTree.length > 0;
+  const Branch = draggable ? ProjectTreeBranch : TreeBranch;
+
+  return (
+    <div>
+      <div className="flex items-center">
+        <Link
+          ref={dropRef as React.Ref<HTMLAnchorElement>}
+          href="/photos/projects"
+          onClick={() => setOpen((current) => !current)}
+          className={cn(
+            "flex min-w-0 flex-1 items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
+            pathname === "/photos/projects"
+              ? "bg-[#F2EEE7] font-medium text-foreground"
+              : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground",
+            isDropTarget &&
+              "bg-[#C2912D] font-medium text-white ring-2 ring-[#C2912D] ring-offset-1"
+          )}
+        >
+          <FolderKanban className="size-3" />
+          Projects
+        </Link>
+        {hasProjects ? (
+          <button
+            type="button"
+            aria-label={open ? "Collapse Projects" : "Expand Projects"}
+            onClick={() => setOpen((current) => !current)}
+            className="mr-1.5 flex size-5 shrink-0 items-center justify-center rounded hover:bg-black/5"
+          >
+            <ChevronRight
+              className={cn(
+                "size-3 transition-transform duration-200",
+                open && "rotate-90"
+              )}
+            />
+          </button>
+        ) : null}
+      </div>
+      {hasProjects ? (
+        <Collapse open={open}>
+          <div>
+            {projectTree.map((node) => (
+              <Branch key={node.id} node={node} depth={1} pathname={pathname} />
+            ))}
+          </div>
+        </Collapse>
+      ) : null}
+    </div>
+  );
+}
+
 /** Photos header + favorites + projects + tree, with the root as a drop target. */
 function PhotosNavArea({
   photoTree,
@@ -666,25 +738,14 @@ function PhotosNavArea({
           <Heart className="size-3" />
           Favorites
         </Link>
-        {/* Dropping a project here moves it back to the top level. */}
-        <Link
-          ref={projectsRootDropRef as React.Ref<HTMLAnchorElement>}
-          href="/photos/projects"
-          className={cn(
-            "flex items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
-            pathname === "/photos/projects"
-              ? "bg-[#F2EEE7] font-medium text-foreground"
-              : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground",
-            projectsRootIsOver &&
-              "bg-[#C2912D] font-medium text-white ring-2 ring-[#C2912D] ring-offset-1"
-          )}
-        >
-          <FolderKanban className="size-3" />
-          Projects
-        </Link>
-        {projectTree.map((node) => (
-          <ProjectTreeBranch key={node.id} node={node} depth={1} pathname={pathname} />
-        ))}
+        {/* Dropping a project on the header moves it back to the top level. */}
+        <ProjectsGroup
+          projectTree={projectTree}
+          pathname={pathname}
+          draggable
+          dropRef={projectsRootDropRef}
+          isDropTarget={projectsRootIsOver}
+        />
       </div>
       {photoTree.length > 0 ? (
         <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
@@ -732,21 +793,7 @@ function PhotosNav({
             <Heart className="size-3" />
             Favorites
           </Link>
-          <Link
-            href="/photos/projects"
-            className={cn(
-              "flex items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
-              pathname === "/photos/projects"
-                ? "bg-[#F2EEE7] font-medium text-foreground"
-                : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
-            )}
-          >
-            <FolderKanban className="size-3" />
-            Projects
-          </Link>
-          {projectTree.map((node) => (
-            <TreeBranch key={node.id} node={node} depth={1} pathname={pathname} />
-          ))}
+          <ProjectsGroup projectTree={projectTree} pathname={pathname} />
         </div>
         {photoTree.length > 0 ? (
           <div className="mb-1 ml-3 mt-0.5 border-l border-border pl-1">
