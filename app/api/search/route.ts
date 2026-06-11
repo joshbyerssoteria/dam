@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, getSessionProfile } from "@/lib/supabase/server";
 import { embedText } from "@/lib/embeddings";
 import {
+  applyRelevanceCutoff,
   embeddingToVectorLiteral,
   queryToTags,
   SEMANTIC_WEIGHT,
@@ -56,7 +57,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Search failed" }, { status: 500 });
   }
 
-  const matchList = matches ?? [];
+  // `search_photos` ranks candidates by score but admits weak matches; keep
+  // only the relevant cluster near the top hit (SPEC.md → Search).
+  const matchList = applyRelevanceCutoff(matches ?? []);
   if (matchList.length === 0) {
     return NextResponse.json({
       results: [],

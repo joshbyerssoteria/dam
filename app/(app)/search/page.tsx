@@ -20,7 +20,7 @@ export default async function SearchPage({
         description={
           semantic
             ? "Search the photo archive by keyword or meaning — “hands raised in worship” works."
-            : "Keyword search across AI tags. Add OPENAI_API_KEY to enable semantic search."
+            : "Search the photo archive by keyword."
         }
       />
       <div className="p-8">

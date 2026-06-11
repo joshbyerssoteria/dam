@@ -229,7 +229,11 @@ Single endpoint `/api/search?q=...`:
    - Vector similarity (cosine distance) on `photos.embedding`
    - Keyword overlap on `photos.ai_tags`
    - Combined score with configurable weights (start 70/30 semantic/keyword)
-3. Return ranked results with snippets
+3. Apply a relative relevance cutoff — keep only results scoring within a
+   fraction (`RELEVANCE_RATIO`, default 0.85) of the top hit, dropping the weak
+   tail the recall query pads in. Adapts per query (dense subjects keep
+   everything; sparse subjects trim aggressively) and never returns empty.
+4. Return ranked results with snippets
 
 ### SVG Transforms (v2)
 
