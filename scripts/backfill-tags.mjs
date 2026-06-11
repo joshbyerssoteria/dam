@@ -90,7 +90,9 @@ async function toVariantJpeg(original) {
       await heicConvert({ buffer: original, format: "JPEG", quality: 0.9 })
     );
   }
-  return sharp(source)
+  // failOn:"none" lets sharp decode truncated/slightly-corrupt JPEGs
+  // (common in migrated archives) instead of throwing "premature end".
+  return sharp(source, { failOn: "none" })
     .rotate()
     .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
     .jpeg({ quality: 80 })
@@ -211,21 +213,43 @@ const { count: total } = await supabase
 console.log(`Untagged photos: ${total ?? 0}`);
 if (dryRun || !total) process.exit(0);
 
-const target = limit ? Math.min(limit, total) : total;
-console.log(`Tagging ${target} photo(s), concurrency ${CONCURRENCY}…\n`);
+const target = limit ?? total;
+console.log(`Tagging up to ${target} photo(s), concurrency ${CONCURRENCY}…\n`);
 
 let done = 0;
 let failed = 0;
+const failedIds = [];
 const started = Date.now();
+// Keyset cursor over (created_at, id): always advances past photos already
+// attempted this run, so a failure is never re-fetched and can't clog the
+// queue. Prior failures are retried on the next fresh run.
+let cursorCreated = null;
+let cursorId = null;
 
 while (done + failed < target) {
-  const { data: batch } = await supabase
+  let query = supabase
     .from("photos")
-    .select("id, file_id")
+    .select("id, file_id, created_at")
     .is("ai_caption", null)
-    .order("created_at")
-    .limit(Math.min(CONCURRENCY * 5, target - done - failed));
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true })
+    .limit(CONCURRENCY * 5);
+  if (cursorCreated) {
+    // (created_at > c) OR (created_at = c AND id > id)
+    query = query.or(
+      `created_at.gt.${cursorCreated},and(created_at.eq.${cursorCreated},id.gt.${cursorId})`
+    );
+  }
+  const { data: batch, error } = await query;
+  if (error) {
+    console.error("fetch failed:", error.message);
+    break;
+  }
   if (!batch || batch.length === 0) break;
+
+  const last = batch[batch.length - 1];
+  cursorCreated = last.created_at;
+  cursorId = last.id;
 
   for (let i = 0; i < batch.length; i += CONCURRENCY) {
     const slice = batch.slice(i, i + CONCURRENCY);
@@ -235,13 +259,14 @@ while (done + failed < target) {
         done += 1;
       } else {
         failed += 1;
+        failedIds.push(slice[index].id);
         console.warn(`  ! photo ${slice[index].id}: ${result.reason?.message}`);
       }
     }
-    if ((done + failed) % 20 < CONCURRENCY) {
+    if ((done + failed) % 100 < CONCURRENCY) {
       const rate = done / ((Date.now() - started) / 60000);
       console.log(
-        `  ${done}/${target} tagged (${failed} failed) — ${rate.toFixed(0)}/min`
+        `  ${done} tagged, ${failed} failed — ${rate.toFixed(0)}/min`
       );
     }
     if (done + failed >= target) break;
@@ -249,4 +274,6 @@ while (done + failed < target) {
 }
 
 console.log(`\nDone. Tagged ${done}, failed ${failed}.`);
-console.log("Failed photos remain untagged — re-run to retry them.");
+if (failedIds.length > 0) {
+  console.log(`Failed ids (re-run to retry): ${failedIds.slice(0, 25).join(", ")}${failedIds.length > 25 ? `, +${failedIds.length - 25} more` : ""}`);
+}
