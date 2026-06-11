@@ -170,11 +170,12 @@ function DraggableFolderCard({
         {...attributes}
         {...listeners}
         className={cn(
-          "group flex items-center gap-3 rounded-lg border bg-card p-4 transition-colors",
+          "group flex items-center gap-3 rounded-lg border p-4 transition-colors",
+          // Match the sidebar's unmistakable gold drop target.
           isOver
-            ? "border-foreground bg-accent ring-1 ring-[#C2912D]"
-            : "border-border hover:border-muted-foreground/40",
-          dragging && "opacity-40"
+            ? "border-[#C2912D] bg-[#C2912D] text-white ring-2 ring-[#C2912D]"
+            : "border-border bg-card hover:border-muted-foreground/40",
+          dragging && "opacity-30"
         )}
       >
         <CardInner folder={folder} />
