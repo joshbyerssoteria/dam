@@ -52,7 +52,7 @@ export default async function SharesPage() {
             No share links yet. Create one from any kit or folder page.
           </p>
         ) : (
-          <div className="divide-y divide-border rounded-lg border border-border">
+          <div className="divide-y divide-border border border-border">
             {linkList.map((link) => {
               const live = isTokenLive(link.expires_at);
               const path = `${link.target_type === "kit" ? "/k" : "/f"}/${link.token}`;

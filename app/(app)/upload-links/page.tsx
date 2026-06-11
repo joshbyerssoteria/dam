@@ -40,7 +40,7 @@ export default async function UploadTokensPage() {
             No upload links yet.
           </p>
         ) : (
-          <div className="divide-y divide-border rounded-lg border border-border">
+          <div className="divide-y divide-border border border-border">
             {tokenList.map((token) => {
               const live = isTokenLive(token.expires_at);
               const path = `/upload/${token.token}`;

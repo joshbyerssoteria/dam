@@ -37,7 +37,7 @@ function HomeCard({
   return (
     <Link
       href={href}
-      className="group rounded-lg border border-border p-5 transition-colors hover:border-[var(--gold)]/50 hover:bg-accent/40"
+      className="group border border-border p-5 transition-colors hover:border-[var(--gold)]/50 hover:bg-accent/40"
     >
       <div className="flex items-center justify-between">
         <Icon className="size-5 text-muted-foreground" strokeWidth={1.75} />

@@ -34,7 +34,7 @@ export default async function SettingsPage() {
           >
             Account
           </h2>
-          <div className="mt-4 space-y-5 rounded-lg border border-border bg-card p-5">
+          <div className="mt-4 space-y-5 border border-border bg-card p-5">
             <DisplayNameForm initialName={session.profile.display_name ?? ""} />
             <dl className="space-y-3 border-t border-border pt-4 text-sm">
               <div className="flex justify-between gap-4">
@@ -67,7 +67,7 @@ export default async function SettingsPage() {
               New sign-ins start as viewers. Grant editor to people who upload
               and organize; admin manages users and tokens.
             </p>
-            <div className="mt-4 max-w-2xl divide-y divide-border rounded-lg border border-border">
+            <div className="mt-4 max-w-2xl divide-y divide-border border border-border">
               {(profiles ?? []).map((profile) => (
                 <div
                   key={profile.id}

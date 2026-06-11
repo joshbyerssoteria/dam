@@ -20,7 +20,7 @@ export default function BrandTypographyPage() {
         </p>
 
         <div className="mt-5 space-y-3">
-          <div className="rounded-lg border border-border bg-card p-6">
+          <div className="border border-border bg-card p-6">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Inter — primary · UI, labels, body, all display
             </p>
@@ -42,7 +42,7 @@ export default function BrandTypographyPage() {
             </p>
           </div>
 
-          <div className="rounded-lg border border-border bg-card p-6">
+          <div className="border border-border bg-card p-6">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Lora — serif companion · wordmark, scripture, long-form, quotes
             </p>
@@ -65,7 +65,7 @@ export default function BrandTypographyPage() {
 
       <section aria-label="Type roles">
         <h2 className="text-sm font-semibold">Three roles</h2>
-        <div className="mt-4 overflow-hidden rounded-lg border border-border">
+        <div className="mt-4 overflow-hidden border border-border">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50 text-left">
@@ -99,7 +99,7 @@ export default function BrandTypographyPage() {
           {TYPE_RULES.map((rule) => (
             <li
               key={rule}
-              className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground"
+              className="border border-border bg-card px-4 py-3 text-sm text-muted-foreground"
             >
               {rule}
             </li>

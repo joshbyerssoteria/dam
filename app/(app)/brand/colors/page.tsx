@@ -18,7 +18,7 @@ export default function BrandColorsPage() {
           {BRAND_COLORS.map((color) => (
             <div
               key={color.id}
-              className="overflow-hidden rounded-lg border border-border"
+              className="overflow-hidden border border-border"
             >
               <div
                 className="h-24"
@@ -54,7 +54,7 @@ export default function BrandColorsPage() {
           White dominates; gold punctuates. Hold these proportions in any
           composition.
         </p>
-        <div className="mt-4 flex h-10 w-full overflow-hidden rounded-lg border border-border">
+        <div className="mt-4 flex h-10 w-full overflow-hidden border border-border">
           {[...BRAND_COLORS]
             .sort((a, b) => b.share - a.share)
             .map((color) => (
@@ -85,7 +85,7 @@ export default function BrandColorsPage() {
           {SUPPORTING_COLORS.map((color) => (
             <div
               key={color.id}
-              className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
+              className="flex items-center gap-3 border border-border bg-card p-3"
             >
               <span
                 className="size-10 shrink-0 rounded-md border border-black/5"
@@ -109,7 +109,7 @@ export default function BrandColorsPage() {
           {COLOR_RULES.map((rule, index) => (
             <li
               key={index}
-              className="flex gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm"
+              className="flex gap-3 border border-border bg-card px-4 py-3 text-sm"
             >
               <span className="font-mono text-xs text-muted-foreground">
                 {index + 1}
@@ -122,7 +122,7 @@ export default function BrandColorsPage() {
 
       <section aria-label="Contrast">
         <h2 className="text-sm font-semibold">Contrast (WCAG AA)</h2>
-        <div className="mt-4 overflow-hidden rounded-lg border border-border">
+        <div className="mt-4 overflow-hidden border border-border">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50 text-left">

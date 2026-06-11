@@ -23,7 +23,7 @@ export default function BrandLogosPage() {
               {LOGO_COLORS.map((variant) => (
                 <div
                   key={variant.color}
-                  className="overflow-hidden rounded-lg border border-border"
+                  className="overflow-hidden border border-border"
                 >
                   <div
                     className="flex aspect-[4/3] items-center justify-center p-6"
@@ -76,7 +76,7 @@ export default function BrandLogosPage() {
             ).map((favicon) => (
               <div
                 key={favicon.file}
-                className="overflow-hidden rounded-lg border border-border"
+                className="overflow-hidden border border-border"
               >
                 <div
                   className="flex aspect-[2/1] items-center justify-center"
@@ -123,7 +123,7 @@ export default function BrandLogosPage() {
               Reserve a margin equal to the height of the logomark on all four
               sides of any lockup. Nothing sits inside that boundary.
             </p>
-            <div className="mt-4 flex items-center justify-center rounded-lg border border-border bg-card p-8">
+            <div className="mt-4 flex items-center justify-center border border-border bg-card p-8">
               {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
               <img
                 src="/branding/logos/logo-whitespace.svg"
@@ -148,7 +148,7 @@ export default function BrandLogosPage() {
               </li>
             </ul>
             <h2 className="mt-8 text-sm font-semibold">The mark</h2>
-            <div className="mt-4 rounded-lg border border-border bg-card p-4">
+            <div className="mt-4 border border-border bg-card p-4">
               {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset */}
               <img
                 src="/branding/logos/logo-symbology.png"
@@ -165,7 +165,7 @@ export default function BrandLogosPage() {
             {LOGO_DONTS.map((rule) => (
               <li
                 key={rule}
-                className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground"
+                className="border border-border bg-card px-4 py-3 text-sm text-muted-foreground"
               >
                 <span
                   className="mr-2 font-semibold"

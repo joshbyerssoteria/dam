@@ -80,7 +80,7 @@ export default async function UploadPortalPage({
           . Originals are kept at full quality.
         </p>
         {uploadToken.instructions ? (
-          <div className="mt-6 rounded-lg border border-border bg-card p-4">
+          <div className="mt-6 border border-border bg-card p-4">
             <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Instructions
             </h2>
