@@ -1107,7 +1107,7 @@ export function AppSidebar({
           <img
             src={org.logoPath}
             alt={org.fullName}
-            className="h-auto w-full"
+            className="h-auto w-40"
             draggable={false}
           />
         </Link>
