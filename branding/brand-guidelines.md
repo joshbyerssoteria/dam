@@ -400,6 +400,45 @@ Sermon player chrome lives inside a translucent navy pill — the same surface a
 - Custom SVG icons for play, pause, fast-rewind, volume, CC, fullscreen (live at `branding/photos/` is the wrong path — they live at `web/public/graphics/playbar-*.svg`).
 - Source is 24fps cinematic — keyframe math should respect that.
 
+### Application UI (product chrome)
+
+The component specs above are drawn for **compositions** — a page with one
+hero, one CTA, generous quiet. Product screens (Soteria Assets, admin tools)
+have dozens of controls per view, so the same weights read as shouting.
+App chrome keeps the brand's silhouette and palette but drops the weight.
+
+**The dial, not a different brand:** pills stay pills, cards stay square and
+hairlined, navy/gold/off-white stay the only voices. What changes is border
+weight, hover drama, and motion speed.
+
+#### App buttons
+
+| Role | Rest | Hover |
+|---|---|---|
+| Primary | navy fill, white ink, pill | navy deepens to 90% |
+| Secondary | 1px navy-tint border (navy @ 20%), navy ink, transparent fill | border to navy @ 35%, off-white fill |
+| Ghost | no border, navy ink | off-white fill |
+| Destructive | red fill, white ink | red deepens to 90% |
+| Text link | gold underline | ink goes gold |
+
+- **The marketing hover contract (fill → transparent + full border, 500ms)
+  is reserved for guest-facing CTA moments** — share landings, the upload
+  portal, marketing pages. One per screen, as ever. In app chrome it is
+  never used: with many buttons per view the inversion reads as flicker.
+- **Motion: 150ms ease-out** in app chrome. 500ms belongs to compositions.
+- **Icon buttons** are quiet ghosts: ≥ 32px hit area, off-white circular
+  hover. The moment an icon button carries a second glyph (a caret, a
+  count), it becomes a **pill with horizontal padding** — never two glyphs
+  crammed in a fixed square.
+
+#### App focus & states
+
+- Focus is one gold ring around the **whole interactive row or control** —
+  never around an inner text fragment of a composite row.
+- Hover/pressed washes are **navy or off-white tints** (e.g. navy @ 5%) —
+  never black or gray washes, same as everywhere else in the system.
+- Density: app chrome runs 13–14px type; eyebrow labels mark sections.
+
 ---
 
 ## 8. Voice

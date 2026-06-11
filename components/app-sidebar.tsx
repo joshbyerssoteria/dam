@@ -115,7 +115,9 @@ function BranchRow({
   return (
     <div
       className={cn(
-        "group flex items-center rounded-md transition-colors",
+        // Focus draws one gold ring around the whole row (brand guide →
+        // Application UI) — the inner link's own outline is suppressed.
+        "group flex items-center rounded-md transition-colors has-[a:focus-visible]:ring-1 has-[a:focus-visible]:ring-ring",
         active
           ? "bg-[#F2EEE7] font-medium text-foreground"
           : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground",
@@ -130,7 +132,7 @@ function BranchRow({
           type="button"
           aria-label={expanded ? `Collapse ${node.name}` : `Expand ${node.name}`}
           onClick={onToggle}
-          className="flex size-5 shrink-0 items-center justify-center rounded hover:bg-black/5"
+          className="flex size-5 shrink-0 items-center justify-center rounded hover:bg-[#1B2A41]/5"
         >
           <ChevronRight
             className={cn("size-3 transition-transform", expanded && "rotate-90")}
@@ -144,7 +146,7 @@ function BranchRow({
         draggable={false}
         onClick={onExpand}
         {...(dragProps ?? {})}
-        className="min-w-0 flex-1 truncate py-1 pr-2 text-[13px]"
+        className="min-w-0 flex-1 truncate py-1 pr-2 text-[13px] focus-visible:outline-none"
         title={node.name}
       >
         {node.name}
@@ -651,13 +653,13 @@ function ProjectsGroup({
 
   return (
     <div>
-      <div className="flex items-center">
+      <div className="flex items-center rounded-md has-[a:focus-visible]:ring-1 has-[a:focus-visible]:ring-ring">
         <Link
           ref={dropRef as React.Ref<HTMLAnchorElement>}
           href="/photos/projects"
           onClick={() => setOpen((current) => !current)}
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors",
+            "flex min-w-0 flex-1 items-center gap-1.5 truncate rounded-md py-1 pl-5 pr-2 text-[13px] transition-colors focus-visible:outline-none",
             pathname === "/photos/projects"
               ? "bg-[#F2EEE7] font-medium text-foreground"
               : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground",
@@ -673,7 +675,7 @@ function ProjectsGroup({
             type="button"
             aria-label={open ? "Collapse Projects" : "Expand Projects"}
             onClick={() => setOpen((current) => !current)}
-            className="mr-1.5 flex size-5 shrink-0 items-center justify-center rounded hover:bg-black/5"
+            className="mr-1.5 flex size-5 shrink-0 items-center justify-center rounded hover:bg-[#1B2A41]/5"
           >
             <ChevronRight
               className={cn(
@@ -912,7 +914,7 @@ function BrandGuideNav({ pathname }: { pathname: string }) {
     <div>
       <div
         className={cn(
-          "flex items-center rounded-md transition-colors duration-150",
+          "flex items-center rounded-md transition-colors duration-150 has-[a:focus-visible]:ring-1 has-[a:focus-visible]:ring-ring",
           sectionActive
             ? "text-foreground"
             : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
@@ -921,7 +923,7 @@ function BrandGuideNav({ pathname }: { pathname: string }) {
         <Link
           href="/brand"
           onClick={() => setOpen((current) => !current)}
-          className="flex min-w-0 flex-1 items-center gap-2.5 px-2.5 py-1.5 text-sm"
+          className="flex min-w-0 flex-1 items-center gap-2.5 px-2.5 py-1.5 text-sm focus-visible:outline-none"
         >
           <BookOpen className="size-4" strokeWidth={1.75} />
           Brand Guide
@@ -930,7 +932,7 @@ function BrandGuideNav({ pathname }: { pathname: string }) {
           type="button"
           aria-label={open ? "Collapse Brand Guide" : "Expand Brand Guide"}
           onClick={() => setOpen((current) => !current)}
-          className="mr-1.5 flex size-5 shrink-0 items-center justify-center rounded hover:bg-black/5"
+          className="mr-1.5 flex size-5 shrink-0 items-center justify-center rounded hover:bg-[#1B2A41]/5"
         >
           <ChevronRight
             className={cn(
@@ -945,9 +947,10 @@ function BrandGuideNav({ pathname }: { pathname: string }) {
           {subLink("/brand/logos", "Logos", "pl-5")}
           {subLink("/brand/colors", "Colors", "pl-5")}
           {subLink("/brand/typography", "Typography", "pl-5")}
+          {subLink("/brand/application", "Application UI", "pl-5")}
           <div
             className={cn(
-              "flex items-center rounded-md transition-colors duration-150",
+              "flex items-center rounded-md transition-colors duration-150 has-[a:focus-visible]:ring-1 has-[a:focus-visible]:ring-ring",
               pathname.startsWith("/brand/examples")
                 ? "text-foreground"
                 : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground"
@@ -956,7 +959,7 @@ function BrandGuideNav({ pathname }: { pathname: string }) {
             <Link
               href="/brand/examples/compositions"
               onClick={() => setExamplesOpen((current) => !current)}
-              className="min-w-0 flex-1 truncate py-1 pl-5 pr-2 text-[13px]"
+              className="min-w-0 flex-1 truncate py-1 pl-5 pr-2 text-[13px] focus-visible:outline-none"
             >
               Examples
             </Link>
@@ -964,7 +967,7 @@ function BrandGuideNav({ pathname }: { pathname: string }) {
               type="button"
               aria-label={examplesOpen ? "Collapse Examples" : "Expand Examples"}
               onClick={() => setExamplesOpen((current) => !current)}
-              className="mr-1.5 flex size-5 shrink-0 items-center justify-center rounded hover:bg-black/5"
+              className="mr-1.5 flex size-5 shrink-0 items-center justify-center rounded hover:bg-[#1B2A41]/5"
             >
               <ChevronRight
                 className={cn(

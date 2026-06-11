@@ -67,7 +67,14 @@ export function DownloadMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size={size} aria-label="Download options">
+        {/* Icon + caret never share a fixed square (brand guide → Application
+            UI) — give the pill real horizontal padding. */}
+        <Button
+          variant="ghost"
+          size={size}
+          aria-label="Download options"
+          className={size === "icon" ? "w-auto gap-1 px-2.5" : undefined}
+        >
           <Download className="size-4" />
           {size === "sm" ? "Download" : null}
           <ChevronDown className="size-3" />

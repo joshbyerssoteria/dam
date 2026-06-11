@@ -194,6 +194,55 @@ export const TYPE_RULES = [
 ] as const;
 
 // ---------------------------------------------------------------------------
+// Application UI (product chrome)
+// ---------------------------------------------------------------------------
+
+export const APP_UI_PRINCIPLE =
+  "The component specs are drawn for compositions — one hero, one CTA, generous quiet. Product screens have dozens of controls per view, so the same weights read as shouting. App chrome keeps the brand's silhouette and palette but drops the weight: lighter borders, quieter hovers, faster motion.";
+
+export const APP_BUTTON_ROLES = [
+  {
+    role: "Primary",
+    rest: "Navy fill, white ink, pill",
+    hover: "Navy deepens to 90%",
+    variant: "default",
+  },
+  {
+    role: "Secondary",
+    rest: "1px navy-tint border (20%), navy ink",
+    hover: "Border to 35%, off-white fill",
+    variant: "outline",
+  },
+  {
+    role: "Ghost",
+    rest: "No border, navy ink",
+    hover: "Off-white fill",
+    variant: "ghost",
+  },
+  {
+    role: "Destructive",
+    rest: "Red fill, white ink",
+    hover: "Red deepens to 90%",
+    variant: "destructive",
+  },
+  {
+    role: "Text link",
+    rest: "Gold underline",
+    hover: "Ink goes gold",
+    variant: "link",
+  },
+] as const;
+
+export const APP_UI_RULES = [
+  "The marketing hover contract (fill → transparent + full border, 500ms) is reserved for guest-facing CTA moments — share landings, the upload portal. One per screen. In app chrome it is never used.",
+  "Motion: 150ms ease-out in app chrome. 500ms belongs to compositions.",
+  "Icon buttons are quiet ghosts: ≥ 32px hit area, off-white circular hover. An icon button that carries a second glyph (a caret, a count) becomes a pill with horizontal padding — never two glyphs in a fixed square.",
+  "Focus is one gold ring around the whole interactive row or control — never around an inner text fragment of a composite row.",
+  "Hover and pressed washes are navy or off-white tints (e.g. navy at 5%) — never black or gray washes.",
+  "Density: app chrome runs 13–14px type; eyebrow labels mark sections.",
+] as const;
+
+// ---------------------------------------------------------------------------
 // Voice
 // ---------------------------------------------------------------------------
 

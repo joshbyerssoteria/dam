@@ -309,8 +309,8 @@ export function PhotoGrid({
                   className={cn(
                     "absolute right-2 top-2 flex size-6 items-center justify-center rounded-full border transition-opacity",
                     isSelected
-                      ? "border-transparent bg-[#C2912D] text-white opacity-100"
-                      : "border-white/80 bg-black/30 text-white opacity-0 hover:bg-black/50 group-hover:opacity-100"
+                      ? "border-transparent bg-[#1B2A41] text-white opacity-100"
+                      : "border-white/80 bg-[#1B2A41]/40 text-white opacity-0 hover:bg-[#1B2A41]/60 group-hover:opacity-100"
                   )}
                 >
                   {isSelected ? <Check className="size-3.5" /> : null}
@@ -323,7 +323,7 @@ export function PhotoGrid({
                   aria-label={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
                   onClick={() => void toggleFavorite(photo.id)}
                   className={cn(
-                    "absolute left-2 top-2 flex size-6 items-center justify-center rounded-full bg-black/30 transition-opacity hover:bg-black/50",
+                    "absolute left-2 top-2 flex size-6 items-center justify-center rounded-full bg-[#1B2A41]/40 transition-opacity hover:bg-[#1B2A41]/60",
                     isFavorite
                       ? "text-[#C2912D] opacity-100"
                       : "text-white opacity-0 group-hover:opacity-100"
