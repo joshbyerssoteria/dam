@@ -210,6 +210,7 @@ export function KitsDndGrid({
 
   return (
     <DndContext
+      id="kits-grid-dnd"
       sensors={sensors}
       collisionDetection={gridCollision}
       onDragStart={(event) =>

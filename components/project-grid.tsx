@@ -80,6 +80,7 @@ export function ProjectGrid({
 
   return (
     <DndContext
+      id="project-grid-dnd"
       sensors={sensors}
       collisionDetection={pointerWithin}
       onDragStart={(event) =>

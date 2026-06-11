@@ -672,6 +672,7 @@ function KitsNav({
 
   return (
     <DndContext
+      id="sidebar-kits-dnd"
       sensors={sensors}
       onDragStart={(event) =>
         setActiveKitId(String(event.active.id).replace(/^kit:/, ""))
@@ -948,6 +949,7 @@ function PhotosNav({
 
   return (
     <DndContext
+      id="sidebar-photos-dnd"
       sensors={sensors}
       collisionDetection={pointerWithin}
       onDragStart={(event) => setActiveId(String(event.active.id))}

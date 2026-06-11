@@ -80,6 +80,7 @@ export function PhotoFolderGrid({
 
   return (
     <DndContext
+      id="photo-folder-grid-dnd"
       sensors={sensors}
       collisionDetection={pointerWithin}
       onDragStart={(event) =>

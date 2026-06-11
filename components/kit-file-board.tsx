@@ -533,6 +533,7 @@ export function KitFileBoard({
   return (
     <div className="space-y-8">
       <DndContext
+        id="kit-file-board-dnd"
         sensors={sensors}
         collisionDetection={boardCollision}
         onDragStart={handleDragStart}
