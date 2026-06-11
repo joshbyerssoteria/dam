@@ -72,7 +72,7 @@ export async function renameFolder(
 export async function moveFolder(
   folderId: string,
   newParentId: string | null
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; unchanged?: boolean }> {
   const session = await getSessionProfile();
   if (!session || session.profile.role === "viewer") {
     return { ok: false, error: "Not allowed" };
@@ -82,6 +82,16 @@ export async function moveFolder(
   }
 
   const db = await createClient();
+
+  // No-op if dropped back onto its current parent — nothing moved.
+  const { data: current } = await db
+    .from("folders")
+    .select("parent_id")
+    .eq("id", folderId)
+    .single();
+  if (current && current.parent_id === newParentId) {
+    return { ok: true, unchanged: true };
+  }
 
   if (newParentId) {
     // Walk up from the target; if we reach folderId, the move is a cycle.

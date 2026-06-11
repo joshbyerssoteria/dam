@@ -120,7 +120,9 @@ function BranchRow({
         active
           ? "bg-[#F2EEE7] font-medium text-foreground"
           : "text-muted-foreground hover:bg-[#F2EEE7]/70 hover:text-foreground",
-        isDropTarget && "bg-[#F2EEE7] ring-1 ring-[#C2912D]"
+        // Unmistakable drop target: gold fill, inset ring, white ink.
+        isDropTarget &&
+          "bg-[#C2912D] font-medium text-white ring-2 ring-[#C2912D] ring-offset-1"
       )}
       style={{ paddingLeft: `${depth * 12}px` }}
     >
@@ -213,17 +215,20 @@ function PhotoTreeBranch({
     setNodeRef: setDragRef,
     attributes,
     listeners,
-    transform,
     isDragging,
   } = useDraggable({ id: `photo:${node.id}` });
 
+  // The ROW is both drag source and drop target. Children render OUTSIDE
+  // this node so they don't inflate the drop zone (which made every drop
+  // land on an ambiguous ancestor).
+  const setRowRef = (element: HTMLElement | null) => {
+    setDropRef(element);
+    setDragRef(element);
+  };
+
   return (
-    <div ref={setDropRef}>
-      <div
-        ref={setDragRef}
-        style={transform ? { transform: CSS.Translate.toString(transform) } : undefined}
-        className={cn(isDragging && "opacity-40")}
-      >
+    <div>
+      <div ref={setRowRef} className={cn(isDragging && "opacity-30")}>
         <BranchRow
           node={node}
           depth={depth}
@@ -231,7 +236,7 @@ function PhotoTreeBranch({
           expanded={expanded}
           onToggle={() => setExpanded((current) => !current)}
           onExpand={() => setExpanded((current) => !current)}
-          isDropTarget={isOver}
+          isDropTarget={isOver && !isDragging}
           dragProps={{ ...attributes, ...listeners }}
         />
       </div>
@@ -288,16 +293,23 @@ function KitsTreeBranch({
   const folderChildren = node.children.filter((c) => c.kind === "folder");
   const kitChildren = node.children.filter((c) => c.kind === "leaf");
 
+  // The ROW is the drop zone (folders) / drag source (kits) — never the
+  // whole subtree, so drops land on the row actually under the pointer.
+  const setRowRef = (element: HTMLElement | null) => {
+    if (isFolder) setDropRef(element);
+    else setDragRef(element);
+  };
+
   return (
-    <div ref={isFolder ? setDropRef : undefined}>
+    <div>
       <div
-        ref={!isFolder ? setDragRef : undefined}
+        ref={setRowRef}
         style={
           !isFolder
             ? { transform: CSS.Transform.toString(transform), transition }
             : undefined
         }
-        className={cn(isDragging && "opacity-40")}
+        className={cn(isDragging && "opacity-30")}
       >
         <BranchRow
           node={node}
@@ -652,8 +664,10 @@ function PhotosNav({
 
     const result = await moveFolder(folderId, target === "root" ? null : target);
     if (result.ok) {
-      toast.success(target === "root" ? "Moved to top level" : "Folder moved");
-      router.refresh();
+      if (!result.unchanged) {
+        toast.success(target === "root" ? "Moved to top level" : "Folder moved");
+        router.refresh();
+      }
     } else {
       toast.error(result.error ?? "Failed to move folder");
     }

@@ -54,9 +54,11 @@ export function PhotoFolderGrid({
 
     const result = await moveFolder(folderId, targetId);
     if (result.ok) {
-      const target = folders.find((f) => f.id === targetId);
-      toast.success(`Moved into ${target?.name ?? "folder"}`);
-      router.refresh();
+      if (!result.unchanged) {
+        const target = folders.find((f) => f.id === targetId);
+        toast.success(`Moved into ${target?.name ?? "folder"}`);
+        router.refresh();
+      }
     } else {
       toast.error(result.error ?? "Failed to move folder");
     }
