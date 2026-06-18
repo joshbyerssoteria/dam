@@ -1,6 +1,6 @@
-import { FileIcon } from "lucide-react";
 import { isPdfLike } from "@/lib/file-kinds";
 import { formatBytes } from "@/lib/utils";
+import { AssetPreview } from "@/components/asset-preview";
 import { DownloadMenu } from "@/components/download-menu";
 import { KitFileActions } from "@/components/kit-asset-actions";
 
@@ -27,22 +27,19 @@ export function FileAssetCard({
   const isImage = file.mime_type.startsWith("image/");
   const previewable =
     isImage || isPdfLike(file.mime_type, file.original_filename);
+  const ext = (file.original_filename.split(".").pop() || "file")
+    .slice(0, 4)
+    .toUpperCase();
 
   return (
     <div className="group overflow-hidden border border-border bg-card">
       <div className="flex aspect-[4/3] items-center justify-center bg-asset">
-        {previewable ? (
-          /* eslint-disable-next-line @next/next/no-img-element -- authenticated variant route */
-          <img
-            src={`${srcPrefix}/${file.id}${file.mime_type === "image/svg+xml" ? "" : "?w=480"}`}
-            alt={file.original_filename}
-            loading="lazy"
-            draggable={false}
-            className="size-full object-contain p-4"
-          />
-        ) : (
-          <FileIcon className="size-8 text-muted-foreground" strokeWidth={1.25} />
-        )}
+        <AssetPreview
+          src={`${srcPrefix}/${file.id}${file.mime_type === "image/svg+xml" ? "" : "?w=480"}`}
+          alt={file.original_filename}
+          ext={ext}
+          previewable={previewable}
+        />
       </div>
       <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
         <div className="min-w-0">
