@@ -74,6 +74,38 @@ function FontRow({
         ? "Adobe Fonts"
         : font.licenseNote;
 
+  // Render the family name + specimen in the actual typeface. Google/Adobe
+  // load via their stylesheet; uploaded fonts get an @font-face pointing at
+  // the (same-origin) file route.
+  const FONT_FORMATS: Record<string, string> = {
+    woff2: "woff2",
+    woff: "woff",
+    ttf: "truetype",
+    otf: "opentype",
+  };
+  const fileExt = (name: string) => (name.split(".").pop() ?? "").toLowerCase();
+  const webFontOrder = Object.keys(FONT_FORMATS);
+  const bestFile =
+    font.source === "upload"
+      ? (font.files
+          .filter((f) => webFontOrder.includes(fileExt(f.filename)))
+          .sort(
+            (a, b) =>
+              webFontOrder.indexOf(fileExt(a.filename)) -
+              webFontOrder.indexOf(fileExt(b.filename))
+          )[0] ?? null)
+      : null;
+  const uploadFamily = bestFile ? `kitfont-${font.id}` : null;
+  const fontFaceCss = bestFile
+    ? `@font-face{font-family:"${uploadFamily}";src:url("${srcPrefix}/${bestFile.fileId}") format("${FONT_FORMATS[fileExt(bestFile.filename)]}");font-display:swap;}`
+    : null;
+  const displayFamily =
+    font.source === "upload"
+      ? uploadFamily
+        ? `"${uploadFamily}", sans-serif`
+        : undefined
+      : `"${font.family}", sans-serif`;
+
   async function handleDelete() {
     const result = await deleteFont(font.id);
     if (result.ok) {
@@ -86,19 +118,21 @@ function FontRow({
   return (
     <div className="group flex items-center gap-4 py-1.5">
       {stylesheet ? <link rel="stylesheet" href={stylesheet} /> : null}
+      {fontFaceCss ? <style>{fontFaceCss}</style> : null}
       <span
         className="w-24 shrink-0 truncate text-xl leading-none"
-        style={
-          font.source !== "upload"
-            ? { fontFamily: `"${font.family}", sans-serif` }
-            : undefined
-        }
+        style={displayFamily ? { fontFamily: displayFamily } : undefined}
         aria-hidden
       >
         {SPECIMEN_TEXT}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{font.family}</p>
+        <p
+          className="truncate text-sm font-medium"
+          style={displayFamily ? { fontFamily: displayFamily } : undefined}
+        >
+          {font.family}
+        </p>
         <p className="truncate text-xs text-muted-foreground">
           {sourceLabel ?? "Uploaded"}
           {font.source === "upload" && font.files.length > 0 ? (

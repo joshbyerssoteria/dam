@@ -10,6 +10,7 @@ import {
   shareUnlockCookieName,
 } from "@/lib/share-access";
 import { isImageMime } from "@/lib/upload";
+import { isFontFile } from "@/lib/file-kinds";
 import { isPdfLike, renderPdfFirstPage } from "@/lib/pdf-preview";
 import { isPsd, renderPsdThumbnail } from "@/lib/psd-preview";
 import { loadImage } from "@/lib/image-decode";
@@ -111,11 +112,16 @@ export async function GET(
     });
   }
 
-  const presigned = await presignedGetUrl(
-    file.s3_bucket,
-    file.s3_key,
-    download ? file.original_filename : undefined
-  );
+  // Fonts are streamed same-origin (never redirected) so @font-face can
+  // load them without cross-origin CORS headers from S3.
+  const serveFontInline = !download && isFontFile(file.mime_type, file.original_filename);
+  const presigned = serveFontInline
+    ? null
+    : await presignedGetUrl(
+        file.s3_bucket,
+        file.s3_key,
+        download ? file.original_filename : undefined
+      );
   if (presigned) {
     return NextResponse.redirect(presigned);
   }

@@ -12,6 +12,28 @@ export function isPdfLike(mimeType: string, filename: string): boolean {
   );
 }
 
+/**
+ * Web/desktop font files. Served same-origin (not via an S3 redirect) so
+ * `@font-face` can load them without cross-origin CORS headers.
+ */
+export function isFontFile(mimeType: string, filename: string): boolean {
+  if (mimeType.startsWith("font/")) return true;
+  if (
+    [
+      "application/font-woff",
+      "application/font-woff2",
+      "application/x-font-ttf",
+      "application/x-font-otf",
+      "application/x-font-opentype",
+      "application/vnd.ms-opentype",
+    ].includes(mimeType)
+  ) {
+    return true;
+  }
+  const ext = (filename.split(".").pop() ?? "").toLowerCase();
+  return ["woff2", "woff", "ttf", "otf"].includes(ext);
+}
+
 /** Photoshop documents — previewed via their embedded thumbnail. */
 export function isPsd(mimeType: string, filename: string): boolean {
   if (
