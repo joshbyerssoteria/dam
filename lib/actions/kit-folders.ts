@@ -26,6 +26,18 @@ export async function createKitFolder(input: {
   const { data: space } = await db.from("spaces").select("id").limit(1).single();
   if (!space) return { ok: false, error: "No space configured" };
 
+  // Sermon Series is a flat, static container — it holds no subfolders.
+  if (parsed.data.parentId) {
+    const { data: parent } = await db
+      .from("kit_folders")
+      .select("kind")
+      .eq("id", parsed.data.parentId)
+      .single();
+    if (parent?.kind === "sermon_series") {
+      return { ok: false, error: "The Sermon Series folder can't contain subfolders" };
+    }
+  }
+
   const { data: folder, error } = await db
     .from("kit_folders")
     .insert({

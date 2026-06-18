@@ -141,10 +141,13 @@ function BranchRow({
         draggable={false}
         onClick={onExpand}
         {...(dragProps ?? {})}
-        className="min-w-0 flex-1 truncate py-1 pr-2 text-[13px] focus-visible:outline-none"
+        className="flex min-w-0 flex-1 items-center gap-1.5 truncate py-1 pr-2 text-[13px] focus-visible:outline-none"
         title={node.name}
       >
-        {node.name}
+        {node.variant === "sermon_series" ? (
+          <BookOpen className="size-3.5 shrink-0" strokeWidth={1.75} />
+        ) : null}
+        <span className="truncate">{node.name}</span>
       </Link>
     </div>
   );
@@ -636,32 +639,23 @@ function KitsNav({
       return;
     }
 
-    // Dropped on another kit → reorder (same group) or move-and-position
-    // (different group).
+    // Dropped on another kit → reorder within the SAME folder only. A kit
+    // never changes folders by landing on another kit (that orphaned kits);
+    // moving between folders is done by dropping on a folder row above.
     const overKitId = overId.replace(/^kit:/, "");
     const groups = new Map<string, KitGroup>();
     buildKitGroups(kitTree, null, groups);
     const activeGroup = groups.get(kitId);
     const overGroup = groups.get(overKitId);
     if (!activeGroup || !overGroup || kitId === overKitId) return;
+    if (activeGroup.parentId !== overGroup.parentId) return;
 
-    let updates: Array<{ kitId: string; sortOrder: number; kitFolderId?: string | null }>;
-    if (activeGroup.parentId === overGroup.parentId) {
-      const next = arrayMove(
-        activeGroup.siblings,
-        activeGroup.siblings.indexOf(kitId),
-        activeGroup.siblings.indexOf(overKitId)
-      );
-      updates = next.map((id, index) => ({ kitId: id, sortOrder: index }));
-    } else {
-      const next = overGroup.siblings.filter((id) => id !== kitId);
-      next.splice(next.indexOf(overKitId), 0, kitId);
-      updates = next.map((id, index) => ({
-        kitId: id,
-        sortOrder: index,
-        ...(id === kitId ? { kitFolderId: overGroup.parentId } : {}),
-      }));
-    }
+    const next = arrayMove(
+      activeGroup.siblings,
+      activeGroup.siblings.indexOf(kitId),
+      activeGroup.siblings.indexOf(overKitId)
+    );
+    const updates = next.map((id, index) => ({ kitId: id, sortOrder: index }));
 
     const result = await reorderKits(updates);
     if (!result.ok) toast.error(result.error ?? "Failed to save order");
@@ -674,6 +668,7 @@ function KitsNav({
     <DndContext
       id="sidebar-kits-dnd"
       sensors={sensors}
+      collisionDetection={pointerWithin}
       onDragStart={(event) =>
         setActiveKitId(String(event.active.id).replace(/^kit:/, ""))
       }

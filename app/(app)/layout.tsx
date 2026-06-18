@@ -16,7 +16,7 @@ export default async function AppLayout({
     await Promise.all([
       db.from("folders").select("id, name, parent_id, sort_order"),
       db.from("projects").select("id, name, parent_id, sort_order"),
-      db.from("kit_folders").select("id, name, parent_id, sort_order"),
+      db.from("kit_folders").select("id, name, parent_id, sort_order, kind"),
       db
         .from("kits")
         .select("id, slug, name, kit_folder_id")

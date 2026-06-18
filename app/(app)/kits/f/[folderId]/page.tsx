@@ -63,7 +63,10 @@ export default async function KitFolderPage({
       <PageHeader title={folder.name} description={folder.description ?? undefined}>
         {canEdit ? (
           <>
-            <NewKitFolderDialog parentId={folder.id} />
+            {/* Sermon Series is a flat, static container — no subfolders. */}
+            {folder.kind === "sermon_series" ? null : (
+              <NewKitFolderDialog parentId={folder.id} />
+            )}
             <NewKitDialog
               folders={folderList.map(({ id, name, kind }) => ({
                 id,

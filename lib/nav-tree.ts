@@ -4,6 +4,8 @@ export interface NavTreeNode {
   href: string;
   /** folders can receive drops; leaves (kits) can be dragged */
   kind: "folder" | "leaf";
+  /** Marks a special static container (e.g. the Sermon Series kit folder). */
+  variant?: "sermon_series";
   children: NavTreeNode[];
 }
 
@@ -12,6 +14,8 @@ interface TreeSource {
   name: string;
   parent_id: string | null;
   sort_order: number;
+  /** Optional folder kind; "sermon_series" gets a distinguishing icon. */
+  kind?: string | null;
 }
 
 /** Build a nested nav tree from flat parent_id rows. */
@@ -28,6 +32,9 @@ export function buildNavTree(
         name: row.name,
         href: hrefFor(row.id),
         kind: "folder" as const,
+        ...(row.kind === "sermon_series"
+          ? { variant: "sermon_series" as const }
+          : {}),
         children: [],
       },
     ])
