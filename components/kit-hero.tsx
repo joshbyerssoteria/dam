@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ExternalLink, FileUp, ImagePlus, PenTool, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteFont, deletePalette } from "@/lib/actions/kits";
-import { isPdfLike } from "@/lib/file-kinds";
+import { isPdfLike, isPsd } from "@/lib/file-kinds";
 import type { FontSource } from "@/lib/database.types";
 import { cn, formatBytes } from "@/lib/utils";
 import { AddFontDialog } from "@/components/add-font-dialog";
@@ -271,8 +271,9 @@ export function KitHero({
               className="size-full object-cover"
             />
           ) : sourceFile &&
-            isPdfLike(sourceFile.mime_type, sourceFile.original_filename) ? (
-            /* eslint-disable-next-line @next/next/no-img-element -- first-artboard preview */
+            (isPdfLike(sourceFile.mime_type, sourceFile.original_filename) ||
+              isPsd(sourceFile.mime_type, sourceFile.original_filename)) ? (
+            /* eslint-disable-next-line @next/next/no-img-element -- first-artboard / PSD thumbnail preview */
             <img
               src={`${srcPrefix}/${sourceFile.id}?w=960`}
               alt=""

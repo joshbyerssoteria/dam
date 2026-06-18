@@ -11,6 +11,7 @@ import {
 } from "@/lib/share-access";
 import { isImageMime } from "@/lib/upload";
 import { isPdfLike, renderPdfFirstPage } from "@/lib/pdf-preview";
+import { isPsd, renderPsdThumbnail } from "@/lib/psd-preview";
 import { loadImage } from "@/lib/image-decode";
 
 export const runtime = "nodejs";
@@ -71,6 +72,7 @@ export async function GET(
   }
 
   const pdfLike = isPdfLike(file.mime_type, file.original_filename);
+  const psd = isPsd(file.mime_type, file.original_filename);
   if (
     requestedWidth &&
     !download &&
@@ -82,9 +84,11 @@ export async function GET(
       VARIANT_WIDTHS[VARIANT_WIDTHS.length - 1]!;
     const original = await getObjectBuffer(file.s3_bucket, file.s3_key);
     let source = original;
-    if (pdfLike) {
+    if (pdfLike || psd) {
       try {
-        source = await renderPdfFirstPage(original, width);
+        source = pdfLike
+          ? await renderPdfFirstPage(original, width)
+          : await renderPsdThumbnail(original);
       } catch {
         return NextResponse.json(
           { error: "No preview available" },
@@ -94,7 +98,9 @@ export async function GET(
     }
     const variant = await (await loadImage(source))
       .rotate()
-      .resize(width, undefined, { withoutEnlargement: true })
+      // PSD previews come from the small embedded thumbnail, so allow
+      // enlargement to fill the requested width.
+      .resize(width, undefined, { withoutEnlargement: !psd })
       .webp({ quality: 78 })
       .toBuffer();
     return new NextResponse(new Uint8Array(variant), {

@@ -11,3 +11,16 @@ export function isPdfLike(mimeType: string, filename: string): boolean {
     (mimeType === "application/postscript" && ext !== "eps")
   );
 }
+
+/** Photoshop documents — previewed via their embedded thumbnail. */
+export function isPsd(mimeType: string, filename: string): boolean {
+  if (
+    mimeType === "image/vnd.adobe.photoshop" ||
+    mimeType === "image/x-photoshop" ||
+    mimeType === "application/x-photoshop"
+  ) {
+    return true;
+  }
+  const ext = (filename.split(".").pop() ?? "").toLowerCase();
+  return ext === "psd" || ext === "psb";
+}
