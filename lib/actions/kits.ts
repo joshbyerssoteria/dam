@@ -422,6 +422,16 @@ export async function suggestPaletteFromSource(
     return { ok: false, error: "Upload a source file first" };
   }
 
+  // Don't run if the kit already has a palette — extraction is for kits that
+  // have none yet.
+  const { count: paletteCount } = await db
+    .from("palettes")
+    .select("id", { count: "exact", head: true })
+    .eq("kit_id", kitId);
+  if (paletteCount && paletteCount > 0) {
+    return { ok: false, error: "This kit already has a palette" };
+  }
+
   const { data: file } = await db
     .from("files")
     .select("s3_bucket, s3_key, mime_type, original_filename")
