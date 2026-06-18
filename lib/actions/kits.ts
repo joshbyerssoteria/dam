@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient, getSessionProfile } from "@/lib/supabase/server";
+import { getObjectBuffer } from "@/lib/storage";
+import {
+  extractPaletteSuggestion,
+  type SuggestedColor,
+} from "@/lib/palette-extract";
 import { slugify } from "@/lib/utils";
 
 async function requireEditor() {
@@ -391,6 +396,53 @@ export async function addPalette(
 
   revalidatePath("/kits");
   return { ok: true };
+}
+
+/**
+ * Suggest a probable palette from the kit's source file (e.g. its master .ai).
+ * Read-only — returns swatches for the editor to review and save via
+ * addPalette; nothing is written here.
+ */
+export async function suggestPaletteFromSource(
+  kitId: string
+): Promise<
+  | { ok: true; colors: SuggestedColor[]; named: boolean }
+  | { ok: false; error: string }
+> {
+  const session = await requireEditor();
+  if (!session) return { ok: false, error: "Not allowed" };
+
+  const db = await createClient();
+  const { data: kit } = await db
+    .from("kits")
+    .select("source_file_id")
+    .eq("id", kitId)
+    .single();
+  if (!kit?.source_file_id) {
+    return { ok: false, error: "Upload a source file first" };
+  }
+
+  const { data: file } = await db
+    .from("files")
+    .select("s3_bucket, s3_key, mime_type, original_filename")
+    .eq("id", kit.source_file_id)
+    .single();
+  if (!file) return { ok: false, error: "Source file not found" };
+
+  try {
+    const buffer = await getObjectBuffer(file.s3_bucket, file.s3_key);
+    const result = await extractPaletteSuggestion(
+      buffer,
+      file.mime_type,
+      file.original_filename
+    );
+    if (result.colors.length === 0) {
+      return { ok: false, error: "Couldn't detect distinct colors in this file" };
+    }
+    return { ok: true, colors: result.colors, named: result.named };
+  } catch {
+    return { ok: false, error: "Couldn't read colors from this file" };
+  }
 }
 
 export async function deletePalette(

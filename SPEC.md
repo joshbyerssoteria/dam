@@ -156,6 +156,7 @@ Estimated 60–80 disciplined hours.
 - Create kit with name, slug, description, cover image
 - Add file assets to kit (any file type)
 - Add palettes (name + colors with hex, name, role)
+- Suggest a probable palette from the kit's source file (rasterize the master .ai/PDF first artboard, quantize dominant colors with `sharp`, then name/role them with Claude vision; editor reviews and edits before saving). Falls back to raw sampled hex when `ANTHROPIC_API_KEY` is unset. See `lib/palette-extract.ts`.
 - Add fonts (family + uploaded files)
 - Palette swatches render as live UI with click-to-copy hex
 - Kit detail page shows all asset types together in one nav

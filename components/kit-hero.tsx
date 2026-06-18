@@ -7,9 +7,10 @@ import { toast } from "sonner";
 import { deleteFont, deletePalette } from "@/lib/actions/kits";
 import { isPdfLike } from "@/lib/file-kinds";
 import type { FontSource } from "@/lib/database.types";
-import { formatBytes } from "@/lib/utils";
+import { cn, formatBytes } from "@/lib/utils";
 import { AddFontDialog } from "@/components/add-font-dialog";
 import { AddPaletteDialog } from "@/components/add-palette-dialog";
+import { ExtractPaletteDialog } from "@/components/extract-palette-dialog";
 import { DownloadMenu } from "@/components/download-menu";
 import {
   ColorSwatchRow,
@@ -175,6 +176,13 @@ export function KitHero({
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [sourceProgress, setSourceProgress] = useState<number | null>(null);
   const [coverBusy, setCoverBusy] = useState(false);
+  const [coverDragging, setCoverDragging] = useState(false);
+  const [sourceDragging, setSourceDragging] = useState(false);
+
+  // Palette extraction only works on rasterizable source files (PDF/.ai).
+  const canExtractPalette =
+    sourceFile != null &&
+    isPdfLike(sourceFile.mime_type, sourceFile.original_filename);
 
   async function handleSourceFile(files: FileList | null) {
     const file = files?.[0];
@@ -228,7 +236,32 @@ export function KitHero({
     >
       {/* Source file + 16:9 thumbnail */}
       <div className="flex flex-col sm:flex-row">
-        <div className="group relative aspect-video shrink-0 bg-asset sm:w-80">
+        <div
+          className={cn(
+            "group relative aspect-video shrink-0 bg-asset sm:w-80",
+            canEdit &&
+              coverDragging &&
+              "ring-2 ring-inset ring-foreground"
+          )}
+          onDragOver={
+            canEdit
+              ? (event) => {
+                  event.preventDefault();
+                  setCoverDragging(true);
+                }
+              : undefined
+          }
+          onDragLeave={canEdit ? () => setCoverDragging(false) : undefined}
+          onDrop={
+            canEdit
+              ? (event) => {
+                  event.preventDefault();
+                  setCoverDragging(false);
+                  if (!coverBusy) void handleCover(event.dataTransfer.files);
+                }
+              : undefined
+          }
+        >
           {coverImageId ? (
             /* eslint-disable-next-line @next/next/no-img-element -- authenticated variant route */
             <img
@@ -260,15 +293,22 @@ export function KitHero({
                 type="button"
                 disabled={coverBusy}
                 onClick={() => coverInputRef.current?.click()}
-                className="absolute inset-0 flex items-center justify-center bg-black/0 text-white opacity-0 transition-opacity hover:bg-black/40 hover:opacity-100 focus-visible:bg-black/40 focus-visible:opacity-100"
+                className={cn(
+                  "absolute inset-0 flex items-center justify-center text-white transition-opacity hover:bg-black/40 hover:opacity-100 focus-visible:bg-black/40 focus-visible:opacity-100",
+                  coverDragging
+                    ? "bg-black/40 opacity-100"
+                    : "bg-black/0 opacity-0"
+                )}
               >
                 <span className="flex items-center gap-2 text-xs font-medium">
                   <ImagePlus className="size-4" />
                   {coverBusy
                     ? "Uploading…"
-                    : coverImageId
-                      ? "Replace thumbnail"
-                      : "Add thumbnail"}
+                    : coverDragging
+                      ? "Drop to set thumbnail"
+                      : coverImageId
+                        ? "Replace thumbnail"
+                        : "Add thumbnail"}
                 </span>
               </button>
               <input
@@ -285,7 +325,33 @@ export function KitHero({
           ) : null}
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 p-6">
+        <div
+          className={cn(
+            "flex min-w-0 flex-1 flex-col justify-center gap-1 p-6 transition-colors",
+            canEdit &&
+              sourceDragging &&
+              "bg-accent ring-2 ring-inset ring-foreground"
+          )}
+          onDragOver={
+            canEdit
+              ? (event) => {
+                  event.preventDefault();
+                  setSourceDragging(true);
+                }
+              : undefined
+          }
+          onDragLeave={canEdit ? () => setSourceDragging(false) : undefined}
+          onDrop={
+            canEdit
+              ? (event) => {
+                  event.preventDefault();
+                  setSourceDragging(false);
+                  if (sourceProgress === null)
+                    void handleSourceFile(event.dataTransfer.files);
+                }
+              : undefined
+          }
+        >
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Source file
           </p>
@@ -409,6 +475,9 @@ export function KitHero({
                 : "Fonts"}
           </h3>
           <div className="flex items-center gap-1.5">
+            {!palette && canExtractPalette ? (
+              <ExtractPaletteDialog kitId={kitId} />
+            ) : null}
             {!palette ? <AddPaletteDialog kitId={kitId} /> : null}
             {fonts.length === 0 ? <AddFontDialog kitId={kitId} /> : null}
           </div>
