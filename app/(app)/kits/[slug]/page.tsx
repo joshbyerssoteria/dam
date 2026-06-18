@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ChevronRight } from "lucide-react";
 import { createClient, getSessionProfile } from "@/lib/supabase/server";
 import { heroFontsFrom, loadKitContent } from "@/lib/kit-data";
 import { EditKitDialog } from "@/components/edit-kit-dialog";
@@ -31,10 +33,22 @@ export default async function KitDetailPage({
 
   const [data, { data: kitFolders }] = await Promise.all([
     loadKitContent(db, kit),
-    db.from("kit_folders").select("id, name").order("name"),
+    db.from("kit_folders").select("id, name, parent_id").order("name"),
   ]);
   const role = session?.profile.role ?? "viewer";
   const canEdit = role !== "viewer";
+
+  // Walk up the kit-folder tree from this kit's parent to build the
+  // breadcrumb ancestry (Kits > … > parent folder > this kit).
+  const folderById = new Map((kitFolders ?? []).map((f) => [f.id, f]));
+  const crumbs: Array<{ id: string; name: string }> = [];
+  let parentId = kit.kit_folder_id;
+  for (let depth = 0; parentId && depth < 20; depth += 1) {
+    const parent = folderById.get(parentId);
+    if (!parent) break;
+    crumbs.unshift({ id: parent.id, name: parent.name });
+    parentId = parent.parent_id;
+  }
 
   const mainPalette = data.palettes[0]
     ? {
@@ -64,6 +78,25 @@ export default async function KitDetailPage({
       </PageHeader>
 
       <div className="space-y-12 p-8">
+        <nav
+          aria-label="Breadcrumb"
+          className="flex items-center gap-1 text-sm text-muted-foreground"
+        >
+          <Link href="/kits" className="hover:text-foreground">
+            Kits
+          </Link>
+          {crumbs.map((crumb) => (
+            <span key={crumb.id} className="flex items-center gap-1">
+              <ChevronRight className="size-3.5" />
+              <Link href={`/kits/f/${crumb.id}`} className="hover:text-foreground">
+                {crumb.name}
+              </Link>
+            </span>
+          ))}
+          <ChevronRight className="size-3.5" />
+          <span className="text-foreground">{kit.name}</span>
+        </nav>
+
         <KitHero
           kitId={kit.id}
           sourceFile={data.sourceFile}
