@@ -22,7 +22,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Folder } from "lucide-react";
+import { BookOpen, Folder } from "lucide-react";
 import { toast } from "sonner";
 import { moveKitToFolder } from "@/lib/actions/kit-folders";
 import { reorderKits } from "@/lib/actions/kits";
@@ -33,6 +33,7 @@ export interface DndFolder {
   id: string;
   name: string;
   meta?: string;
+  kind?: string;
 }
 
 export interface DndKit {
@@ -41,6 +42,8 @@ export interface DndKit {
   name: string;
   description: string | null;
   cover_image_id: string | null;
+  starts_on?: string | null;
+  ends_on?: string | null;
 }
 
 const gridCollision: CollisionDetection = (args) => {
@@ -50,9 +53,11 @@ const gridCollision: CollisionDetection = (args) => {
 };
 
 function FolderCardInner({ folder }: { folder: DndFolder }) {
+  // The static Sermon Series folder gets its own icon.
+  const Icon = folder.kind === "sermon_series" ? BookOpen : Folder;
   return (
     <>
-      <Folder
+      <Icon
         className="size-5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
         strokeWidth={1.5}
       />

@@ -46,6 +46,8 @@ export type KitRow = {
   cover_image_id: string | null;
   kit_folder_id: string | null;
   source_file_id: string | null;
+  starts_on: string | null;
+  ends_on: string | null;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -61,6 +63,8 @@ export type KitAssetRow = {
   created_at: string;
 }
 
+export type KitFolderKind = "standard" | "sermon_series";
+
 export type KitFolderRow = {
   id: string;
   space_id: string;
@@ -68,6 +72,7 @@ export type KitFolderRow = {
   slug: string;
   name: string;
   description: string | null;
+  kind: KitFolderKind;
   sort_order: number;
   created_at: string;
 }

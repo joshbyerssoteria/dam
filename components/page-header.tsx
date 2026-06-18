@@ -1,10 +1,13 @@
 export function PageHeader({
   title,
   description,
+  meta,
   children,
 }: {
   title: string;
   description?: string;
+  /** Small line shown directly beneath the title (e.g. a date range). */
+  meta?: React.ReactNode;
   children?: React.ReactNode;
 }) {
   return (
@@ -14,6 +17,9 @@ export function PageHeader({
         <h1 className="truncate text-xl font-semibold tracking-tight">
           {title}
         </h1>
+        {meta ? (
+          <p className="mt-1 text-sm text-muted-foreground">{meta}</p>
+        ) : null}
         {description ? (
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             {description}

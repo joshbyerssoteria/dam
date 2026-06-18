@@ -54,6 +54,15 @@ export async function renameKitFolder(
   if (!trimmed) return { ok: false, error: "Name required" };
 
   const db = await createClient();
+  const { data: folder } = await db
+    .from("kit_folders")
+    .select("kind")
+    .eq("id", folderId)
+    .single();
+  if (folder?.kind === "sermon_series") {
+    return { ok: false, error: "The Sermon Series folder can't be renamed" };
+  }
+
   const { error } = await db
     .from("kit_folders")
     .update({ name: trimmed, slug: slugify(trimmed) || "folder" })
@@ -74,6 +83,15 @@ export async function deleteKitFolder(
 
   // Kits inside are detached (kit_folder_id → null), not deleted.
   const db = await createClient();
+  const { data: folder } = await db
+    .from("kit_folders")
+    .select("kind")
+    .eq("id", folderId)
+    .single();
+  if (folder?.kind === "sermon_series") {
+    return { ok: false, error: "The Sermon Series folder can't be deleted" };
+  }
+
   const { error } = await db.from("kit_folders").delete().eq("id", folderId);
   if (error) return { ok: false, error: "Failed to delete folder" };
 

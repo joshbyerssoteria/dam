@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Palette } from "lucide-react";
 import { QuickShareButton } from "@/components/quick-share-button";
+import { formatDateRange } from "@/lib/utils";
 
 export function KitCard({
   kit,
@@ -12,9 +13,13 @@ export function KitCard({
     name: string;
     description: string | null;
     cover_image_id: string | null;
+    starts_on?: string | null;
+    ends_on?: string | null;
   };
   canShare: boolean;
 }) {
+  const dateRange = formatDateRange(kit.starts_on ?? null, kit.ends_on ?? null);
+
   return (
     <div className="group overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/40">
       <Link href={`/kits/${kit.slug}`} className="block" draggable={false}>
@@ -41,6 +46,9 @@ export function KitCard({
           draggable={false}
         >
           <h2 className="text-sm font-medium">{kit.name}</h2>
+          {dateRange ? (
+            <p className="mt-0.5 text-xs text-muted-foreground">{dateRange}</p>
+          ) : null}
           {kit.description ? (
             <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
               {kit.description}

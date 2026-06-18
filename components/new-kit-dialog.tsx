@@ -32,7 +32,7 @@ export function NewKitDialog({
   folders,
   defaultFolderId,
 }: {
-  folders: Array<{ id: string; name: string }>;
+  folders: Array<{ id: string; name: string; kind?: string }>;
   defaultFolderId: string | null;
 }) {
   const router = useRouter();
@@ -40,7 +40,13 @@ export function NewKitDialog({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [folderId, setFolderId] = useState(defaultFolderId ?? NO_FOLDER);
+  const [startsOn, setStartsOn] = useState("");
+  const [endsOn, setEndsOn] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // A date range only applies inside the static Sermon Series folder.
+  const isSermonSeries =
+    folders.find((folder) => folder.id === folderId)?.kind === "sermon_series";
 
   async function handleCreate() {
     setSaving(true);
@@ -48,6 +54,8 @@ export function NewKitDialog({
       name,
       description,
       kitFolderId: folderId === NO_FOLDER ? null : folderId,
+      startsOn: isSermonSeries ? startsOn || null : null,
+      endsOn: isSermonSeries ? endsOn || null : null,
     });
     setSaving(false);
     if (result.ok) {
@@ -114,6 +122,28 @@ export function NewKitDialog({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          ) : null}
+          {isSermonSeries ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="kit-starts-on">Start date</Label>
+                <Input
+                  id="kit-starts-on"
+                  type="date"
+                  value={startsOn}
+                  onChange={(event) => setStartsOn(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="kit-ends-on">End date</Label>
+                <Input
+                  id="kit-ends-on"
+                  type="date"
+                  value={endsOn}
+                  onChange={(event) => setEndsOn(event.target.value)}
+                />
+              </div>
             </div>
           ) : null}
           <DialogFooter>

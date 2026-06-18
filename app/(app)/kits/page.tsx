@@ -15,17 +15,17 @@ export default async function KitsPage() {
     await Promise.all([
       db
         .from("kit_folders")
-        .select("id, name")
+        .select("id, name, kind")
         .is("parent_id", null)
         .order("sort_order")
         .order("name"),
       db
         .from("kits")
-        .select("id, slug, name, description, cover_image_id")
+        .select("id, slug, name, description, cover_image_id, starts_on, ends_on")
         .is("kit_folder_id", null)
         .order("sort_order")
         .order("name"),
-      db.from("kit_folders").select("id, name").order("name"),
+      db.from("kit_folders").select("id, name, kind").order("name"),
     ]);
 
   const folderList = kitFolders ?? [];
@@ -75,6 +75,7 @@ export default async function KitsPage() {
             folders={folderCounts.map((folder) => ({
               id: folder.id,
               name: folder.name,
+              kind: folder.kind,
               meta: `${
                 folder.subCount > 0
                   ? `${folder.subCount} folder${folder.subCount === 1 ? "" : "s"} · `

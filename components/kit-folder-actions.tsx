@@ -28,11 +28,14 @@ export function KitFolderActions({
   folderName,
   parentId,
   isAdmin,
+  isStatic = false,
 }: {
   folderId: string;
   folderName: string;
   parentId: string | null;
   isAdmin: boolean;
+  // The static Sermon Series folder can't be renamed or deleted.
+  isStatic?: boolean;
 }) {
   const router = useRouter();
   const [renameOpen, setRenameOpen] = useState(false);
@@ -64,6 +67,9 @@ export function KitFolderActions({
       toast.error(result.error ?? "Failed to delete");
     }
   }
+
+  // The static Sermon Series folder offers no rename/delete controls.
+  if (isStatic) return null;
 
   return (
     <>

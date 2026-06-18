@@ -12,6 +12,7 @@ import { KitHero } from "@/components/kit-hero";
 import { PageHeader } from "@/components/page-header";
 import { QuickShareButton } from "@/components/quick-share-button";
 import { ShareDialog } from "@/components/share-dialog";
+import { formatDateRange } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Kit" };
 
@@ -33,7 +34,7 @@ export default async function KitDetailPage({
 
   const [data, { data: kitFolders }] = await Promise.all([
     loadKitContent(db, kit),
-    db.from("kit_folders").select("id, name, parent_id").order("name"),
+    db.from("kit_folders").select("id, name, parent_id, kind").order("name"),
   ]);
   const role = session?.profile.role ?? "viewer";
   const canEdit = role !== "viewer";
@@ -50,6 +51,14 @@ export default async function KitDetailPage({
     parentId = parent.parent_id;
   }
 
+  // Sermon-series kits (those inside the static Sermon Series folder) show an
+  // editable date range beneath the title.
+  const isSermonSeries =
+    folderById.get(kit.kit_folder_id ?? "")?.kind === "sermon_series";
+  const dateRange = isSermonSeries
+    ? formatDateRange(kit.starts_on, kit.ends_on)
+    : null;
+
   const mainPalette = data.palettes[0]
     ? {
         id: data.palettes[0].palette.id,
@@ -60,7 +69,11 @@ export default async function KitDetailPage({
 
   return (
     <div>
-      <PageHeader title={kit.name} description={kit.description ?? undefined}>
+      <PageHeader
+        title={kit.name}
+        description={kit.description ?? undefined}
+        meta={dateRange ?? undefined}
+      >
         {canEdit ? (
           <>
             <KitFileUpload kitId={kit.id} />
@@ -72,6 +85,9 @@ export default async function KitDetailPage({
               initialDescription={kit.description ?? ""}
               hasCover={kit.cover_image_id !== null}
               isAdmin={role === "admin"}
+              isSermonSeries={isSermonSeries}
+              initialStartsOn={kit.starts_on ?? ""}
+              initialEndsOn={kit.ends_on ?? ""}
             />
           </>
         ) : null}

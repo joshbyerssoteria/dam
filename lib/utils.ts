@@ -24,6 +24,42 @@ export function formatDate(date: string | Date): string {
   }).format(typeof date === "string" ? new Date(date) : date);
 }
 
+/** Parse a YYYY-MM-DD date string as a local date (no timezone shift). */
+function parseDateOnly(value: string): Date {
+  const [y, m, d] = value.split("-").map(Number);
+  return new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
+}
+
+/**
+ * Format a sermon-series date range, e.g. "Jan 5 – Feb 9, 2026". The year is
+ * dropped from the start date when both ends share it. Returns null when there
+ * is nothing to show.
+ */
+export function formatDateRange(
+  starts: string | null,
+  ends: string | null
+): string | null {
+  const start = starts ? parseDateOnly(starts) : null;
+  const end = ends ? parseDateOnly(ends) : null;
+  if (!start && !end) return null;
+
+  const full = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const noYear = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+
+  if (start && end) {
+    const sameYear = start.getFullYear() === end.getFullYear();
+    return `${(sameYear ? noYear : full).format(start)} – ${full.format(end)}`;
+  }
+  return full.format((start ?? end) as Date);
+}
+
 export function slugify(input: string): string {
   return input
     .toLowerCase()

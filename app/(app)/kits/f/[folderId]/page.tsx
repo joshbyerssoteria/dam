@@ -25,11 +25,11 @@ export default async function KitFolderPage({
     getSessionProfile(),
     db
       .from("kit_folders")
-      .select("id, name, parent_id, description, sort_order")
+      .select("id, name, parent_id, description, sort_order, kind")
       .order("name"),
     db
       .from("kits")
-      .select("id, slug, name, description, cover_image_id")
+      .select("id, slug, name, description, cover_image_id, starts_on, ends_on")
       .eq("kit_folder_id", folderId)
       .order("sort_order")
       .order("name"),
@@ -65,7 +65,11 @@ export default async function KitFolderPage({
           <>
             <NewKitFolderDialog parentId={folder.id} />
             <NewKitDialog
-              folders={folderList.map(({ id, name }) => ({ id, name }))}
+              folders={folderList.map(({ id, name, kind }) => ({
+                id,
+                name,
+                kind,
+              }))}
               defaultFolderId={folder.id}
             />
             <KitFolderActions
@@ -73,6 +77,7 @@ export default async function KitFolderPage({
               folderName={folder.name}
               parentId={folder.parent_id}
               isAdmin={role === "admin"}
+              isStatic={folder.kind === "sermon_series"}
             />
           </>
         ) : null}
@@ -107,6 +112,7 @@ export default async function KitFolderPage({
             folders={(subfolders ?? []).map((subfolder) => ({
               id: subfolder.id,
               name: subfolder.name,
+              kind: subfolder.kind,
             }))}
             kits={kits ?? []}
             canEdit={canEdit}

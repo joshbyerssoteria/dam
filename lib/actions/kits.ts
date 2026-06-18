@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient, getSessionProfile } from "@/lib/supabase/server";
+import type { KitRow } from "@/lib/database.types";
 import { getObjectBuffer } from "@/lib/storage";
 import {
   extractPaletteSuggestion,
@@ -17,11 +18,33 @@ async function requireEditor() {
 }
 
 const HEX_RE = /^#?[0-9a-fA-F]{6}$/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Accept a YYYY-MM-DD string, otherwise null (blank/invalid clears the date). */
+function normalizeDate(value: string | null | undefined): string | null {
+  return value && DATE_RE.test(value) ? value : null;
+}
+
+/** True when the folder is the static Sermon Series folder (date-ranged kits). */
+async function isSermonSeriesFolder(
+  db: Awaited<ReturnType<typeof createClient>>,
+  kitFolderId: string | null | undefined
+): Promise<boolean> {
+  if (!kitFolderId) return false;
+  const { data } = await db
+    .from("kit_folders")
+    .select("kind")
+    .eq("id", kitFolderId)
+    .single();
+  return data?.kind === "sermon_series";
+}
 
 export async function createKit(input: {
   name: string;
   description: string;
   kitFolderId?: string | null;
+  startsOn?: string | null;
+  endsOn?: string | null;
 }): Promise<{ ok: true; slug: string } | { ok: false; error: string }> {
   const session = await requireEditor();
   if (!session) return { ok: false, error: "Not allowed" };
@@ -35,12 +58,17 @@ export async function createKit(input: {
   const { data: space } = await db.from("spaces").select("id").limit(1).single();
   if (!space) return { ok: false, error: "No space configured" };
 
+  // A date range only applies to kits inside the static Sermon Series folder.
+  const sermonSeries = await isSermonSeriesFolder(db, input.kitFolderId);
+
   const { error } = await db.from("kits").insert({
     space_id: space.id,
     name,
     slug,
     description: input.description.trim() || null,
     kit_folder_id: input.kitFolderId ?? null,
+    starts_on: sermonSeries ? normalizeDate(input.startsOn) : null,
+    ends_on: sermonSeries ? normalizeDate(input.endsOn) : null,
   });
   if (error) {
     return {
@@ -57,6 +85,10 @@ export async function updateKit(input: {
   kitId: string;
   name: string;
   description: string;
+  // Sent only by the edit dialog for sermon-series kits; undefined leaves the
+  // stored range untouched.
+  startsOn?: string | null;
+  endsOn?: string | null;
 }): Promise<{ ok: boolean; error?: string }> {
   const session = await requireEditor();
   if (!session) return { ok: false, error: "Not allowed" };
@@ -66,14 +98,15 @@ export async function updateKit(input: {
 
   // Slug stays stable so existing URLs and share links keep working.
   const db = await createClient();
-  const { error } = await db
-    .from("kits")
-    .update({
-      name,
-      description: input.description.trim() || null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", input.kitId);
+  const update: Partial<KitRow> = {
+    name,
+    description: input.description.trim() || null,
+    updated_at: new Date().toISOString(),
+  };
+  if (input.startsOn !== undefined) update.starts_on = normalizeDate(input.startsOn);
+  if (input.endsOn !== undefined) update.ends_on = normalizeDate(input.endsOn);
+
+  const { error } = await db.from("kits").update(update).eq("id", input.kitId);
   if (error) return { ok: false, error: "Failed to update kit" };
 
   revalidatePath("/kits");

@@ -27,23 +27,39 @@ export function EditKitDialog({
   initialDescription,
   hasCover,
   isAdmin,
+  isSermonSeries = false,
+  initialStartsOn = "",
+  initialEndsOn = "",
 }: {
   kitId: string;
   initialName: string;
   initialDescription: string;
   hasCover: boolean;
   isAdmin: boolean;
+  // Sermon-series kits carry an editable date range shown beneath the title.
+  isSermonSeries?: boolean;
+  initialStartsOn?: string;
+  initialEndsOn?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
+  const [startsOn, setStartsOn] = useState(initialStartsOn);
+  const [endsOn, setEndsOn] = useState(initialEndsOn);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   async function handleSave() {
     setSaving(true);
-    const result = await updateKit({ kitId, name, description });
+    const result = await updateKit({
+      kitId,
+      name,
+      description,
+      ...(isSermonSeries
+        ? { startsOn: startsOn || null, endsOn: endsOn || null }
+        : {}),
+    });
     setSaving(false);
     if (result.ok) {
       setOpen(false);
@@ -101,6 +117,28 @@ export function EditKitDialog({
               onChange={(event) => setDescription(event.target.value)}
             />
           </div>
+          {isSermonSeries ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="edit-kit-starts-on">Start date</Label>
+                <Input
+                  id="edit-kit-starts-on"
+                  type="date"
+                  value={startsOn}
+                  onChange={(event) => setStartsOn(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-kit-ends-on">End date</Label>
+                <Input
+                  id="edit-kit-ends-on"
+                  type="date"
+                  value={endsOn}
+                  onChange={(event) => setEndsOn(event.target.value)}
+                />
+              </div>
+            </div>
+          ) : null}
           <div className="space-y-2">
             <Label>Thumbnail</Label>
             <UploadDropzone
