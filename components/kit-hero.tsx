@@ -16,6 +16,7 @@ import {
   ColorSwatchRow,
   type PaletteCardColor,
 } from "@/components/palette-card";
+import { FileBadge } from "@/components/asset-preview";
 import { uploadWithProgress } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
 
@@ -279,6 +280,12 @@ export function KitHero({
               alt=""
               draggable={false}
               className="size-full object-contain"
+            />
+          ) : sourceFile ? (
+            <FileBadge
+              ext={(sourceFile.original_filename.split(".").pop() || "file")
+                .slice(0, 4)
+                .toUpperCase()}
             />
           ) : (
             <div className="flex size-full items-center justify-center">
