@@ -26,7 +26,13 @@ const nextConfig: NextConfig = {
           ]),
     ],
   },
-  serverExternalPackages: ["sharp", "archiver", "mupdf"],
+  serverExternalPackages: [
+    "sharp",
+    "archiver",
+    "mupdf",
+    "ag-psd",
+    "@napi-rs/canvas",
+  ],
 };
 
 export default nextConfig;
