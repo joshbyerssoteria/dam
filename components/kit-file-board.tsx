@@ -47,6 +47,7 @@ import {
   type FileAssetCardFile,
 } from "@/components/file-asset-card";
 import { KitFileUpload } from "@/components/kit-file-upload";
+import { uploadWithProgress } from "@/components/upload-dropzone";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -137,11 +138,16 @@ function SortableCard({ item }: { item: BoardFile }) {
 function SectionBody({
   containerId,
   items,
+  onDropFiles,
 }: {
   containerId: string;
   items: BoardFile[];
+  onDropFiles: (containerId: string, files: FileList) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: containerId });
+  // Native OS file drags (e.g. from Finder) are separate from the pointer-based
+  // @dnd-kit card sorting, so they get their own hover state.
+  const [fileOver, setFileOver] = useState(false);
 
   return (
     <SortableContext
@@ -150,16 +156,33 @@ function SectionBody({
     >
       <div
         ref={setNodeRef}
+        onDragOver={(event) => {
+          if (!event.dataTransfer.types.includes("Files")) return;
+          event.preventDefault();
+          setFileOver(true);
+        }}
+        onDragLeave={(event) => {
+          // Ignore leave events fired when crossing onto a child element.
+          if (event.currentTarget.contains(event.relatedTarget as Node)) return;
+          setFileOver(false);
+        }}
+        onDrop={(event) => {
+          if (!event.dataTransfer.types.includes("Files")) return;
+          event.preventDefault();
+          setFileOver(false);
+          onDropFiles(containerId, event.dataTransfer.files);
+        }}
         className={cn(
           "grid min-h-24 grid-cols-2 gap-3 p-1 transition-colors sm:grid-cols-3 lg:grid-cols-4",
-          isOver && "bg-accent/50",
+          (isOver || fileOver) && "bg-accent/50",
+          fileOver && "rounded-sm ring-2 ring-inset ring-foreground",
           items.length === 0 &&
             "items-center justify-center border border-dashed border-border"
         )}
       >
         {items.length === 0 ? (
           <p className="col-span-full py-6 text-center text-xs text-muted-foreground">
-            Drag files here
+            {fileOver ? "Drop to upload" : "Drag files here"}
           </p>
         ) : (
           items.map((item) => <SortableCard key={item.kitAssetId} item={item} />)
@@ -239,6 +262,7 @@ function SortableSection({
   onRename,
   onDelete,
   onConvert,
+  onDropFiles,
 }: {
   kitId: string;
   section: BoardSection;
@@ -246,6 +270,7 @@ function SortableSection({
   onRename: () => void;
   onDelete: () => void;
   onConvert: () => void;
+  onDropFiles: (containerId: string, files: FileList) => void;
 }) {
   const {
     attributes,
@@ -293,7 +318,11 @@ function SortableSection({
           }
         />
       </div>
-      <SectionBody containerId={section.id} items={items} />
+      <SectionBody
+        containerId={section.id}
+        items={items}
+        onDropFiles={onDropFiles}
+      />
     </section>
   );
 }
@@ -400,6 +429,37 @@ export function KitFileBoard({
       toItems.splice(insertAt, 0, activeId);
       return { ...current, [from]: fromItems, [to]: toItems };
     });
+  }
+
+  // Native file drop (from Finder etc.) onto a section grid → upload there.
+  async function handleDropFiles(containerId: string, fileList: FileList) {
+    const files = [...fileList];
+    if (files.length === 0) return;
+    const sectionId = containerId === UNSECTIONED ? undefined : containerId;
+    const intent =
+      sectionId !== undefined
+        ? ({ intent: "kit-file", kitId, sectionId } as const)
+        : ({ intent: "kit-file", kitId } as const);
+
+    const toastId = toast.loading(
+      files.length === 1
+        ? `Uploading ${files[0]!.name}…`
+        : `Uploading ${files.length} files…`
+    );
+    let succeeded = 0;
+    // Sequential keeps memory predictable for large batches.
+    for (const file of files) {
+      const result = await uploadWithProgress(file, intent, () => {});
+      if (result.ok) succeeded += 1;
+      else toast.error(`${file.name}: ${result.error ?? "Upload failed"}`);
+    }
+    toast.dismiss(toastId);
+    if (succeeded > 0) {
+      toast.success(
+        succeeded === 1 ? "1 file uploaded" : `${succeeded} files uploaded`
+      );
+      router.refresh();
+    }
   }
 
   async function persistAssets(next: Record<string, string[]>) {
@@ -556,7 +616,11 @@ export function KitFileBoard({
               renameLabel="Name this section"
               actions={<KitFileUpload kitId={kitId} variant="section" />}
             />
-            <SectionBody containerId={UNSECTIONED} items={unsectionedItems} />
+            <SectionBody
+              containerId={UNSECTIONED}
+              items={unsectionedItems}
+              onDropFiles={handleDropFiles}
+            />
           </section>
         ) : null}
 
@@ -582,6 +646,7 @@ export function KitFileBoard({
                   setConvertFolderId("__root__");
                   setConvertSection(section);
                 }}
+                onDropFiles={handleDropFiles}
               />
             ))}
           </div>
