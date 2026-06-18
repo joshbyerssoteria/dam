@@ -54,6 +54,7 @@ export function ExtractPaletteDialog({ kitId }: { kitId: string }) {
     if (result.ok) {
       setColors(result.colors);
       setAutoNamed(result.named);
+      setName(result.suggestedName);
     } else {
       setExtractError(result.error);
     }

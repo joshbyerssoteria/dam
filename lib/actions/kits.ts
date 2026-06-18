@@ -439,7 +439,7 @@ export async function addPalette(
 export async function suggestPaletteFromSource(
   kitId: string
 ): Promise<
-  | { ok: true; colors: SuggestedColor[]; named: boolean }
+  | { ok: true; colors: SuggestedColor[]; named: boolean; suggestedName: string }
   | { ok: false; error: string }
 > {
   const session = await requireEditor();
@@ -448,12 +448,19 @@ export async function suggestPaletteFromSource(
   const db = await createClient();
   const { data: kit } = await db
     .from("kits")
-    .select("source_file_id")
+    .select("source_file_id, name")
     .eq("id", kitId)
     .single();
   if (!kit?.source_file_id) {
     return { ok: false, error: "Upload a source file first" };
   }
+
+  // Default palette name follows the series: "Finally Alive" → "Finally Alive
+  // Series Palette" (avoid a doubled "Series" when the name already has one).
+  const seriesName = kit.name.trim();
+  const suggestedName = /\bseries$/i.test(seriesName)
+    ? `${seriesName} Palette`
+    : `${seriesName} Series Palette`;
 
   // Don't run if the kit already has a palette — extraction is for kits that
   // have none yet.
@@ -482,7 +489,7 @@ export async function suggestPaletteFromSource(
     if (result.colors.length === 0) {
       return { ok: false, error: "Couldn't detect distinct colors in this file" };
     }
-    return { ok: true, colors: result.colors, named: result.named };
+    return { ok: true, colors: result.colors, named: result.named, suggestedName };
   } catch {
     return { ok: false, error: "Couldn't read colors from this file" };
   }
