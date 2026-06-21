@@ -24,6 +24,52 @@ export function queryToTags(query: string): string[] {
 
 export const SEMANTIC_WEIGHT = 0.7;
 
+/** Weight given to a token found only in a folder's description, relative to
+ * one found in its name. Description hits still count, but a name match always
+ * outranks a description match so named albums surface first. */
+export const FOLDER_DESC_WEIGHT = 0.4;
+
+export interface FolderMatch {
+  /** Share of tokens found anywhere (name or description) — used to qualify. */
+  coverage: number;
+  /** Weighted score for ranking — name hits count more than description hits. */
+  score: number;
+}
+
+/**
+ * Score how well a folder matches the query tokens. `coverage` is the share of
+ * tokens present in either the name or description (gates whether it's a match);
+ * `score` weights name hits over description hits so albums titled for an event
+ * (e.g. "Father's Day 2024") rank above ones that only mention it in passing.
+ */
+export function scoreFolder(
+  name: string,
+  description: string | null,
+  tokens: string[]
+): FolderMatch {
+  if (tokens.length === 0) return { coverage: 0, score: 0 };
+  const lowerName = name.toLowerCase();
+  const lowerDesc = (description ?? "").toLowerCase();
+  let nameHits = 0;
+  let descHits = 0;
+  for (const token of tokens) {
+    if (lowerName.includes(token)) nameHits += 1;
+    else if (lowerDesc.includes(token)) descHits += 1;
+  }
+  return {
+    coverage: (nameHits + descHits) / tokens.length,
+    score: (nameHits + descHits * FOLDER_DESC_WEIGHT) / tokens.length,
+  };
+}
+
+/**
+ * Minimum share of query tokens a folder must contain to count as an album
+ * match. 0.6 means a two-token query ("father's day") needs both tokens, while
+ * a three-token query tolerates one miss — precise enough to avoid every folder
+ * containing "day", loose enough to catch real albums.
+ */
+export const FOLDER_MATCH_RATIO = 0.6;
+
 /**
  * Relative relevance cutoff applied after scoring. The Postgres function
  * returns up to `match_limit` candidates ranked by score, but admits anything

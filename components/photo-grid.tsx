@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Check,
   ChevronLeft,
@@ -106,7 +106,21 @@ export function PhotoGrid({
   projectId?: string;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  // Deep link: /photos/[folderId]?photo=<id> opens that photo's lightbox
+  // directly (e.g. arriving from search). Consumed once so a later
+  // router.refresh() doesn't reopen it.
+  const deepLinkPhotoId = searchParams.get("photo");
+  const deepLinkConsumed = useRef(false);
+  useEffect(() => {
+    if (deepLinkConsumed.current || !deepLinkPhotoId) return;
+    const index = photos.findIndex((photo) => photo.id === deepLinkPhotoId);
+    if (index >= 0) {
+      setOpenIndex(index);
+      deepLinkConsumed.current = true;
+    }
+  }, [deepLinkPhotoId, photos]);
   const [favorites, setFavorites] = useState<Set<string>>(
     () => new Set(favoriteIds)
   );
