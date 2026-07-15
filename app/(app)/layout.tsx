@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { buildNavTree } from "@/lib/nav-tree";
 import { createClient, getSessionProfile } from "@/lib/supabase/server";
+import { compareSermonSeriesKits } from "@/lib/utils";
 
 export default async function AppLayout({
   children,
@@ -19,10 +20,25 @@ export default async function AppLayout({
       db.from("kit_folders").select("id, name, parent_id, sort_order, kind"),
       db
         .from("kits")
-        .select("id, slug, name, kit_folder_id")
+        .select("id, slug, name, kit_folder_id, starts_on")
         .order("sort_order")
         .order("name"),
     ]);
+
+  // Sermon-series kits order by start date (newest first), not drag order.
+  // Leaves attach to the tree in array order, and only relative order within
+  // a folder matters, so appending the re-sorted sermon kits is enough.
+  const sermonFolderIds = new Set(
+    (kitFolders ?? [])
+      .filter((folder) => folder.kind === "sermon_series")
+      .map((folder) => folder.id)
+  );
+  const inSermonSeries = (kit: { kit_folder_id: string | null }) =>
+    kit.kit_folder_id !== null && sermonFolderIds.has(kit.kit_folder_id);
+  const kitList = [
+    ...(kits ?? []).filter((kit) => !inSermonSeries(kit)),
+    ...(kits ?? []).filter(inSermonSeries).sort(compareSermonSeriesKits),
+  ];
 
   const photoTree = buildNavTree(folders ?? [], (id) => `/photos/${id}`);
   const projectTree = buildNavTree(
@@ -32,7 +48,7 @@ export default async function AppLayout({
   const kitTree = buildNavTree(
     kitFolders ?? [],
     (id) => `/kits/f/${id}`,
-    (kits ?? []).map((kit) => ({
+    kitList.map((kit) => ({
       id: kit.id,
       name: kit.name,
       parentId: kit.kit_folder_id,

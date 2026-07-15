@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { createClient, getSessionProfile } from "@/lib/supabase/server";
+import { compareSermonSeriesKits } from "@/lib/utils";
 import { KitFolderActions } from "@/components/kit-folder-actions";
 import { KitsDndGrid } from "@/components/kits-dnd-grid";
 import { NewKitDialog } from "@/components/new-kit-dialog";
@@ -48,6 +49,12 @@ export default async function KitFolderPage({
     crumbs.unshift({ id: parent.id, name: parent.name });
     parentId = parent.parent_id;
   }
+
+  // Sermon series order by start date (newest first), not manual drag order.
+  const isSermonSeries = folder.kind === "sermon_series";
+  const kitList = isSermonSeries
+    ? [...(kits ?? [])].sort(compareSermonSeriesKits)
+    : kits ?? [];
 
   const subfolders = folderList
     .filter((f) => f.parent_id === folder.id)
@@ -106,7 +113,7 @@ export default async function KitFolderPage({
           <span className="text-foreground">{folder.name}</span>
         </nav>
 
-        {(kits ?? []).length === 0 && (subfolders ?? []).length === 0 ? (
+        {kitList.length === 0 && (subfolders ?? []).length === 0 ? (
           <p className="py-16 text-center text-sm text-muted-foreground">
             Nothing in this folder yet.
           </p>
@@ -117,8 +124,9 @@ export default async function KitFolderPage({
               name: subfolder.name,
               kind: subfolder.kind,
             }))}
-            kits={kits ?? []}
+            kits={kitList}
             canEdit={canEdit}
+            lockKitOrder={isSermonSeries}
           />
         )}
       </div>

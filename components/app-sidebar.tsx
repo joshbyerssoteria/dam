@@ -558,21 +558,29 @@ function KitsNavTreeArea({
 interface KitGroup {
   parentId: string | null;
   siblings: string[]; // kit ids in display order
+  /** Sermon-series kits order by start date — manual reorder is disabled. */
+  dateOrdered: boolean;
 }
 
 function buildKitGroups(
   nodes: NavTreeNode[],
   parentId: string | null,
-  map: Map<string, KitGroup>
+  map: Map<string, KitGroup>,
+  dateOrdered = false
 ) {
   const kitIds = nodes
     .filter((node) => node.kind === "leaf")
     .map((node) => node.id);
   for (const node of nodes) {
     if (node.kind === "leaf") {
-      map.set(node.id, { parentId, siblings: kitIds });
+      map.set(node.id, { parentId, siblings: kitIds, dateOrdered });
     } else {
-      buildKitGroups(node.children, node.id, map);
+      buildKitGroups(
+        node.children,
+        node.id,
+        map,
+        node.variant === "sermon_series"
+      );
     }
   }
 }
@@ -649,6 +657,10 @@ function KitsNav({
     const overGroup = groups.get(overKitId);
     if (!activeGroup || !overGroup || kitId === overKitId) return;
     if (activeGroup.parentId !== overGroup.parentId) return;
+    if (activeGroup.dateOrdered) {
+      toast.info("Sermon series are ordered by start date");
+      return;
+    }
 
     const next = arrayMove(
       activeGroup.siblings,

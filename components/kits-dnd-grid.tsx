@@ -121,16 +121,19 @@ function SortableKitCard({
 
 /**
  * Kit folder + kit grid: drag a kit onto a folder card to move it there,
- * or between kit cards to reorder. Static grid for viewers.
+ * or between kit cards to reorder. Static grid for viewers, and for folders
+ * whose kit order is derived (Sermon Series orders by start date).
  */
 export function KitsDndGrid({
   folders,
   kits,
   canEdit,
+  lockKitOrder = false,
 }: {
   folders: DndFolder[];
   kits: DndKit[];
   canEdit: boolean;
+  lockKitOrder?: boolean;
 }) {
   const router = useRouter();
   const sensors = useSensors(
@@ -184,7 +187,7 @@ export function KitsDndGrid({
     .map((id) => kitById.get(id))
     .filter((kit): kit is DndKit => Boolean(kit));
 
-  if (!canEdit) {
+  if (!canEdit || lockKitOrder) {
     return (
       <>
         {folders.length > 0 ? (
@@ -203,7 +206,7 @@ export function KitsDndGrid({
         {kits.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {kits.map((kit) => (
-              <KitCard key={kit.id} kit={kit} canShare={false} />
+              <KitCard key={kit.id} kit={kit} canShare={canEdit} />
             ))}
           </div>
         ) : null}

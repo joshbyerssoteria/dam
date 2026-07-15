@@ -60,6 +60,24 @@ export function formatDateRange(
   return full.format((start ?? end) as Date);
 }
 
+/**
+ * Display order for kits inside the Sermon Series folder: newest series first
+ * by start date, undated kits (not yet scheduled) on top, ties by name.
+ * Dates own the order there — manual drag ordering does not apply.
+ */
+export function compareSermonSeriesKits(
+  a: { name: string; starts_on: string | null },
+  b: { name: string; starts_on: string | null }
+): number {
+  if (a.starts_on !== b.starts_on) {
+    if (!a.starts_on) return -1;
+    if (!b.starts_on) return 1;
+    // YYYY-MM-DD strings compare correctly lexicographically.
+    return b.starts_on.localeCompare(a.starts_on);
+  }
+  return a.name.localeCompare(b.name);
+}
+
 export function slugify(input: string): string {
   return input
     .toLowerCase()
