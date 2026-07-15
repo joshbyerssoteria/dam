@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  closestCenter,
+  getFirstCollision,
   pointerWithin,
   rectIntersection,
   useDroppable,
@@ -74,15 +76,6 @@ import {
 
 const UNSECTIONED = "none";
 const SECTION_PREFIX = "sec:";
-
-// closestCorners misbehaves with adjacent grid containers — the container a
-// drag started in keeps winning, so items can never leave it. Prefer
-// whatever is directly under the pointer; fall back to rect overlap.
-const boardCollision: CollisionDetection = (args) => {
-  const pointerCollisions = pointerWithin(args);
-  if (pointerCollisions.length > 0) return pointerCollisions;
-  return rectIntersection(args);
-};
 
 export interface BoardFile {
   kitAssetId: string;
@@ -394,10 +387,78 @@ export function KitFileBoard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverFingerprint]);
 
-  function findContainer(id: string): string | undefined {
-    if (id in containers) return id;
-    return Object.keys(containers).find((key) => containers[key]!.includes(id));
+  function findContainerIn(
+    map: Record<string, string[]>,
+    id: string
+  ): string | undefined {
+    if (id in map) return id;
+    return Object.keys(map).find((key) => map[key]!.includes(id));
   }
+
+  function findContainer(id: string): string | undefined {
+    return findContainerIn(containers, id);
+  }
+
+  // Pins the collision result to the active item for one frame right after a
+  // cross-container move. Without this, dropping into an empty section grows
+  // that section, the layout shift moves a different container under the
+  // (stationary) pointer, the item flips back, and the two states oscillate
+  // forever — React error #185 (max update depth). See @dnd-kit's
+  // multiple-containers example.
+  const lastOverId = useRef<string | null>(null);
+  const recentlyMovedToNewContainer = useRef(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      recentlyMovedToNewContainer.current = false;
+    });
+  }, [containers]);
+
+  const collisionDetection: CollisionDetection = useCallback(
+    (collisionArgs) => {
+      const activeId = String(collisionArgs.active.id);
+      // Section drags use the simple pointer/rect approach (vertical list).
+      if (activeId.startsWith(SECTION_PREFIX)) {
+        const pointer = pointerWithin(collisionArgs);
+        return pointer.length > 0 ? pointer : rectIntersection(collisionArgs);
+      }
+
+      const pointerIntersections = pointerWithin(collisionArgs);
+      const intersections =
+        pointerIntersections.length > 0
+          ? pointerIntersections
+          : rectIntersection(collisionArgs);
+      let overId = getFirstCollision(intersections, "id");
+
+      if (overId != null) {
+        // When over a container (section body or its wrapper), narrow to the
+        // closest card inside it so reordering within a section stays precise.
+        const rawOver = String(overId).startsWith(SECTION_PREFIX)
+          ? String(overId).slice(SECTION_PREFIX.length)
+          : String(overId);
+        const containerItems = containers[rawOver];
+        if (containerItems && containerItems.length > 0) {
+          const closest = closestCenter({
+            ...collisionArgs,
+            droppableContainers: collisionArgs.droppableContainers.filter(
+              (container) => containerItems.includes(String(container.id))
+            ),
+          })[0]?.id;
+          if (closest != null) overId = closest;
+        }
+        lastOverId.current = String(overId);
+        return [{ id: overId }];
+      }
+
+      // Mid-move into a new container: keep returning the active id so the
+      // collision can't snap back to the source and start oscillating.
+      if (recentlyMovedToNewContainer.current) {
+        lastOverId.current = activeId;
+      }
+      return lastOverId.current ? [{ id: lastOverId.current }] : [];
+    },
+    [containers]
+  );
 
   function handleDragStart(event: DragStartEvent) {
     const id = String(event.active.id);
@@ -414,19 +475,29 @@ export function KitFileBoard({
     const activeId = String(dragActive.id);
     if (activeId.startsWith(SECTION_PREFIX)) return; // sections sort on drop
 
-    const from = findContainer(activeId);
     const overId = String(over.id);
-    const to = overId.startsWith(SECTION_PREFIX)
+    const overContainer = overId.startsWith(SECTION_PREFIX)
       ? overId.slice(SECTION_PREFIX.length)
-      : findContainer(overId);
-    if (!from || !to || from === to || !(to in containers)) return;
+      : null;
 
     setContainers((current) => {
-      const fromItems = current[from]!.filter((id) => id !== activeId);
-      const toItems = [...current[to]!];
+      // Re-derive both endpoints from the latest state. A stale render-time
+      // closure can reference a container that was just rebuilt (e.g. right
+      // after creating a section, when router.refresh() resets the board),
+      // so resolving against `current` avoids touching a missing container.
+      const from = findContainerIn(current, activeId);
+      const to = overContainer ?? findContainerIn(current, overId);
+      if (!from || !to || from === to) return current;
+      if (!current[from] || !current[to]) return current;
+
+      const fromItems = current[from].filter((id) => id !== activeId);
+      // Filter activeId out of the target too, so a duplicate dragOver can't
+      // insert the same asset twice (which would yield duplicate keys).
+      const toItems = current[to].filter((id) => id !== activeId);
       const overIndex = toItems.indexOf(overId);
       const insertAt = overIndex >= 0 ? overIndex : toItems.length;
       toItems.splice(insertAt, 0, activeId);
+      recentlyMovedToNewContainer.current = true;
       return { ...current, [from]: fromItems, [to]: toItems };
     });
   }
@@ -502,12 +573,14 @@ export function KitFileBoard({
     const container = findContainer(activeId);
     if (!container) return;
     let next = containers;
-    const items = containers[container]!;
-    const fromIndex = items.indexOf(activeId);
-    const toIndex = items.indexOf(overId);
-    if (fromIndex >= 0 && toIndex >= 0 && fromIndex !== toIndex) {
-      next = { ...containers, [container]: arrayMove(items, fromIndex, toIndex) };
-      setContainers(next);
+    const items = containers[container];
+    if (items) {
+      const fromIndex = items.indexOf(activeId);
+      const toIndex = items.indexOf(overId);
+      if (fromIndex >= 0 && toIndex >= 0 && fromIndex !== toIndex) {
+        next = { ...containers, [container]: arrayMove(items, fromIndex, toIndex) };
+        setContainers(next);
+      }
     }
     await persistAssets(next);
   }
@@ -595,7 +668,7 @@ export function KitFileBoard({
       <DndContext
         id="kit-file-board-dnd"
         sensors={sensors}
-        collisionDetection={boardCollision}
+        collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={(event) => void handleDragEnd(event)}
